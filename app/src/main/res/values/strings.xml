@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 5.3 决策：纯中文 MVP，strings 不抽。app_name 保留是 manifest 引用。 -->
+    <string name="app_name">Wake Plan</string>
+
+    <!-- 底部 tab 标签（5.3 决策：纯中文） -->
+    <string name="tab_today">现在</string>
+    <string name="tab_plans">计划</string>
+    <string name="tab_settings">设置</string>
+
+    <!-- 占位屏文案 -->
+    <string name="placeholder_today_title">Wake Plan</string>
+    <string name="placeholder_today_subtitle">当前时刻</string>
+    <string name="placeholder_plans_title">计划列表</string>
+    <string name="placeholder_settings_title">设置</string>
+</resources>

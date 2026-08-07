@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- 本地优先：暂不参与系统自动备份（v0.4 备份导出走 SAF） -->
+</full-backup-content>

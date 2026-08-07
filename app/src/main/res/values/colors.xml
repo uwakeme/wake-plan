@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 主色 — 映射 design/colors_and_type.css 的 color-primary（light 主题） -->
+    <color name="brand_primary">#C48520</color>
+    <color name="brand_on_primary">#FFFFFF</color>
+
+    <!-- 启动背景 — 映射 design tokens 的 color-bg-elevated（light 主题） -->
+    <color name="splash_bg">#FAFAF8</color>
+
+    <!-- 状态栏 / 导航栏颜色（系统栏） -->
+    <color name="system_bar_dark">#18160F</color>
+    <color name="system_bar_light">#FAFAF8</color>
+</resources>
