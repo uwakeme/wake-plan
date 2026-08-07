@@ -45,23 +45,25 @@ class Converters {
     fun toInstant(value: Long?): Instant? = value?.let(Instant::ofEpochMilli)
 
     // ===== Set<DayOfWeek> =====
+    // 空集返回 "" 而非 null — Room 字段 NOT NULL 约束
     @TypeConverter
-    fun fromDayOfWeekSet(value: Set<DayOfWeek>?): String? =
-        value?.takeIf { it.isNotEmpty() }?.joinToString(",") { it.name }
+    fun fromDayOfWeekSet(value: Set<DayOfWeek>?): String =
+        value?.joinToString(",") { it.name } ?: ""
 
     @TypeConverter
     fun toDayOfWeekSet(value: String?): Set<DayOfWeek> =
         value?.takeIf { it.isNotBlank() }
             ?.split(",")
+            ?.filter { it.isNotBlank() }
             ?.map { DayOfWeek.valueOf(it) }
             ?.toSet()
             ?: emptySet()
 
     // ===== List<String> =====
+    // 空列表返回 "" 而非 null — Room 字段 NOT NULL 约束
     @TypeConverter
-    fun fromStringList(value: List<String>?): String? =
-        value?.takeIf { it.isNotEmpty() }
-            ?.joinToString(",") { it.replace(",", "␐") } // 简单 CSV 编码避免内部逗号冲突
+    fun fromStringList(value: List<String>?): String =
+        value?.joinToString(",") { it.replace(",", "␐") } ?: ""
 
     @TypeConverter
     fun toStringList(value: String?): List<String> =

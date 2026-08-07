@@ -1,5 +1,6 @@
 package com.wakeplan.app.ui.today
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wakeplan.app.domain.model.Plan
@@ -14,6 +15,7 @@ import com.wakeplan.app.domain.usecase.AutoExtendCalculator
 import com.wakeplan.app.domain.usecase.ConflictDetector
 import com.wakeplan.app.domain.usecase.TaskCompletionInstantiator
 import com.wakeplan.app.domain.usecase.TaskConflict
+import com.wakeplan.app.domain.model.TaskStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -149,6 +152,7 @@ class TodayViewModel @Inject constructor(
             val tasks = taskRepository.observeAll().first()
             val existing = taskCompletionRepository.observeByDate(today).first()
             val existingTaskIds = existing.map { it.taskId }.toSet()
+            Log.d("TodayViewModel", "ensure: plans=${plans.size} segments=${segments.size} tasks=${tasks.size} existing=${existing.size}")
 
             plans.filter { it.isActive }.forEach { plan ->
                 val planSegments = segments.filter { it.planId == plan.id }
@@ -159,8 +163,48 @@ class TodayViewModel @Inject constructor(
                     tasks = planTasks,
                     date = today,
                 ).filter { it.taskId !in existingTaskIds }
+                Log.d("TodayViewModel", "ensure: plan=${plan.title} pending=${pending.size}")
                 pending.forEach { taskCompletionRepository.upsert(it) }
             }
+        }
+    }
+
+    // ---- 任务状态机交互（Phase 2.4b）----
+
+    /** PENDING → IN_PROGRESS，写 actualStart = now */
+    fun onStartTask(completionId: String) {
+        viewModelScope.launch {
+            val c = taskCompletionRepository.getById(completionId) ?: return@launch
+            if (c.status != TaskStatus.PENDING) return@launch
+            val now = LocalDateTime.now(clock)
+            taskCompletionRepository.upsert(c.copy(
+                status = TaskStatus.IN_PROGRESS,
+                actualStart = now,
+            ))
+        }
+    }
+
+    /** IN_PROGRESS → COMPLETED，写 actualEnd = now + overrun */
+    fun onCompleteTask(completionId: String) {
+        viewModelScope.launch {
+            val c = taskCompletionRepository.getById(completionId) ?: return@launch
+            if (c.status != TaskStatus.IN_PROGRESS) return@launch
+            val now = LocalDateTime.now(clock)
+            val overrun = Duration.between(c.plannedEnd, now).toMinutes().coerceAtLeast(0L).toInt()
+            taskCompletionRepository.upsert(c.copy(
+                status = TaskStatus.COMPLETED,
+                actualEnd = now,
+                overrunMinutes = overrun,
+            ))
+        }
+    }
+
+    /** PENDING / IN_PROGRESS → SKIPPED（不写 actual 时间） */
+    fun onSkipTask(completionId: String) {
+        viewModelScope.launch {
+            val c = taskCompletionRepository.getById(completionId) ?: return@launch
+            if (c.status == TaskStatus.COMPLETED || c.status == TaskStatus.SKIPPED) return@launch
+            taskCompletionRepository.upsert(c.copy(status = TaskStatus.SKIPPED))
         }
     }
 }
