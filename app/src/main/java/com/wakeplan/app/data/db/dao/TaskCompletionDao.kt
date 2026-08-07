@@ -27,6 +27,13 @@ interface TaskCompletionDao {
     @Query("SELECT * FROM task_completions WHERE id = :id LIMIT 1")
     suspend fun findById(id: String): TaskCompletionEntity?
 
+    /**
+     * 全表 snapshot — Phase 4.1 备份导出专用
+     * v0.1 假设用户 < 1k completion；量大时再分批或加日期边界
+     */
+    @Query("SELECT * FROM task_completions ORDER BY scheduled_date ASC, planned_start ASC")
+    suspend fun getAllSnapshot(): List<TaskCompletionEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(completion: TaskCompletionEntity)
 
