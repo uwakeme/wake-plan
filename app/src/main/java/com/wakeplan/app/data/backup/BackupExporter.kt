@@ -81,6 +81,43 @@ class BackupExporter @Inject constructor(
     private suspend fun readAllCompletions(): List<com.wakeplan.app.data.db.entity.TaskCompletionEntity> {
         return taskCompletionDao.getAllSnapshot()
     }
+
+    /**
+     * 导出为 BackupFile（disk-level envelope）— Phase 4.2
+     *
+     * @param passphrase null → 明文；非空 → 加密（用完请 clear）
+     * @return BackupFile JSON 字符串，可以直接写到 .json 文件
+     */
+    suspend fun exportToBackupFile(
+        passphrase: CharArray? = null,
+        iterations: Int = BackupCrypto.DEFAULT_ITERATIONS,
+        appVersionName: String = appVersionProvider.versionName,
+        appVersionCode: Int = appVersionProvider.versionCode,
+    ): String {
+        val envelopeJson = export(appVersionName, appVersionCode)
+        val backupFile = if (passphrase == null) {
+            // 明文
+            val envelope = json.decodeFromString(BackupEnvelope.serializer(), envelopeJson)
+            BackupFile(
+                format = BackupFile.FORMAT_PLAIN,
+                encryption = null,
+                envelope = envelope,
+                data = null,
+            )
+        } else {
+            // 加密
+            val plaintext = envelopeJson.toByteArray(Charsets.UTF_8)
+            val result = BackupCrypto.encrypt(plaintext, passphrase, iterations)
+            val ciphertextB64 = java.util.Base64.getEncoder().withoutPadding().encodeToString(result.ciphertext)
+            BackupFile(
+                format = BackupFile.FORMAT_ENCRYPTED,
+                encryption = result.metadata,
+                envelope = null,
+                data = ciphertextB64,
+            )
+        }
+        return json.encodeToString(backupFile)
+    }
 }
 
 /**

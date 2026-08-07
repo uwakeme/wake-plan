@@ -21,6 +21,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -244,5 +245,98 @@ class BackupExporterTest {
         // 顶层 exportedAt 是字符串
         val exportedAtStr = root["exportedAt"]!!.jsonPrimitive.content
         assertTrue(exportedAtStr.contains("2026-08-08T12:00:00Z"))
+    }
+
+    // ===== Phase 4.2 exportToBackupFile =====
+
+    @Test
+    fun `exportToBackupFile 无 passphrase — format=plain-v1 envelope 内嵌`() = runTest {
+        coEvery { planDao.observeAll() } returns flowOf(listOf(samplePlan))
+        coEvery { timeSegmentDao.observeAll() } returns flowOf(emptyList())
+        coEvery { taskDao.observeAll() } returns flowOf(emptyList())
+        coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
+        coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+
+        val fileJson = exporter().exportToBackupFile(passphrase = null)
+        val file = Json.decodeFromString(BackupFile.serializer(), fileJson)
+
+        assertEquals(BackupFile.FORMAT_PLAIN, file.format)
+        assertNull(file.encryption)
+        assertNotNull(file.envelope)
+        assertNull(file.data)
+        assertEquals(1, file.fileSchemaVersion)
+        // 内嵌 envelope 数据保持
+        assertEquals(1, file.envelope!!.data.plans.size)
+        assertEquals("plan-1", file.envelope!!.data.plans[0].id)
+    }
+
+    @Test
+    fun `exportToBackupFile 有 passphrase — format=encrypted-v1 + encryption metadata + base64 data`() = runTest {
+        coEvery { planDao.observeAll() } returns flowOf(listOf(samplePlan))
+        coEvery { timeSegmentDao.observeAll() } returns flowOf(emptyList())
+        coEvery { taskDao.observeAll() } returns flowOf(emptyList())
+        coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
+        coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+
+        val pass = "test-passphrase".toCharArray()
+        try {
+            // 用小 iteration 加速测试
+            val fileJson = exporter().exportToBackupFile(passphrase = pass, iterations = 1_000)
+            val file = Json.decodeFromString(BackupFile.serializer(), fileJson)
+
+            assertEquals(BackupFile.FORMAT_ENCRYPTED, file.format)
+            assertNotNull(file.encryption)
+            assertNull(file.envelope)
+            assertNotNull(file.data)
+
+            val meta = file.encryption!!
+            assertEquals("PBKDF2-SHA256", meta.kdf)
+            assertEquals("AES-256-GCM", meta.cipher)
+            assertEquals(1_000, meta.iterations)
+            // base64 长度: 16 bytes salt → 24 chars (no padding newline)
+            assertTrue(meta.saltB64.length >= 22, "salt base64 should be ~24 chars, got ${meta.saltB64.length}")
+            assertTrue(meta.ivB64.length >= 16, "iv base64 should be ~16 chars, got ${meta.ivB64.length}")
+            // ciphertext data 是非空 base64
+            assertTrue(file.data!!.isNotEmpty())
+
+            // 关键 round-trip：解密后能拿回原 envelope
+            val ciphertext = java.util.Base64.getDecoder().decode(file.data)
+            val plaintextBytes = BackupCrypto.decrypt(ciphertext, meta, pass)
+            val innerEnvelope = Json.decodeFromString(BackupEnvelope.serializer(), String(plaintextBytes, Charsets.UTF_8))
+            assertEquals(1, innerEnvelope.data.plans.size)
+            assertEquals("plan-1", innerEnvelope.data.plans[0].id)
+        } finally {
+            pass.fill('\u0000')
+        }
+    }
+
+    @Test
+    fun `exportToBackupFile 加密 — 错 passphrase 解不出来`() = runTest {
+        coEvery { planDao.observeAll() } returns flowOf(emptyList())
+        coEvery { timeSegmentDao.observeAll() } returns flowOf(emptyList())
+        coEvery { taskDao.observeAll() } returns flowOf(emptyList())
+        coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
+        coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+
+        val rightPass = "right".toCharArray()
+        val wrongPass = "wrong".toCharArray()
+        try {
+            val fileJson = exporter().exportToBackupFile(passphrase = rightPass, iterations = 1_000)
+            val file = Json.decodeFromString(BackupFile.serializer(), fileJson)
+            val ciphertext = java.util.Base64.getDecoder().decode(file.data)
+            val meta = file.encryption!!
+
+            // 错 passphrase 应该抛 AEADBadTagException
+            try {
+                BackupCrypto.decrypt(ciphertext, meta, wrongPass)
+                error("expected exception")
+            } catch (e: javax.crypto.AEADBadTagException) {
+                // OK
+            } finally {
+                wrongPass.fill('\u0000')
+            }
+        } finally {
+            rightPass.fill('\u0000')
+        }
     }
 }

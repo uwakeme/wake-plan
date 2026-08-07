@@ -116,3 +116,59 @@ data class BackupTemplate(
     val isBuiltIn: Boolean,
     val schemaVersion: Int,
 )
+
+/**
+ * 加密元数据 — Phase 4.2
+ *
+ * 写盘时跟 BackupFile 一起存；解析时决定走 decrypt 还是直接读 envelope
+ *
+ * @param saltB64 16 字节 salt 的 Base64 编码（无换行）
+ * @param ivB64 12 字节 IV 的 Base64 编码
+ * @param iterations PBKDF2 迭代次数（OWASP 2023 600k，测试可小）
+ */
+@Serializable
+data class EncryptionMetadata(
+    val kdf: String,
+    val iterations: Int,
+    val cipher: String,
+    val saltB64: String,
+    val ivB64: String,
+)
+
+/**
+ * 磁盘文件顶层结构 — Phase 4.2
+ *
+ * 跟 BackupEnvelope 区别：这是写到磁盘文件的"外层包装"
+ * BackupEnvelope 是数据本身的 schema；BackupFile 是"这个文件怎么读"
+ *
+ * ```json
+ * // 明文备份
+ * { "fileSchemaVersion": 1, "format": "plain-v1", "encryption": null,
+ *   "envelope": { schemaVersion, exportedAt, ..., data: { plans, segments, ... } } }
+ *
+ * // 加密备份
+ * { "fileSchemaVersion": 1, "format": "encrypted-v1",
+ *   "encryption": { kdf, iterations, cipher, saltB64, ivB64 },
+ *   "envelope": null, "data": "base64(ciphertext)" }
+ * ```
+ *
+ * Phase 4.3 导入时按 `format` 路由：
+ * - "plain-v1"：直接读 envelope
+ * - "encrypted-v1"：用 metadata 解密 data，再 parse 内部 JSON 为 BackupEnvelope
+ *
+ * `fileSchemaVersion` 跟 envelope.schemaVersion 分开：前者管"文件怎么读"，后者管"数据是什么版本"
+ */
+@Serializable
+data class BackupFile(
+    val fileSchemaVersion: Int = FILE_SCHEMA_VERSION,
+    val format: String,    // "plain-v1" 或 "encrypted-v1"
+    val encryption: EncryptionMetadata? = null,
+    val envelope: BackupEnvelope? = null,
+    val data: String? = null,    // base64 ciphertext（仅 encrypted-v1 用）
+) {
+    companion object {
+        const val FILE_SCHEMA_VERSION = 1
+        const val FORMAT_PLAIN = "plain-v1"
+        const val FORMAT_ENCRYPTED = "encrypted-v1"
+    }
+}
