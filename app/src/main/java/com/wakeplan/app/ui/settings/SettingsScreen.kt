@@ -2,6 +2,8 @@ package com.wakeplan.app.ui.settings
 
 import android.Manifest
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,9 +14,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,12 +29,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +56,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -56,14 +66,15 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 /**
- * 设置屏 — Phase 3.3 加通知配置
- * 包含 lead minutes 选择 + 4 渠道开关 + 测试通知按钮
+ * 设置屏 — Phase 3.3 加通知配置 + Phase 4.4 加备份
+ * 包含 lead minutes 选择 + 4 渠道开关 + 测试通知按钮 + 备份入口
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onTemplatesClick: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
+    backupViewModel: BackupViewModel = hiltViewModel(),
 ) {
     val leadMinutes by viewModel.leadMinutes.collectAsStateWithLifecycle(initialValue = UserPreferences.DEFAULT_LEAD_MINUTES)
     val startingEnabled by viewModel.taskStartingEnabled.collectAsStateWithLifecycle(initialValue = true)
@@ -73,10 +84,86 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // ===== Phase 4.4 备份 state =====
+    val exportState by backupViewModel.exportState.collectAsStateWithLifecycle()
+    val importState by backupViewModel.importState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showExportPlainDialog by remember { mutableStateOf(false) }
+    var showExportEncryptedDialog by remember { mutableStateOf(false) }
+    var showImportConfirmDialog by remember { mutableStateOf(false) }
+    var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var pendingImportEncrypted by remember { mutableStateOf(false) }
+    var pendingExportPassphrase by remember { mutableStateOf<CharArray?>(null) }
+
+    // SAF 导出 launcher
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        if (uri != null) {
+            backupViewModel.export(uri, passphrase = pendingExportPassphrase)
+            pendingExportPassphrase = null
+        }
+    }
+
+    // SAF 导入 launcher
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            pendingImportUri = uri
+            // 先尝试明文 import；如果是加密文件 importer 会抛 IllegalStateException 提示需要 passphrase
+            backupViewModel.import(uri, passphrase = null)
+        }
+    }
+
+    // Snackbar 反馈 export / import 结果
+    LaunchedEffect(exportState) {
+        when (val s = exportState) {
+            is BackupViewModel.ExportState.Success -> {
+                snackbarHostState.showSnackbar("导出成功：${s.bytesWritten / 1024} KB")
+                backupViewModel.consumeExportSuccess()
+            }
+            is BackupViewModel.ExportState.Error -> {
+                snackbarHostState.showSnackbar("导出失败：${s.message}")
+                backupViewModel.consumeExportError()
+            }
+            else -> Unit
+        }
+    }
+    LaunchedEffect(importState) {
+        when (val s = importState) {
+            is BackupViewModel.ImportState.Success -> {
+                val r = s.result
+                snackbarHostState.showSnackbar(
+                    "导入成功：${r.plansImported} 计划 / ${r.tasksImported} 任务 / ${r.completionsImported} 完成",
+                )
+                backupViewModel.consumeImportSuccess()
+            }
+            is BackupViewModel.ImportState.Error -> {
+                snackbarHostState.showSnackbar("导入失败：${s.message}")
+                backupViewModel.consumeImportError()
+            }
+            else -> Unit
+        }
+    }
+
+    // 监听 import 失败 — 如果是"需要 passphrase"则弹加密输入 dialog
+    LaunchedEffect(importState) {
+        val s = importState
+        if (s is BackupViewModel.ImportState.Error && s.message.contains("requires passphrase")) {
+            val uri = pendingImportUri
+            if (uri != null) {
+                pendingImportEncrypted = true
+                showImportConfirmDialog = true
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("设置") })
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -157,6 +244,149 @@ fun SettingsScreen(
             ) {
                 Text("发测试通知")
             }
+
+            // ===== Phase 4.4 备份 =====
+            Spacer(Modifier.height(16.dp))
+            SectionHeader("数据备份")
+
+            Text(
+                "把数据导出到本地文件，或从备份文件恢复。\n加密备份用 AES-256 + PBKDF2，密码请妥善保管。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { showExportPlainDialog = true },
+                    enabled = exportState !is BackupViewModel.ExportState.Running,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("导出明文")
+                }
+                OutlinedButton(
+                    onClick = { showExportEncryptedDialog = true },
+                    enabled = exportState !is BackupViewModel.ExportState.Running,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("导出加密")
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Button(
+                onClick = { showImportConfirmDialog = true },
+                enabled = importState !is BackupViewModel.ImportState.Running,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("导入备份")
+            }
+
+            // 进度指示
+            if (exportState is BackupViewModel.ExportState.Running) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("导出中…", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            if (importState is BackupViewModel.ImportState.Running) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("导入中…", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+
+        // ===== 对话框（Phase 4.4）=====
+
+        // 1. 导出明文确认
+        if (showExportPlainDialog) {
+            AlertDialog(
+                onDismissRequest = { showExportPlainDialog = false },
+                title = { Text("导出明文备份") },
+                text = {
+                    Text(
+                        "明文备份不加密，文件内容可以直接查看。\n导出的 JSON 可以用文本编辑器打开。",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showExportPlainDialog = false
+                        pendingExportPassphrase = null
+                        val ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
+                        exportLauncher.launch("wakeplan-backup-$ts.json")
+                    }) {
+                        Text("选位置")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showExportPlainDialog = false }) {
+                        Text("取消")
+                    }
+                },
+            )
+        }
+
+        // 2. 导出加密：先弹密码输入，完了再启 SAF
+        if (showExportEncryptedDialog) {
+            PassphraseDialog(
+                title = "导出加密备份",
+                message = "设置一个至少 8 位的密码。\n忘记密码无法恢复，请妥善保管。",
+                onConfirm = { pass ->
+                    showExportEncryptedDialog = false
+                    pendingExportPassphrase = pass
+                    val ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
+                    exportLauncher.launch("wakeplan-backup-$ts-encrypted.json")
+                },
+                onDismiss = { showExportEncryptedDialog = false },
+            )
+        }
+
+        // 3. 导入：先弹强提示
+        if (showImportConfirmDialog && pendingImportUri == null) {
+            ImportConfirmDialog(
+                onConfirm = {
+                    showImportConfirmDialog = false
+                    pendingImportEncrypted = false
+                    importLauncher.launch(arrayOf("application/json", "*/*"))
+                },
+                onDismiss = { showImportConfirmDialog = false },
+            )
+        }
+
+        // 4. 导入加密备份：明文 import 失败后，弹密码输入再试
+        if (showImportConfirmDialog && pendingImportUri != null && pendingImportEncrypted) {
+            PassphraseDialog(
+                title = "导入加密备份",
+                message = "这是加密备份，请输入密码。",
+                onConfirm = { pass ->
+                    showImportConfirmDialog = false
+                    val uri = pendingImportUri
+                    pendingImportUri = null
+                    pendingImportEncrypted = false
+                    if (uri != null) {
+                        backupViewModel.import(uri, passphrase = pass)
+                    }
+                },
+                onDismiss = {
+                    showImportConfirmDialog = false
+                    pendingImportUri = null
+                    pendingImportEncrypted = false
+                },
+            )
         }
     }
 }
