@@ -119,9 +119,9 @@ Room DAO / DataStore
 
 | Phase | 范围 | 预计 | 状态 |
 |---|---|---|---|
-| **0. 骨架** | Gradle 工程 + 主题 + 3 tab 导航 + Hilt + Room 空壳 + AGENTS.md + 推 GitHub | 1-2 轮 | **当前轮** |
+| **0. 骨架** | Gradle 工程 + 主题 + 3 tab 导航 + Hilt + Room 空壳 + AGENTS.md + 推 GitHub | 1-2 轮 | ✅ 完成 |
 | 1. CRUD | 计划/段/任务/模板基础 CRUD（含 CUSTOM 重复规则 UI + 10 色 + hex 自定义） | 1-2 周 | 待启动 |
-| 2. 核心交互 | 开始/完成 + 自动延期算法 + 冲突检测内联 + 当前时刻聚合视图 | 2-3 周 | 待启动 |
+| 2. 核心交互 | 开始/完成 + 自动延期算法 + 冲突检测内联 + 当前时刻聚合视图 | 2-3 周 | **下一轮** |
 | 3. 通知 | WorkManager + AlarmManager + 4 渠道（starting/overdue/completed/recap） + 权限引导 | 1 周 | 待启动 |
 | 4. 备份/收尾 | JSON 备份导出导入（明文 + 可选 AES-256）+ Settings 完整化 | 1 周 | 待启动 |
 | **v0.2 候选** | 时间线预览 (US-08) · 统计面板 (US-12) · 自动延期撤销 · i18n · 模板库打磨 | 4-6 周 | 候选 |
