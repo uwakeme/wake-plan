@@ -123,7 +123,7 @@ Room DAO / DataStore
 | 1. CRUD | 计划/段/任务/模板基础 CRUD（含 CUSTOM 重复规则 UI + 10 色 + hex 自定义） | 1-2 周 | ✅ 完成 |
 | 2. 核心交互 | 开始/完成 + 自动延期算法 + 冲突检测内联 + 当前时刻聚合视图 | 2-3 周 | ✅ 完成 |
 | 3. 通知 | WorkManager + AlarmManager + 4 渠道（starting/overdue/completed/recap） + 权限引导 | 1 周 | ✅ 完成 |
-| 4. 备份/收尾 | JSON 备份导出导入（明文 + 可选 AES-256）+ Settings 完整化 | 1 周 | **下一轮** |
+| 4. 备份/收尾 | JSON 备份导出导入（明文 + 可选 AES-256）+ Settings 完整化 | 1 周 | ✅ 完成 |
 | **v0.2 候选** | 时间线预览 (US-08) · 统计面板 (US-12) · 自动延期撤销 · i18n · 模板库打磨 | 4-6 周 | 候选 |
 | **v0.3 候选** | AppWidget + Quick Settings Tile | 3-4 周 | 候选 |
 | **v1.0 候选** | 隐私政策 + 应用市场上架 + E2E 测试 | 4 周 | 候选 |
@@ -227,7 +227,7 @@ Room DAO / DataStore
 
 ## 9. v0.1 当前进度（2026-08-08 更新）
 
-**已完成**：Phase 0 / 1 / 2 / 3 全部推送到 `main`，90 个 JVM 单测全过。
+**已完成**：Phase 0 / 1 / 2 / 3 / 4 全部推送到 `main`，177 个 JVM 单测全过。
 
 | Phase | commits | 测试数 | 关键产出 |
 |---|---|---|---|
@@ -235,8 +235,11 @@ Room DAO / DataStore
 | 1 | `a~20+` | 0 | 5 entity + Repository + 5 Screen + 10 色 + CUSTOM 重复规则 |
 | 2 | `a7e9d31 / d92c289 / 228a167 / 335e3a6 / 73dce96` | 51 | TimeWindow + AutoExtend + ConflictDetector + TodayScreen 24h 视图 |
 | 3 | `757c0f0 / fce73f8 / 213e0da` | 31 | DataStore 偏好 + 4 渠道 + Builder + AlarmManager + WorkManager + Onboarding + Settings 通知配置 + deep link |
+| 4 | `de4bba7 / 99273fb / 89d1242 / b00d597` | 87 | BackupEnvelope + 5 DTO + AES-256-GCM + PBKDF2-SHA256 600k + BackupImporter (完全覆盖) + BackupManager + BackupViewModel + Passphrase/Confirm dialogs + SAF |
 
 **SQLCipher 状态**：4.5.x 4KB page size 不支持 Android 15+ 16KB 要求；阿里云 4.6.1 AAR 损坏（Maven Central HTTPS 443 被封无法同步）。v0.1 暂用 Room 默认 SQLite，备份加密走应用层 AES-256 + PBKDF2（PRD 5.3 #7）。
 
-**下一阶段 Phase 4**：JSON 备份导出/导入（明文 + 可选 AES-256） + Settings 备份入口 + 备份/恢复进度 UI。
+**v0.1 状态**：所有 5 个 Phase 完成，177 个测试全过，编译通过。准备 v0.1 release（清理 demo seed / 调试 log / BuildConfig guard，AGP warning，签名配置）。
+
+**v0.2 候选**：时间线预览 (US-08) · 完成统计 (US-12) · 自动延期撤销 · i18n · 模板库打磨 · SQLCipher 重新评估 · AppWidget · Quick Settings Tile。
 
