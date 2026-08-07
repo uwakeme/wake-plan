@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,7 +36,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +66,7 @@ import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.model.TimeSegment
 import com.wakeplan.app.domain.usecase.TaskConflict
+import com.wakeplan.app.ui.common.HighlightBus
 import com.wakeplan.app.ui.common.parseHexColor
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -78,9 +85,25 @@ import java.time.format.DateTimeFormatter
 fun TodayScreen() {
     val viewModel: TodayViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val highlightedTaskId by HighlightBus.highlightedTaskId.collectAsState()
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.ensureTodayCompletions()
+    }
+
+    // Deep link 触发的高亮：滚动到对应 plan item + 5s 后清掉
+    LaunchedEffect(highlightedTaskId, state.planItems) {
+        val targetId = highlightedTaskId ?: return@LaunchedEffect
+        val targetIndex = state.planItems.indexOfFirst { planItem ->
+            planItem.tasks.any { it.id == targetId }
+        }
+        if (targetIndex >= 0) {
+            listState.animateScrollToItem(targetIndex + 1)  // +1 是 timeline item
+            delay(5_000L)
+            HighlightBus.clear()
+        }
     }
 
     Scaffold(
@@ -96,6 +119,8 @@ fun TodayScreen() {
             TodayContent(
                 state = state,
                 contentPadding = padding,
+                listState = listState,
+                highlightedTaskId = highlightedTaskId,
                 onStartTask = viewModel::onStartTask,
                 onCompleteTask = viewModel::onCompleteTask,
                 onSkipTask = viewModel::onSkipTask,
@@ -109,11 +134,14 @@ fun TodayScreen() {
 private fun TodayContent(
     state: TodayUiState,
     contentPadding: PaddingValues,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    highlightedTaskId: String?,
     onStartTask: (String) -> Unit,
     onCompleteTask: (String) -> Unit,
     onSkipTask: (String) -> Unit,
 ) {
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             top = contentPadding.calculateTopPadding() + 8.dp,
@@ -142,6 +170,7 @@ private fun TodayContent(
                 adjustedCompletions = state.adjustedCompletions.filter { it.planId == item.plan.id },
                 conflicts = planConflicts,
                 plansById = state.planItems.associate { it.plan.id to it.plan },
+                highlightedTaskId = highlightedTaskId,
                 onStartTask = onStartTask,
                 onCompleteTask = onCompleteTask,
                 onSkipTask = onSkipTask,
@@ -287,6 +316,7 @@ private fun TodayPlanCard(
     adjustedCompletions: List<TaskCompletion>,
     conflicts: List<TaskConflict>,
     plansById: Map<String, Plan>,
+    highlightedTaskId: String?,
     onStartTask: (String) -> Unit,
     onCompleteTask: (String) -> Unit,
     onSkipTask: (String) -> Unit,
@@ -347,6 +377,7 @@ private fun TodayPlanCard(
                         segment = seg,
                         completions = completions,
                         tasksById = tasksById,
+                        highlightedTaskId = highlightedTaskId,
                         onStartTask = onStartTask,
                         onCompleteTask = onCompleteTask,
                         onSkipTask = onSkipTask,
@@ -362,6 +393,7 @@ private fun SegmentSection(
     segment: TimeSegment,
     completions: List<TaskCompletion>,
     tasksById: Map<String, com.wakeplan.app.domain.model.Task>,
+    highlightedTaskId: String?,
     onStartTask: (String) -> Unit,
     onCompleteTask: (String) -> Unit,
     onSkipTask: (String) -> Unit,
@@ -389,6 +421,7 @@ private fun SegmentSection(
             TaskRow(
                 completion = c,
                 taskTitle = title,
+                highlighted = c.taskId == highlightedTaskId,
                 onStart = { onStartTask(c.id) },
                 onComplete = { onCompleteTask(c.id) },
                 onSkip = { onSkipTask(c.id) },
@@ -401,12 +434,19 @@ private fun SegmentSection(
 private fun TaskRow(
     completion: TaskCompletion,
     taskTitle: String,
+    highlighted: Boolean = false,
     onStart: () -> Unit,
     onComplete: () -> Unit,
     onSkip: () -> Unit,
 ) {
+    val bg = if (highlighted) MaterialTheme.colorScheme.primaryContainer
+             else androidx.compose.ui.graphics.Color.Transparent
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .background(bg, RoundedCornerShape(8.dp))
+            .padding(horizontal = 4.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // 状态图标

@@ -100,4 +100,21 @@ class UserPreferencesTest {
         prefs.setPlanRecapEnabled(true)
         assertEquals(true, prefs.planRecapEnabled.first())
     }
+
+    @Test
+    @DisplayName("hasShownOnboarding 默认 false，set true 后能读到 true")
+    fun `hasShownOnboarding default false set true works`() = runTest {
+        assertEquals(false, prefs.hasShownOnboarding.first())
+        prefs.setHasShownOnboarding(true)
+        assertEquals(true, prefs.hasShownOnboarding.first())
+    }
+
+    @Test
+    @DisplayName("hasShownOnboarding 可以从 true 切回 false（重新看引导）")
+    fun `hasShownOnboarding can revert to false`() = runTest {
+        prefs.setHasShownOnboarding(true)
+        assertEquals(true, prefs.hasShownOnboarding.first())
+        prefs.setHasShownOnboarding(false)
+        assertEquals(false, prefs.hasShownOnboarding.first())
+    }
 }

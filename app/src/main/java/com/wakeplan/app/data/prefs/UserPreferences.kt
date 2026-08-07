@@ -41,6 +41,10 @@ class UserPreferences @Inject constructor(
     val planRecapEnabled: Flow<Boolean> = dataStore.data
         .map { it[KEY_PLAN_RECAP_ENABLED] ?: false }
 
+    /** 首次启动引导页是否已完成 — Phase 3.3 */
+    val hasShownOnboarding: Flow<Boolean> = dataStore.data
+        .map { it[KEY_HAS_SHOWN_ONBOARDING] ?: false }
+
     suspend fun setTaskStartingLeadMinutes(minutes: Int) {
         require(minutes in ALLOWED_LEAD_VALUES) { "lead minutes must be in $ALLOWED_LEAD_VALUES" }
         dataStore.edit { it[KEY_TASK_STARTING_LEAD] = minutes }
@@ -62,6 +66,10 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[KEY_PLAN_RECAP_ENABLED] = enabled }
     }
 
+    suspend fun setHasShownOnboarding(shown: Boolean) {
+        dataStore.edit { it[KEY_HAS_SHOWN_ONBOARDING] = shown }
+    }
+
     companion object {
         const val DEFAULT_LEAD_MINUTES = 5
         val ALLOWED_LEAD_VALUES = setOf(0, 5, 10, 15)
@@ -71,5 +79,6 @@ class UserPreferences @Inject constructor(
         val KEY_TASK_OVERDUE_ENABLED = booleanPreferencesKey("task_overdue_enabled")
         val KEY_TASK_COMPLETED_ENABLED = booleanPreferencesKey("task_completed_enabled")
         val KEY_PLAN_RECAP_ENABLED = booleanPreferencesKey("plan_recap_enabled")
+        val KEY_HAS_SHOWN_ONBOARDING = booleanPreferencesKey("has_shown_onboarding")
     }
 }
