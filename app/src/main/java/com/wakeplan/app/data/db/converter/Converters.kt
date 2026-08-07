@@ -1,13 +1,12 @@
 package com.wakeplan.app.data.db.converter
 
 import androidx.room.TypeConverter
-import com.wakeplan.app.data.db.entity.RepeatRule
-import com.wakeplan.app.data.db.entity.TaskStatus
+import com.wakeplan.app.domain.model.RepeatRule
+import com.wakeplan.app.domain.model.TaskStatus
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 /**
  * Room TypeConverters — 跨版本 java.time 稳定做法

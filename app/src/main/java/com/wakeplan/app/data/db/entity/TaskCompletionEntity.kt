@@ -5,18 +5,9 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.wakeplan.app.domain.model.TaskStatus
 import java.time.LocalDate
 import java.time.LocalDateTime
-
-/**
- * 任务执行状态 — PENDING / IN_PROGRESS / COMPLETED / SKIPPED
- */
-enum class TaskStatus {
-    PENDING,
-    IN_PROGRESS,
-    COMPLETED,
-    SKIPPED,
-}
 
 /**
  * 任务在某一天的具体实例（同一 Task 在周一和周二是两条记录）
