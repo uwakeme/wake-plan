@@ -1,7 +1,6 @@
 package com.wakeplan.app.di
 
 import android.content.Context
-import android.util.Log
 import androidx.room.Room
 import com.wakeplan.app.data.db.WakePlanDatabase
 import com.wakeplan.app.data.db.dao.PlanDao
@@ -15,55 +14,37 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 /**
  * Database Module — 注入 Room Database + 5 个 DAO
  *
- * SQLCipher 4.6.x 加密：占位 passphrase（32 字节 0）打通链路；
- * 完整版用 Android Keystore 派生（Phase 0 收尾 TODO）。
+ * **SQLCipher 状态（v0.1 临时）**：
+ * 阿里云 maven 镜像的 SQLCipher 4.6.1 AAR 损坏（classes 跟 native lib 不同步，RegisterNatives 失败）。
+ * 4.5.x 系列 16KB page size 不兼容 Android 15+。Maven Central HTTPS 443 网络限制访问不到。
  *
- * **4.5.x → 4.6.x 加密格式不兼容兜底**：如果旧设备上还有 4.5.x 时代的 .db 文件，
- * 4.6.x SupportOpenHelperFactory 打开会失败（page size 4KB → 16KB 改了加密格式）。
- * 第一次 build 失败时 deleteDatabase + 重建（旧数据会丢，MVP 阶段可接受）。
+ * **临时方案**：v0.1 阶段不用 SQLCipher，Room 默认 SQLite（数据明文存）。
+ * Phase 4 备份导出时**重新设计加密方案**：
+ *   - 方案 A：自己编译 SQLCipher 4.6.1 本地 AAR
+ *   - 方案 B：换 androidx.sqlite 集成方式
+ *   - 方案 C：换其他加密方案（sqlcypher + Room 直接集成）
  */
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
-    private const val TAG = "WakePlanDatabase"
 
     @Provides
     @Singleton
     fun provideDatabase(
         @ApplicationContext context: Context,
     ): WakePlanDatabase {
-        // TODO(Phase 0 收尾): passphrase 从 Keystore 派生；现在用占位字符串让编译链路通
-        val placeholderPassphrase = ByteArray(32) // 32 字节 0；Phase 0 收尾前不允许 release build
-        val factory = SupportOpenHelperFactory(placeholderPassphrase)
-
-        val builder = Room.databaseBuilder(
+        return Room.databaseBuilder(
             context,
             WakePlanDatabase::class.java,
             WakePlanDatabase.DB_NAME,
         )
-            .openHelperFactory(factory)
+            // 暂不传 openHelperFactory：v0.1 用 Room 默认 SQLite（无加密）
             .fallbackToDestructiveMigration() // MVP 阶段；v0.2 加 Migration 测试后去掉
-
-        return try {
-            builder.build()
-        } catch (e: Exception) {
-            // 大概率是 4.5.x 时代的旧加密 .db 跟 4.6.x 不兼容；删了重建
-            Log.w(TAG, "Database build 失败，尝试 deleteDatabase 重建: ${e.message}", e)
-            val deleted = context.deleteDatabase(WakePlanDatabase.DB_NAME)
-            Log.w(TAG, "deleteDatabase 返回 $deleted")
-            try {
-                builder.build()
-            } catch (e2: Exception) {
-                Log.e(TAG, "重建仍然失败: ${e2.message}", e2)
-                throw e2
-            }
-        }
+            .build()
     }
 
     @Provides fun providePlanDao(db: WakePlanDatabase): PlanDao = db.planDao()
@@ -72,4 +53,3 @@ object DatabaseModule {
     @Provides fun providePlanTemplateDao(db: WakePlanDatabase): PlanTemplateDao = db.planTemplateDao()
     @Provides fun provideTaskCompletionDao(db: WakePlanDatabase): TaskCompletionDao = db.taskCompletionDao()
 }
-

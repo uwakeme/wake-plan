@@ -21,13 +21,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // SQLCipher 4.6.x：System.loadLibrary 替代 4.5.x 的 SQLiteDatabase.loadLibs(context)
-        // 必须先于任何 DAO 操作；try/catch 防重复加载
-        try {
-            System.loadLibrary("sqlcipher")
-        } catch (_: UnsatisfiedLinkError) {
-            // 已经加载过，忽略
-        }
+        // SQLCipher 4.6.1 AAR 损坏暂不加载 native lib；v0.1 用 Room 默认 SQLite
         // Seed 3 个内置模板（first install 才插入）
         databaseSeeder.seedIfEmpty(applicationScope)
     }

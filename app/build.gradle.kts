@@ -113,7 +113,8 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
-    implementation(libs.sqlcipher.android)
+    // SQLCipher 4.6.1 AAR 损坏暂不启用
+    // implementation(libs.sqlcipher.android)
     implementation(libs.sqlite.ktx)
 
     // DataStore
