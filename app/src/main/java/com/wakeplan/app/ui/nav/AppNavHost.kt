@@ -14,12 +14,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.wakeplan.app.ui.plan.CreatePlanScreen
+import com.wakeplan.app.ui.plan.PlanDetailScreen
+import com.wakeplan.app.ui.plan.PlanDetailViewModel
 import com.wakeplan.app.ui.plan.PlanListScreen
+import com.wakeplan.app.ui.plan.SegmentEditorScreen
+import com.wakeplan.app.ui.plan.SegmentEditorViewModel
 import com.wakeplan.app.ui.settings.SettingsScreen
 import com.wakeplan.app.ui.today.TodayScreen
 
@@ -27,11 +33,13 @@ import com.wakeplan.app.ui.today.TodayScreen
  * 根导航 — Scaffold 内嵌 BottomBar + NavHost
  *
  * 路由表：
- *   today                → TodayScreen（Phase 0 占位，Phase 2 接入当前时刻聚合）
- *   plans                → PlanListScreen
- *   plans/create         → CreatePlanScreen
- *   plans/{planId}       → PlanDetailScreen（Phase 1.3 接入）
- *   settings             → SettingsScreen（Phase 0 占位）
+ *   today                                      → TodayScreen
+ *   plans                                      → PlanListScreen
+ *   plans/create                               → CreatePlanScreen
+ *   plans/{planId}                             → PlanDetailScreen
+ *   plans/{planId}/segments/new                → SegmentEditorScreen (create)
+ *   plans/{planId}/segments/{segmentId}        → SegmentEditorScreen (edit)
+ *   settings                                   → SettingsScreen
  */
 @Composable
 fun AppNavHost() {
@@ -41,7 +49,6 @@ fun AppNavHost() {
 
     Scaffold(
         bottomBar = {
-            // 仅在顶级 tab 路由显示 BottomBar；进入 plans/create 等子路由时隐藏
             if (currentRoute in TOP_LEVEL_ROUTES) {
                 NavigationBar {
                     BottomTab.entries.forEach { tab ->
@@ -92,7 +99,7 @@ private fun AppNavGraph(
         composable(BottomTab.Plans.route) {
             PlanListScreen(
                 onCreatePlan = { navController.navigate(Route.PlanCreate) },
-                onPlanClick = { /* Phase 1.3 接入 PlanDetail */ },
+                onPlanClick = { plan -> navController.navigate(Route.planDetail(plan.id)) },
             )
         }
         composable(BottomTab.Settings.route) { SettingsScreen() }
@@ -104,12 +111,60 @@ private fun AppNavGraph(
                 onSaved = { navController.popBackStack() },
             )
         }
+        composable(
+            route = Route.PlanDetailPattern,
+            arguments = listOf(
+                navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
+            ),
+        ) { entry ->
+            // planId 从 nav arg 取，闭包捕获供 segment 回调使用
+            val planId = entry.arguments?.getString(PlanDetailViewModel.ARG_PLAN_ID).orEmpty()
+            PlanDetailScreen(
+                onBack = { navController.popBackStack() },
+                onAddSegment = { navController.navigate(Route.segmentEditorCreate(planId)) },
+                onSegmentClick = { segmentId ->
+                    navController.navigate(Route.segmentEditorEdit(planId, segmentId))
+                },
+                onAddTask = { /* Phase 1.3c 接入 TaskEditor */ },
+                onTaskClick = { /* Phase 1.3c 接入 TaskEditor */ },
+            )
+        }
+        composable(
+            route = Route.SegmentEditorCreatePattern,
+            arguments = listOf(
+                navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
+            ),
+        ) {
+            SegmentEditorScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = Route.SegmentEditorEditPattern,
+            arguments = listOf(
+                navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
+                navArgument(SegmentEditorViewModel.ARG_SEGMENT_ID) { type = NavType.StringType },
+            ),
+        ) {
+            SegmentEditorScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
     }
 }
 
 /** 集中管理所有路由常量 */
 object Route {
     const val PlanCreate = "plans/create"
+    const val PlanDetailPattern = "plans/{planId}"
+    const val SegmentEditorCreatePattern = "plans/{planId}/segments/new"
+    const val SegmentEditorEditPattern = "plans/{planId}/segments/{segmentId}"
 
     fun planDetail(planId: String) = "plans/$planId"
+
+    fun segmentEditorCreate(planId: String) = "plans/$planId/segments/new"
+
+    fun segmentEditorEdit(planId: String, segmentId: String) = "plans/$planId/segments/$segmentId"
 }
