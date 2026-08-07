@@ -17,7 +17,7 @@
 - Hilt + Room 空壳（5 entity 已声明，DAO 暂空）
 - Compose 主题 + 3 tab 导航（Today / Plans / Settings，3 个 Screen 占位）
 - AGENTS.md / README.md 到位
-- 推 GitHub `wake-plan`
+- 推 GitHub `wake-plan`（`uwakeme/wake-plan`）
 
 **已完成 P0 US**：无（骨架阶段尚无可演示功能）
 **下一阶段**：Phase 1 CRUD（计划/段/任务/模板基础 CRUD）
@@ -113,7 +113,7 @@ app/src/main/java/com/wakeplan/app/
 3. **SQLCipher** —— 用 `net.zetetic:android-database-sqlcipher` + `androidx.sqlite:sqlite-ktx`；数据库打开走 `SupportFactory(passphrase)`，`passphrase` 存 Android Keystore
 4. **Compose Material3 主题** —— `WakePlanTheme` 是 `MaterialTheme` 的薄包装，token 来自 `design/colors_and_type.css`；不要另起 `MaterialTheme` 子品牌
 5. **不要用 `&&` 在 PowerShell 里** —— 改用 `;` / `if ($?) { ... }`
-6. **网络约束** —— 本机 HTTPS 443 不通，SSH 22 通；GitHub 走 SSH URL（`git@github.com:wake/wake-plan.git`）
+6. **网络约束** —— 本机 HTTPS 443 不通，SSH 22 通；GitHub 走 SSH URL（`git@github.com:uwakeme/wake-plan.git`）
 
 ## 跑这个项目的人要知道的事
 

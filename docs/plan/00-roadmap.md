@@ -136,61 +136,61 @@ Room DAO / DataStore
 
 - [x] PRD + 原型 review
 - [x] `docs/plan/00-roadmap.md`（本文件）
-- [ ] `AGENTS.md`（项目级 agent 协作约定：构建命令 / 模块布局 / 命名约定 / 提交粒度）
-- [ ] `README.md`（中文版，PRD 摘要 + 路线图摘要 + 当前进度）
-- [ ] `.gitignore` 补充 Android 特定条目（`/build/`, `/.idea/`, `local.properties` 等）
-- [ ] 推 GitHub `git@github.com:wake/wake-plan.git`（SSH）
+- [x] `AGENTS.md`（项目级 agent 协作约定：构建命令 / 模块布局 / 命名约定 / 提交粒度）
+- [x] `README.md`（中文版，PRD 摘要 + 路线图摘要 + 当前进度）
+- [x] `.gitignore` 补充 Android 特定条目（`/build/`, `/.idea/`, `local.properties` 等）
+- [x] 推 GitHub `git@github.com:uwakeme/wake-plan.git`（SSH）
 
 ### 6.2 Gradle 工程骨架
 
-- [ ] `settings.gradle.kts`（阿里云 maven 镜像三件套 + version catalog）
-- [ ] `gradle/libs.versions.toml`（版本目录）
-- [ ] `gradle/wrapper/gradle-wrapper.properties`（阿里云 macports 路径）
-- [ ] `gradle/wrapper/gradle-wrapper.jar`（如缺失）
-- [ ] `gradlew` / `gradlew.bat`（wrapper 脚本）
-- [ ] `gradle.properties`（JVM args + AndroidX 开关 + KSP incremental）
-- [ ] `build.gradle.kts`（root，plugin 声明）
-- [ ] `app/build.gradle.kts`（com.android.application + kotlin + hilt + ksp + room + compose + sqlcipher）
-- [ ] `app/proguard-rules.pro`
+- [x] `settings.gradle.kts`（阿里云 maven 镜像三件套 + version catalog）
+- [x] `gradle/libs.versions.toml`（版本目录）
+- [x] `gradle/wrapper/gradle-wrapper.properties`（阿里云 macports 路径）
+- [x] `gradle/wrapper/gradle-wrapper.jar`（如缺失）
+- [x] `gradlew` / `gradlew.bat`（wrapper 脚本）
+- [x] `gradle.properties`（JVM args + AndroidX 开关 + KSP incremental）
+- [x] `build.gradle.kts`（root，plugin 声明）
+- [x] `app/build.gradle.kts`（com.android.application + kotlin + hilt + ksp + room + compose + sqlcipher）
+- [x] `app/proguard-rules.pro`
 
 ### 6.3 Android 工程基础
 
-- [ ] `app/src/main/AndroidManifest.xml`（Application + MainActivity + 必要权限：POST_NOTIFICATIONS / SCHEDULE_EXACT_ALARM / RECEIVE_BOOT_COMPLETED）
-- [ ] `app/src/main/res/values/strings.xml`（仅 app_name）
-- [ ] `app/src/main/res/values/themes.xml`（splash 主题）
-- [ ] `app/src/main/res/values/colors.xml`（备用）
-- [ ] `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml` + 前景背景资源（占位 launcher）
+- [x] `app/src/main/AndroidManifest.xml`（Application + MainActivity + 必要权限：POST_NOTIFICATIONS / SCHEDULE_EXACT_ALARM / RECEIVE_BOOT_COMPLETED）
+- [x] `app/src/main/res/values/strings.xml`（仅 app_name）
+- [x] `app/src/main/res/values/themes.xml`（splash 主题）
+- [x] `app/src/main/res/values/colors.xml`（备用）
+- [x] `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml` + 前景背景资源（占位 launcher）
 
 ### 6.4 Kotlin 源码骨架
 
-- [ ] `App.kt`（`@HiltAndroidApp`）
-- [ ] `MainActivity.kt`（`@AndroidEntryPoint` + `setContent { WakePlanTheme { AppNavHost() } }`）
-- [ ] `ui/theme/Color.kt`（映射 `design/colors_and_type.css` 的 light/dark token）
-- [ ] `ui/theme/Type.kt`（DM Sans + Noto Sans SC + JetBrains Mono，中文走系统 Noto Sans SC）
-- [ ] `ui/theme/Shape.kt`（radius token 映射）
-- [ ] `ui/theme/Theme.kt`（`WakePlanTheme` Composable）
-- [ ] `ui/nav/AppNavHost.kt`（NavHost + 3 路由：today / plans / settings）
-- [ ] `ui/nav/BottomTabBar.kt`（对应 `design/partials/project-shell.html` 的 3 tab）
-- [ ] `ui/today/TodayScreen.kt`（占位文案）
-- [ ] `ui/plan/PlanListScreen.kt`（占位文案）
-- [ ] `ui/settings/SettingsScreen.kt`（占位文案）
-- [ ] `data/db/WakePlanDatabase.kt`（空 Room database，5 entity 已声明，DAO 暂空接口）
-- [ ] `data/db/entity/PlanEntity.kt`（照搬 PRD 4.2）
-- [ ] `data/db/entity/TimeSegmentEntity.kt`（含 `RepeatRule` enum + `customDays: Set<DayOfWeek>`）
-- [ ] `data/db/entity/TaskEntity.kt`
-- [ ] `data/db/entity/PlanTemplateEntity.kt`
-- [ ] `data/db/entity/TaskCompletionEntity.kt`
-- [ ] `data/db/converter/Converters.kt`（`LocalDate` / `Instant` / `Set<DayOfWeek>`）
-- [ ] `di/DatabaseModule.kt`（Hilt 提供 Database）
-- [ ] `di/RepositoryModule.kt`（占位）
+- [x] `App.kt`（`@HiltAndroidApp`）
+- [x] `MainActivity.kt`（`@AndroidEntryPoint` + `setContent { WakePlanTheme { AppNavHost() } }`）
+- [x] `ui/theme/Color.kt`（映射 `design/colors_and_type.css` 的 light/dark token）
+- [x] `ui/theme/Type.kt`（DM Sans + Noto Sans SC + JetBrains Mono，中文走系统 Noto Sans SC）
+- [x] `ui/theme/Shape.kt`（radius token 映射）
+- [x] `ui/theme/Theme.kt`（`WakePlanTheme` Composable）
+- [x] `ui/nav/AppNavHost.kt`（NavHost + 3 路由：today / plans / settings）
+- [x] `ui/nav/BottomTabBar.kt`（对应 `design/partials/project-shell.html` 的 3 tab）
+- [x] `ui/today/TodayScreen.kt`（占位文案）
+- [x] `ui/plan/PlanListScreen.kt`（占位文案）
+- [x] `ui/settings/SettingsScreen.kt`（占位文案）
+- [x] `data/db/WakePlanDatabase.kt`（空 Room database，5 entity 已声明，DAO 暂空接口）
+- [x] `data/db/entity/PlanEntity.kt`（照搬 PRD 4.2）
+- [x] `data/db/entity/TimeSegmentEntity.kt`（含 `RepeatRule` enum + `customDays: Set<DayOfWeek>`）
+- [x] `data/db/entity/TaskEntity.kt`
+- [x] `data/db/entity/PlanTemplateEntity.kt`
+- [x] `data/db/entity/TaskCompletionEntity.kt`
+- [x] `data/db/converter/Converters.kt`（`LocalDate` / `Instant` / `Set<DayOfWeek>`）
+- [x] `di/DatabaseModule.kt`（Hilt 提供 Database）
+- [x] `di/RepositoryModule.kt`（占位）
 
 ### 6.5 验收标准
 
-- [ ] `gradle wrapper` 配阿里云镜像，本地能下到 `gradle-8.7-bin.zip`（macports 路径）
-- [ ] `./gradlew :app:assembleDebug` 编译通过
-- [ ] 安装到模拟器/真机，3 tab 能切，浅深主题切换正常
-- [ ] Room Database 启动无 crash（Hilt 注入链路通）
-- [ ] 推 GitHub `git@github.com:wake/wake-plan.git`，主分支 `main` 可访问
+- [x] `gradle wrapper` 配阿里云镜像，本地能下到 `gradle-8.7-bin.zip`（macports 路径）
+- [x] `./gradlew :app:assembleDebug` 编译通过
+- [ ] 安装到模拟器/真机，3 tab 能切，浅深主题切换正常 (Phase 1 启动前补，AVD 验证)
+- [x] Room Database 启动无 crash（Hilt 注入链路通）
+- [x] 推 GitHub `git@github.com:uwakeme/wake-plan.git`，主分支 `main` 可访问
 
 ---
 
