@@ -32,4 +32,8 @@ interface PlanTemplateDao {
 
     @Delete
     suspend fun delete(template: PlanTemplateEntity)
+
+    /** 全表清空 — Phase 4.3 备份导入用 */
+    @Query("DELETE FROM plan_templates")
+    suspend fun deleteAll()
 }

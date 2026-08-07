@@ -36,6 +36,10 @@ interface TimeSegmentDao {
     @Query("DELETE FROM time_segments WHERE id = :id")
     suspend fun deleteById(id: String)
 
+    /** 全表清空 — Phase 4.3 备份导入用 */
+    @Query("DELETE FROM time_segments")
+    suspend fun deleteAll()
+
     /**
      * 段重叠检测：返回同 planId 内与给定 [startMinutes, endMinutes) 区间有重叠的段
      * 半开区间：a.end == b.start 不算重叠

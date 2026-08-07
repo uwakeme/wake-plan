@@ -54,6 +54,10 @@ interface TaskDao {
     @Query("DELETE FROM tasks WHERE id = :id")
     suspend fun deleteById(id: String)
 
+    /** 全表清空 — Phase 4.3 备份导入用 */
+    @Query("DELETE FROM tasks")
+    suspend fun deleteAll()
+
     /**
      * 段内重排 — 事务内按新顺序更新 order_in_segment
      * orderedTaskIds 第一个 → order=0，第二个 → order=1，...

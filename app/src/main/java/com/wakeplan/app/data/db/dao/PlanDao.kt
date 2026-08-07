@@ -39,4 +39,8 @@ interface PlanDao {
 
     @Query("DELETE FROM plans WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    /** 全表清空 — Phase 4.3 备份导入用 */
+    @Query("DELETE FROM plans")
+    suspend fun deleteAll()
 }

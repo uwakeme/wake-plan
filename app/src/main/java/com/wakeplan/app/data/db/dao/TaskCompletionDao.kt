@@ -39,4 +39,8 @@ interface TaskCompletionDao {
 
     @Update
     suspend fun update(completion: TaskCompletionEntity)
+
+    /** 全表清空 — Phase 4.3 备份导入用 */
+    @Query("DELETE FROM task_completions")
+    suspend fun deleteAll()
 }
