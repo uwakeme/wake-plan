@@ -1,18 +1,29 @@
 package com.wakeplan.app
 
 import android.app.Application
+import com.wakeplan.app.data.db.DatabaseSeeder
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import javax.inject.Inject
 
 /**
  * Application — @HiltAndroidApp 开启 Hilt 编译期生成
- * 启动时同时初始化 SQLCipher native libs（必须在任何 DAO 调用之前）
+ * 启动时同时初始化 SQLCipher native libs + DatabaseSeeder.seedIfEmpty
  */
 @HiltAndroidApp
 class App : Application() {
+
+    // Application 级 CoroutineScope，用于启动时的 seed 任务
+    private val applicationScope = CoroutineScope(SupervisorJob())
+
+    @Inject lateinit var databaseSeeder: DatabaseSeeder
 
     override fun onCreate() {
         super.onCreate()
         // SQLCipher native libs 加载（Phase 0 用占位密钥时也必须先 loadLibrary）
         net.sqlcipher.database.SQLiteDatabase.loadLibs(this)
+        // Seed 3 个内置模板（first install 才插入）
+        databaseSeeder.seedIfEmpty(applicationScope)
     }
 }

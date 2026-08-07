@@ -21,6 +21,9 @@ interface PlanTemplateDao {
     @Query("SELECT * FROM plan_templates WHERE id = :id LIMIT 1")
     suspend fun findById(id: String): PlanTemplateEntity?
 
+    @Query("SELECT COUNT(*) FROM plan_templates")
+    suspend fun countAll(): Int
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(template: PlanTemplateEntity)
 
