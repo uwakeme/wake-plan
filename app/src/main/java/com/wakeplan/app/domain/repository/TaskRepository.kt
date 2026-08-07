@@ -14,6 +14,9 @@ interface TaskRepository {
     /** 观察某计划下所有段的任务（join，用于冲突检测 / 时间线） */
     fun observeByPlan(planId: String): Flow<List<Task>>
 
+    /** 观察所有任务（跨 plan 跨段）— Phase 2.4a 用 */
+    fun observeAll(): Flow<List<Task>>
+
     /** 单次查询 */
     suspend fun getById(id: String): Task?
 

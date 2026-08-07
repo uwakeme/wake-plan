@@ -22,6 +22,9 @@ class SegmentRepositoryImpl @Inject constructor(
     override fun observeByPlan(planId: String): Flow<List<TimeSegment>> =
         segmentDao.observeByPlan(planId).map { list -> list.map { it.toDomain() } }
 
+    override fun observeAll(): Flow<List<TimeSegment>> =
+        segmentDao.observeAll().map { list -> list.map { it.toDomain() } }
+
     override suspend fun getById(id: String): TimeSegment? =
         segmentDao.findById(id)?.toDomain()
 

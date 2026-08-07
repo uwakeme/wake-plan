@@ -30,6 +30,9 @@ interface TaskDao {
     )
     fun observeByPlan(planId: String): Flow<List<TaskEntity>>
 
+    @Query("SELECT * FROM tasks ORDER BY order_in_segment ASC")
+    fun observeAll(): Flow<List<TaskEntity>>
+
     @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
     fun observeById(id: String): Flow<TaskEntity?>
 

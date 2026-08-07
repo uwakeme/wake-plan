@@ -22,6 +22,9 @@ class TaskRepositoryImpl @Inject constructor(
     override fun observeByPlan(planId: String): Flow<List<Task>> =
         taskDao.observeByPlan(planId).map { list -> list.map { it.toDomain() } }
 
+    override fun observeAll(): Flow<List<Task>> =
+        taskDao.observeAll().map { list -> list.map { it.toDomain() } }
+
     override suspend fun getById(id: String): Task? =
         taskDao.findById(id)?.toDomain()
 

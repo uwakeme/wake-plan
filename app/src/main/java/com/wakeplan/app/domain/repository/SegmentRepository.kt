@@ -13,6 +13,9 @@ interface SegmentRepository {
     /** 观察某计划的所有段（按 startMinutes 升序） */
     fun observeByPlan(planId: String): Flow<List<TimeSegment>>
 
+    /** 观察所有段（跨 plan，按 startMinutes 升序）— Phase 2.4a 用 */
+    fun observeAll(): Flow<List<TimeSegment>>
+
     /** 单次查询 */
     suspend fun getById(id: String): TimeSegment?
 

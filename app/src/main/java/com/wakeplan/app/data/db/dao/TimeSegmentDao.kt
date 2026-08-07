@@ -15,6 +15,9 @@ interface TimeSegmentDao {
     @Query("SELECT * FROM time_segments WHERE plan_id = :planId ORDER BY start_minutes ASC")
     fun observeByPlan(planId: String): Flow<List<TimeSegmentEntity>>
 
+    @Query("SELECT * FROM time_segments ORDER BY start_minutes ASC")
+    fun observeAll(): Flow<List<TimeSegmentEntity>>
+
     @Query("SELECT * FROM time_segments WHERE id = :id LIMIT 1")
     fun observeById(id: String): Flow<TimeSegmentEntity?>
 
