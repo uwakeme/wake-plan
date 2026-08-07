@@ -27,19 +27,25 @@ import com.wakeplan.app.ui.plan.PlanListScreen
 import com.wakeplan.app.ui.plan.SegmentEditorScreen
 import com.wakeplan.app.ui.plan.SegmentEditorViewModel
 import com.wakeplan.app.ui.settings.SettingsScreen
+import com.wakeplan.app.ui.task.TaskEditorScreen
+import com.wakeplan.app.ui.task.TaskEditorViewModel
+import com.wakeplan.app.ui.template.TemplateListScreen
 import com.wakeplan.app.ui.today.TodayScreen
 
 /**
  * 根导航 — Scaffold 内嵌 BottomBar + NavHost
  *
- * 路由表：
- *   today                                      → TodayScreen
- *   plans                                      → PlanListScreen
- *   plans/create                               → CreatePlanScreen
- *   plans/{planId}                             → PlanDetailScreen
- *   plans/{planId}/segments/new                → SegmentEditorScreen (create)
- *   plans/{planId}/segments/{segmentId}        → SegmentEditorScreen (edit)
- *   settings                                   → SettingsScreen
+ * 路由表（v0.1 完成）：
+ *   today                                                            → TodayScreen
+ *   plans                                                            → PlanListScreen
+ *   plans/create                                                     → CreatePlanScreen
+ *   plans/{planId}                                                   → PlanDetailScreen
+ *   plans/{planId}/segments/new                                      → SegmentEditorScreen (create)
+ *   plans/{planId}/segments/{segmentId}                              → SegmentEditorScreen (edit)
+ *   plans/{planId}/segments/{segmentId}/tasks/new                    → TaskEditorScreen (create)
+ *   plans/{planId}/segments/{segmentId}/tasks/{taskId}               → TaskEditorScreen (edit)
+ *   settings                                                         → SettingsScreen
+ *   settings/templates                                               → TemplateListScreen
  */
 @Composable
 fun AppNavHost() {
@@ -102,9 +108,13 @@ private fun AppNavGraph(
                 onPlanClick = { plan -> navController.navigate(Route.planDetail(plan.id)) },
             )
         }
-        composable(BottomTab.Settings.route) { SettingsScreen() }
+        composable(BottomTab.Settings.route) {
+            SettingsScreen(
+                onTemplatesClick = { navController.navigate(Route.Templates) },
+            )
+        }
 
-        // 子路由
+        // Plans 子路由
         composable(Route.PlanCreate) {
             CreatePlanScreen(
                 onBack = { navController.popBackStack() },
@@ -117,7 +127,6 @@ private fun AppNavGraph(
                 navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
             ),
         ) { entry ->
-            // planId 从 nav arg 取，闭包捕获供 segment 回调使用
             val planId = entry.arguments?.getString(PlanDetailViewModel.ARG_PLAN_ID).orEmpty()
             PlanDetailScreen(
                 onBack = { navController.popBackStack() },
@@ -125,8 +134,12 @@ private fun AppNavGraph(
                 onSegmentClick = { segmentId ->
                     navController.navigate(Route.segmentEditorEdit(planId, segmentId))
                 },
-                onAddTask = { /* Phase 1.3c 接入 TaskEditor */ },
-                onTaskClick = { /* Phase 1.3c 接入 TaskEditor */ },
+                onAddTask = { segmentId ->
+                    navController.navigate(Route.taskEditorCreate(planId, segmentId))
+                },
+                onTaskClick = { segmentId, taskId ->
+                    navController.navigate(Route.taskEditorEdit(planId, segmentId, taskId))
+                },
             )
         }
         composable(
@@ -152,6 +165,39 @@ private fun AppNavGraph(
                 onSaved = { navController.popBackStack() },
             )
         }
+        composable(
+            route = Route.TaskEditorCreatePattern,
+            arguments = listOf(
+                navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
+                navArgument(SegmentEditorViewModel.ARG_SEGMENT_ID) { type = NavType.StringType },
+            ),
+        ) {
+            TaskEditorScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = Route.TaskEditorEditPattern,
+            arguments = listOf(
+                navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
+                navArgument(SegmentEditorViewModel.ARG_SEGMENT_ID) { type = NavType.StringType },
+                navArgument(TaskEditorViewModel.ARG_TASK_ID) { type = NavType.StringType },
+            ),
+        ) {
+            TaskEditorScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+
+        // Settings 子路由
+        composable(Route.Templates) {
+            TemplateListScreen(
+                onBack = { navController.popBackStack() },
+                onTemplateClick = { /* Phase 1.5 / 2.0 实装"从模板新建" */ },
+            )
+        }
     }
 }
 
@@ -161,10 +207,15 @@ object Route {
     const val PlanDetailPattern = "plans/{planId}"
     const val SegmentEditorCreatePattern = "plans/{planId}/segments/new"
     const val SegmentEditorEditPattern = "plans/{planId}/segments/{segmentId}"
+    const val TaskEditorCreatePattern = "plans/{planId}/segments/{segmentId}/tasks/new"
+    const val TaskEditorEditPattern = "plans/{planId}/segments/{segmentId}/tasks/{taskId}"
+    const val Templates = "settings/templates"
 
     fun planDetail(planId: String) = "plans/$planId"
-
     fun segmentEditorCreate(planId: String) = "plans/$planId/segments/new"
-
     fun segmentEditorEdit(planId: String, segmentId: String) = "plans/$planId/segments/$segmentId"
+    fun taskEditorCreate(planId: String, segmentId: String) =
+        "plans/$planId/segments/$segmentId/tasks/new"
+    fun taskEditorEdit(planId: String, segmentId: String, taskId: String) =
+        "plans/$planId/segments/$segmentId/tasks/$taskId"
 }

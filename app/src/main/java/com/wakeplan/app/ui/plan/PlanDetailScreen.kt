@@ -62,7 +62,7 @@ fun PlanDetailScreen(
     onAddSegment: () -> Unit,
     onSegmentClick: (segmentId: String) -> Unit,
     onAddTask: (segmentId: String) -> Unit,
-    onTaskClick: (taskId: String) -> Unit,
+    onTaskClick: (segmentId: String, taskId: String) -> Unit,
     viewModel: PlanDetailViewModel = hiltViewModel(),
 ) {
     val plan by viewModel.plan.collectAsStateWithLifecycle()
@@ -145,7 +145,7 @@ private fun PlanDetailBody(
     contentPadding: PaddingValues,
     onSegmentClick: (String) -> Unit,
     onAddTask: (String) -> Unit,
-    onTaskClick: (String) -> Unit,
+    onTaskClick: (segmentId: String, taskId: String) -> Unit,
     onDeleteSegment: (String) -> Unit,
     onDeleteTask: (String) -> Unit,
 ) {
@@ -238,7 +238,7 @@ private fun SegmentCard(
     tasks: List<Task>,
     onSegmentClick: () -> Unit,
     onAddTask: () -> Unit,
-    onTaskClick: (String) -> Unit,
+    onTaskClick: (segmentId: String, taskId: String) -> Unit,
     onDeleteSegment: () -> Unit,
     onDeleteTask: (String) -> Unit,
 ) {
@@ -305,7 +305,7 @@ private fun SegmentCard(
                 tasks.forEach { task ->
                     TaskRow(
                         task = task,
-                        onClick = { onTaskClick(task.id) },
+                        onClick = { onTaskClick(segment.id, task.id) },
                         onDelete = { onDeleteTask(task.id) },
                     )
                 }
@@ -375,6 +375,10 @@ private fun TaskRow(
         }
     }
 }
+
+// 顶层函数：根据 task 在 segment 中查 segmentId（用于 nav 路由）
+@Suppress("unused")
+private fun Task.segmentIdOrEmpty(): String = segmentId
 
 // 辅助：把分钟数（0..1440，跨日可 >1440）格式化为 HH:mm
 private fun formatTime(minutes: Int): String {
