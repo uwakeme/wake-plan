@@ -1,6 +1,5 @@
 package com.wakeplan.app.ui.today
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wakeplan.app.data.prefs.UserPreferences
@@ -158,7 +157,6 @@ class TodayViewModel @Inject constructor(
             val tasks = taskRepository.observeAll().first()
             val existing = taskCompletionRepository.observeByDate(today).first()
             val existingTaskIds = existing.map { it.taskId }.toSet()
-            Log.d("TodayViewModel", "ensure: plans=${plans.size} segments=${segments.size} tasks=${tasks.size} existing=${existing.size}")
 
             plans.filter { it.isActive }.forEach { plan ->
                 val planSegments = segments.filter { it.planId == plan.id }
@@ -169,7 +167,6 @@ class TodayViewModel @Inject constructor(
                     tasks = planTasks,
                     date = today,
                 ).filter { it.taskId !in existingTaskIds }
-                Log.d("TodayViewModel", "ensure: plan=${plan.title} pending=${pending.size}")
                 pending.forEach { taskCompletionRepository.upsert(it) }
             }
             // 同步：重新拿一次当天的 completions（含新建的 PENDING） + 调度 starting alarms
@@ -185,7 +182,6 @@ class TodayViewModel @Inject constructor(
                 startingEnabled = startingEnabled,
             )
             startingAlarmScheduler.scheduleAll(plan)
-            Log.d("TodayViewModel", "schedule: startingTriggers=${plan.startingTriggers.size}")
         }
     }
 
