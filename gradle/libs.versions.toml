@@ -6,7 +6,7 @@ hilt = "2.52"
 hiltNavCompose = "1.2.0"
 hiltWork = "1.2.0"
 room = "2.6.1"
-sqlcipher = "4.5.4"
+sqlcipher = "4.6.1"
 sqliteKtx = "2.4.0"
 navCompose = "2.8.3"
 composeBom = "2024.10.00"
@@ -54,7 +54,7 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
-sqlcipher-android = { group = "net.zetetic", name = "android-database-sqlcipher", version.ref = "sqlcipher" }
+sqlcipher-android = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "sqlcipher" }
 sqlite-ktx = { group = "androidx.sqlite", name = "sqlite-ktx", version.ref = "sqliteKtx" }
 
 # DataStore

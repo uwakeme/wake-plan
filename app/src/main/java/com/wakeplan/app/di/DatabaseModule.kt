@@ -14,7 +14,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 /**
  * Database Module — 注入 Room Database + 5 个 DAO
@@ -35,7 +35,7 @@ object DatabaseModule {
     ): WakePlanDatabase {
         // TODO(Phase 0 收尾): passphrase 从 Keystore 派生；现在用占位字符串让编译链路通
         val placeholderPassphrase = ByteArray(32) // 32 字节 0；Phase 0 收尾前不允许 release build
-        val factory = SupportFactory(placeholderPassphrase)
+        val factory = SupportOpenHelperFactory(placeholderPassphrase)
 
         return Room.databaseBuilder(
             context,
