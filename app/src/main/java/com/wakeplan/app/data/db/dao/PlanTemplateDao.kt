@@ -1,7 +1,11 @@
 package com.wakeplan.app.data.db.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -12,5 +16,17 @@ interface PlanTemplateDao {
     fun observeAll(): Flow<List<PlanTemplateEntity>>
 
     @Query("SELECT * FROM plan_templates WHERE id = :id LIMIT 1")
+    fun observeById(id: String): Flow<PlanTemplateEntity?>
+
+    @Query("SELECT * FROM plan_templates WHERE id = :id LIMIT 1")
     suspend fun findById(id: String): PlanTemplateEntity?
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insert(template: PlanTemplateEntity)
+
+    @Update
+    suspend fun update(template: PlanTemplateEntity)
+
+    @Delete
+    suspend fun delete(template: PlanTemplateEntity)
 }
