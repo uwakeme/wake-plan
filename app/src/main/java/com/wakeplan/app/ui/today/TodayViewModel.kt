@@ -3,6 +3,7 @@ package com.wakeplan.app.ui.today
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wakeplan.app.data.prefs.UserPreferences
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TaskCompletion
@@ -13,9 +14,11 @@ import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.domain.usecase.AutoExtendCalculator
 import com.wakeplan.app.domain.usecase.ConflictDetector
+import com.wakeplan.app.domain.usecase.ScheduleManager
 import com.wakeplan.app.domain.usecase.TaskCompletionInstantiator
 import com.wakeplan.app.domain.usecase.TaskConflict
 import com.wakeplan.app.domain.model.TaskStatus
+import com.wakeplan.app.notification.StartingAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -81,6 +84,9 @@ class TodayViewModel @Inject constructor(
     private val taskCompletionInstantiator: TaskCompletionInstantiator,
     private val autoExtendCalculator: AutoExtendCalculator,
     private val conflictDetector: ConflictDetector,
+    private val scheduleManager: ScheduleManager,
+    private val startingAlarmScheduler: StartingAlarmScheduler,
+    private val userPreferences: UserPreferences,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -166,12 +172,26 @@ class TodayViewModel @Inject constructor(
                 Log.d("TodayViewModel", "ensure: plan=${plan.title} pending=${pending.size}")
                 pending.forEach { taskCompletionRepository.upsert(it) }
             }
+            // 同步：重新拿一次当天的 completions（含新建的 PENDING） + 调度 starting alarms
+            val todaysCompletions = taskCompletionRepository.observeByDate(today).first()
+            val now = LocalDateTime.now(clock)
+            val leadMinutes = userPreferences.taskStartingLeadMinutes.first()
+            val startingEnabled = userPreferences.taskStartingEnabled.first()
+            val plan = scheduleManager(
+                completions = todaysCompletions,
+                tasks = tasks,
+                now = now,
+                leadMinutes = leadMinutes,
+                startingEnabled = startingEnabled,
+            )
+            startingAlarmScheduler.scheduleAll(plan)
+            Log.d("TodayViewModel", "schedule: startingTriggers=${plan.startingTriggers.size}")
         }
     }
 
     // ---- 任务状态机交互（Phase 2.4b）----
 
-    /** PENDING → IN_PROGRESS，写 actualStart = now */
+    /** PENDING → IN_PROGRESS，写 actualStart = now；取消 starting alarm */
     fun onStartTask(completionId: String) {
         viewModelScope.launch {
             val c = taskCompletionRepository.getById(completionId) ?: return@launch
@@ -181,6 +201,7 @@ class TodayViewModel @Inject constructor(
                 status = TaskStatus.IN_PROGRESS,
                 actualStart = now,
             ))
+            startingAlarmScheduler.cancelStartingAlarm(completionId)
         }
     }
 
@@ -199,12 +220,13 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    /** PENDING / IN_PROGRESS → SKIPPED（不写 actual 时间） */
+    /** PENDING / IN_PROGRESS → SKIPPED（不写 actual 时间）；取消 starting alarm */
     fun onSkipTask(completionId: String) {
         viewModelScope.launch {
             val c = taskCompletionRepository.getById(completionId) ?: return@launch
             if (c.status == TaskStatus.COMPLETED || c.status == TaskStatus.SKIPPED) return@launch
             taskCompletionRepository.upsert(c.copy(status = TaskStatus.SKIPPED))
+            startingAlarmScheduler.cancelStartingAlarm(completionId)
         }
     }
 }

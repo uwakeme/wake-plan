@@ -33,6 +33,30 @@
             </intent-filter>
         </activity>
 
+        <!-- 任务 starting 闹钟接收器 — Phase 3.2
+             exported=true 是因为 AlarmManager PendingIntent 需要 system 进程能 broadcast
+             （不是给其他 app 用的，Android 12+ 仍需要显式 exported flag） -->
+        <receiver
+            android:name=".notification.StartingAlarmReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.wakeplan.app.ACTION_TASK_STARTING" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 禁用 WorkManager 自动初始化 — App.onCreate 用 HiltWorkerFactory 手动初始化
+             （让 @HiltWorker 注解的 Worker 拿到 Hilt 注入的依赖） -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
     </application>
 
 </manifest>
