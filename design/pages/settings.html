@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置 — Wake Plan</title>
+        <style id="theme-vars">
+/* Wake Plan — Brand Design Tokens v4 */
+/* Design Philosophy: Temporal Clarity — Bold Edition */
+/* Supports: Light (default) + Dark themes */
+/* Brand Prefix: wp */
+
+/* ===== Google Fonts Import ===== */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+/* ===== LIGHT THEME (Default) ===== */
+:root {
+  color-scheme: light;
+  --color-primary: #C48520;
+  --color-primary-hover: #A86F14;
+  --color-primary-light: rgba(196, 133, 32, 0.08);
+  --color-primary-surface: rgba(196, 133, 32, 0.04);
+  --color-bg: #F2F0EC;
+  --color-bg-elevated: #FAFAF8;
+  --color-bg-overlay: #EAE7E2;
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-hover: #F8F7F5;
+  --color-bg-input: #EAE7E2;
+  --color-text-primary: #18160F;
+  --color-text-secondary: #6E695E;
+  --color-text-tertiary: #A5A099;
+  --color-text-inverse: #FAFAF8;
+  --color-border: rgba(24, 22, 15, 0.07);
+  --color-border-strong: rgba(24, 22, 15, 0.14);
+  --color-border-subtle: rgba(24, 22, 15, 0.03);
+  --state-success: #2E9B5E;
+  --state-success-light: rgba(46, 155, 94, 0.08);
+  --state-warning: #D4901A;
+  --state-warning-light: rgba(212, 144, 26, 0.08);
+  --state-error: #C84545;
+  --state-error-light: rgba(200, 69, 69, 0.08);
+  --state-info: #3B6FB5;
+  --state-info-light: rgba(59, 111, 181, 0.08);
+  --font-display: 'DM Sans', 'Noto Sans SC', sans-serif;
+  --font-body: 'DM Sans', 'Noto Sans SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --text-2xs: 10px; --text-2xs-lh: 14px;
+  --text-xs: 11px; --text-xs-lh: 16px;
+  --text-sm: 13px; --text-sm-lh: 18px;
+  --text-base: 15px; --text-base-lh: 22px;
+  --text-lg: 17px; --text-lg-lh: 24px;
+  --text-xl: 20px; --text-xl-lh: 28px;
+  --text-2xl: 28px; --text-2xl-lh: 36px;
+  --text-3xl: 36px; --text-3xl-lh: 44px;
+  --text-display: 60px; --text-display-lh: 66px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --letter-spacing-tight: -0.04em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.06em;
+  --letter-spacing-wider: 0.12em;
+  --space-2xs: 2px; --space-xs: 4px; --space-sm: 8px; --space-md: 12px;
+  --space-lg: 16px; --space-xl: 20px; --space-2xl: 24px;
+  --space-3xl: 32px; --space-4xl: 40px; --space-5xl: 56px;
+  --radius-xs: 6px; --radius-sm: 8px; --radius-md: 12px;
+  --radius-lg: 16px; --radius-xl: 22px; --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-glow-primary: 0 0 30px rgba(196, 133, 32, 0.15), 0 0 8px rgba(196, 133, 32, 0.08);
+  --shadow-glow-success: 0 0 20px rgba(46, 155, 94, 0.12);
+  --transition-fast: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 260ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 380ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-toggle: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-spring: 480ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-bounce: 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  --noise-opacity: 0.008;
+  --toggle-off-track: rgba(24, 22, 15, 0.08);
+  --toggle-off-knob: #FFFFFF;
+  --toggle-on-track: #C48520;
+  --toggle-on-knob: #FFFFFF;
+  --tab-bar-bg: rgba(250, 250, 248, 0.90);
+}
+
+/* ===== DARK THEME ===== */
+html.dark {
+  color-scheme: dark;
+  --color-primary: #F0B44A;
+  --color-primary-hover: #D4962E;
+  --color-primary-light: rgba(240, 180, 74, 0.10);
+  --color-primary-surface: rgba(240, 180, 74, 0.05);
+  --color-bg: #090E1A;
+  --color-bg-elevated: #121A2C;
+  --color-bg-overlay: #0F1626;
+  --color-bg-card: #151E32;
+  --color-bg-card-hover: #1B2640;
+  --color-bg-input: #0F1626;
+  --color-text-primary: #F0F2F8;
+  --color-text-secondary: #8492AD;
+  --color-text-tertiary: #4F5E78;
+  --color-text-inverse: #090E1A;
+  --color-border: rgba(132, 146, 173, 0.08);
+  --color-border-strong: rgba(132, 146, 173, 0.18);
+  --color-border-subtle: rgba(132, 146, 173, 0.04);
+  --state-success: #5DB88A;
+  --state-success-light: rgba(93, 184, 138, 0.10);
+  --state-warning: #F0B44A;
+  --state-warning-light: rgba(240, 180, 74, 0.10);
+  --state-error: #E85C5C;
+  --state-error-light: rgba(232, 92, 92, 0.10);
+  --state-info: #4A90D9;
+  --state-info-light: rgba(74, 144, 217, 0.10);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-glow-primary: 0 0 30px rgba(240, 180, 74, 0.18), 0 0 8px rgba(240, 180, 74, 0.10);
+  --shadow-glow-success: 0 0 20px rgba(93, 184, 138, 0.14);
+  --noise-opacity: 0.018;
+  --toggle-off-track: rgba(132, 146, 173, 0.14);
+  --toggle-off-knob: #8492AD;
+  --toggle-on-track: #F0B44A;
+  --toggle-on-knob: #FFFFFF;
+  --tab-bar-bg: #121A2C;
+}
+
+/* ===== Shared Entrance Animations ===== */
+@keyframes wp-fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wp-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes wp-scale-in {
+  from { opacity: 0; transform: scale(0.90); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes wp-progress-fill {
+  from { width: 0; }
+}
+@keyframes wp-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wp-slide-down {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 400px; }
+}
+.wp-animate-in {
+  animation: wp-fade-in-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.wp-animate-scale {
+  animation: wp-scale-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.wp-animate-fade {
+  animation: wp-fade-in 320ms ease both;
+}
+.wp-animate-progress {
+  animation: wp-progress-fill 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ===== Accessibility ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-primary: var(--color-primary);
+    --color-border: var(--color-border);
+  }
+  @layer base {
+    body { background: var(--color-background); color: var(--color-text-primary); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+
+<div class="wp-settings-shell">
+
+  <!-- Safe Area -->
+  <div class="wp-safe-area-top"></div>
+
+  <!-- ===== Top Bar ===== -->
+  <div class="wp-top-bar wp-animate-fade" style="animation-delay: 0ms">
+    <button class="wp-back-btn" data-dom-id="back-to-today" data-target="page-today" data-hide-edge="true" aria-label="返回">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <span class="wp-top-bar__title">设置</span>
+  </div>
+
+  <!-- ===== Scrollable Content ===== -->
+  <div class="wp-scroll-content">
+
+    <!-- ===== Section: 通知 ===== -->
+    <div class="wp-section-label">通知</div>
+    <div class="wp-card-group wp-animate-in" style="animation-delay: 60ms">
+
+      <!-- 任务开始提醒 (ON) -->
+      <div class="wp-setting-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">任务开始提醒</div>
+          <div class="wp-setting-row__subtitle">提前 5 分钟</div>
+        </div>
+        <label class="wp-toggle">
+          <input type="checkbox" checked>
+          <span class="wp-toggle__track"></span>
+          <span class="wp-toggle__knob"></span>
+        </label>
+      </div>
+
+      <!-- 超时提醒 (ON) -->
+      <div class="wp-setting-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">超时提醒</div>
+          <div class="wp-setting-row__subtitle">每 10 分钟</div>
+        </div>
+        <label class="wp-toggle">
+          <input type="checkbox" checked>
+          <span class="wp-toggle__track"></span>
+          <span class="wp-toggle__knob"></span>
+        </label>
+      </div>
+
+      <!-- 完成确认 (OFF) -->
+      <div class="wp-setting-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">完成确认</div>
+        </div>
+        <label class="wp-toggle">
+          <input type="checkbox">
+          <span class="wp-toggle__track"></span>
+          <span class="wp-toggle__knob"></span>
+        </label>
+      </div>
+
+      <!-- 每日小结 (OFF) -->
+      <div class="wp-setting-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">每日小结</div>
+          <div class="wp-setting-row__subtitle">21:00</div>
+        </div>
+        <label class="wp-toggle">
+          <input type="checkbox">
+          <span class="wp-toggle__track"></span>
+          <span class="wp-toggle__knob"></span>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- ===== Section: 数据管理 ===== -->
+    <div class="wp-section-label">数据管理</div>
+    <div class="wp-card-group wp-animate-in" style="animation-delay: 120ms">
+
+      <!-- 导出数据 -->
+      <div class="wp-setting-row wp-nav-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">导出数据</div>
+          <div class="wp-setting-row__subtitle">JSON 格式备份</div>
+        </div>
+        <svg class="wp-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+
+      <!-- 从备份导入 -->
+      <div class="wp-setting-row wp-nav-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">从备份导入</div>
+        </div>
+        <svg class="wp-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+
+      <!-- 加密备份 (toggle OFF) -->
+      <div class="wp-setting-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">加密备份</div>
+          <div class="wp-setting-row__subtitle">AES-256</div>
+        </div>
+        <label class="wp-toggle">
+          <input type="checkbox">
+          <span class="wp-toggle__track"></span>
+          <span class="wp-toggle__knob"></span>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- ===== Section: 外观 ===== -->
+    <div class="wp-section-label">外观</div>
+    <div class="wp-card-group wp-animate-in" style="animation-delay: 180ms">
+
+      <!-- 深色模式 -->
+      <div class="wp-setting-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">深色模式</div>
+          <div class="wp-setting-row__subtitle" id="theme-subtitle">跟随系统 · 当前自动</div>
+        </div>
+        <label class="wp-toggle" aria-label="深色模式">
+          <input type="checkbox" id="dark-mode-toggle" />
+          <span class="wp-toggle__track"></span>
+          <span class="wp-toggle__knob"></span>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- ===== Section: 关于 ===== -->
+    <div class="wp-section-label">关于</div>
+    <div class="wp-card-group wp-animate-in" style="animation-delay: 240ms">
+
+      <!-- Wake Plan identity -->
+      <div class="wp-setting-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-app-identity__name">Wake Plan</div>
+          <div class="wp-app-identity__version">v0.1 MVP</div>
+        </div>
+      </div>
+
+      <!-- 隐私政策 -->
+      <div class="wp-setting-row wp-nav-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">隐私政策</div>
+        </div>
+        <svg class="wp-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+
+      <!-- 开源许可 -->
+      <div class="wp-setting-row wp-nav-row">
+        <div class="wp-setting-row__text">
+          <div class="wp-setting-row__title">开源许可</div>
+        </div>
+        <svg class="wp-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+
+    </div>
+
+    <!-- ===== Danger Zone ===== -->
+    <div class="wp-danger-zone wp-animate-in" style="animation-delay: 300ms">
+      <button class="wp-danger-zone__btn" data-dom-id="clear-data">清除所有数据</button>
+      <span class="wp-danger-zone__hint">不可撤销，建议先备份</span>
+    </div>
+
+    <!-- ===== Footer Trust Seal ===== -->
+    <div class="wp-trust-seal wp-animate-fade" style="animation-delay: 400ms">
+      <div class="wp-trust-seal__pill">
+        <svg class="wp-trust-seal__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <polyline points="9 12 11 14 15 10" stroke-width="2.5"/>
+        </svg>
+        <span class="wp-trust-seal__text">本地优先 · <span class="wp-trust-seal__accent">零外联</span> · 数据安全</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== BOTTOM TAB BAR ===== -->
+  <nav class="wp-tab-bar wp-animate-fade" style="animation-delay: 200ms">
+    <!-- Tab: Now -->
+    <button class="wp-tab" data-tab-key="today" data-dom-id="nav-today" aria-label="现在">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <span class="wp-tab-label">现在</span>
+    </button>
+
+    <!-- Tab: Plans -->
+    <button class="wp-tab" data-tab-key="plans" data-dom-id="nav-plans" aria-label="计划">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+      <span class="wp-tab-label">计划</span>
+    </button>
+
+    <!-- Tab: Settings (active) -->
+    <button class="wp-tab wp-tab--active" data-tab-key="settings" data-active="true" aria-label="设置">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span class="wp-tab-label">设置</span>
+    </button>
+  </nav>
+
+</div>
+
+
+    <style>
+/* ========================================
+   SETTINGS PAGE — Temporal Clarity
+   ======================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--text-base-lh);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Shell --- */
+.wp-settings-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  max-width: 390px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- Noise Overlay --- */
+.wp-settings-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px;
+  mix-blend-mode: overlay;
+}
+
+/* --- Status Bar Safe Area --- */
+.wp-safe-area-top {
+  height: env(safe-area-inset-top, 0px);
+  min-height: env(safe-area-inset-top, 0px);
+  flex-shrink: 0;
+  background: var(--color-bg);
+}
+
+/* --- Top Bar --- */
+.wp-top-bar {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 var(--space-lg);
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--color-bg);
+  position: relative;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.wp-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+  outline: none;
+  padding: 0;
+}
+
+.wp-back-btn:hover {
+  background: var(--color-primary-surface);
+}
+
+.wp-back-btn svg {
+  display: block;
+}
+
+.wp-top-bar__title {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-lh);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-right: 44px; /* offset back button */
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+/* --- Scroll Content --- */
+.wp-scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 var(--space-lg) 80px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+/* --- Section Label --- */
+.wp-section-label {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+  margin: 0 0 var(--space-sm) var(--space-lg);
+  padding-top: var(--space-lg);
+}
+
+/* --- Card Group --- */
+.wp-card-group {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-2xl);
+  border: 1px solid var(--color-border-subtle);
+}
+
+/* --- Setting Row --- */
+.wp-setting-row {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: var(--space-md) var(--space-lg);
+  position: relative;
+}
+
+.wp-setting-row + .wp-setting-row {
+  border-top: 1px solid var(--color-border);
+}
+
+/* Row text */
+.wp-setting-row__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.wp-setting-row__title {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.wp-setting-row__subtitle {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+/* Chevron */
+.wp-chevron {
+  flex-shrink: 0;
+  margin-left: var(--space-md);
+  color: var(--color-text-tertiary);
+  transition: transform var(--transition-fast);
+}
+
+.wp-setting-row:hover .wp-chevron {
+  transform: translateX(2px);
+  color: var(--color-text-secondary);
+}
+
+/* --- iOS-style Toggle --- */
+.wp-toggle {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  flex-shrink: 0;
+  margin-left: var(--space-md);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wp-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.wp-toggle__track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: var(--radius-full);
+  transition: background var(--transition-toggle, 320ms cubic-bezier(0.34, 1.56, 0.64, 1)), box-shadow var(--transition-toggle, 320ms cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+.wp-toggle__knob {
+  position: absolute;
+  top: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.10);
+  transition: transform var(--transition-toggle, 320ms cubic-bezier(0.34, 1.56, 0.64, 1)), box-shadow var(--transition-toggle, 320ms cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+/* Toggle ON */
+.wp-toggle input:checked ~ .wp-toggle__track {
+  background: var(--toggle-on-track);
+  box-shadow: 0 0 0 1px rgba(232, 168, 62, 0.30);
+}
+
+.wp-toggle input:checked ~ .wp-toggle__knob {
+  transform: translateX(20px);
+  background: var(--toggle-on-knob);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18), 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* Toggle OFF */
+.wp-toggle input:not(:checked) ~ .wp-toggle__track {
+  background: var(--toggle-off-track);
+  box-shadow: none;
+}
+
+.wp-toggle input:not(:checked) ~ .wp-toggle__knob {
+  transform: translateX(2px);
+  background: var(--toggle-off-knob);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* --- App Identity Row --- */
+.wp-app-identity__name {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  line-height: var(--text-base-lh);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.wp-app-identity__version {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
+/* --- Danger Zone --- */
+.wp-danger-zone {
+  margin-top: var(--space-3xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.wp-danger-zone__btn {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: var(--font-weight-medium);
+  color: var(--state-error);
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity var(--transition-fast);
+  outline: none;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+}
+
+.wp-danger-zone__btn:hover {
+  background: var(--state-error-light);
+}
+
+.wp-danger-zone__btn:active {
+  opacity: 0.7;
+}
+
+.wp-danger-zone__hint {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-tertiary);
+}
+
+/* --- Trust Seal Footer --- */
+.wp-trust-seal {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-4xl);
+  padding-bottom: var(--space-xl);
+}
+
+.wp-trust-seal__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: var(--color-primary-surface);
+  border: 1px solid rgba(232, 168, 62, 0.12);
+  border-radius: var(--radius-full);
+  transition: background var(--transition-normal);
+}
+
+.wp-trust-seal__icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.wp-trust-seal__text {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.wp-trust-seal__accent {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* --- Nav Row cursor --- */
+.wp-nav-row {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.wp-nav-row:hover {
+  background: rgba(232, 168, 62, 0.03);
+}
+
+.wp-nav-row:active {
+  background: var(--color-primary-surface);
+}
+
+/* --- Bottom Tab Bar --- */
+.wp-tab-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 60px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--tab-bar-bg);
+  border-top: 1px solid var(--color-border-subtle);
+  position: relative;
+  z-index: 100;
+}
+
+.wp-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  height: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  transition: color 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+.wp-tab:hover {
+  color: var(--color-text-secondary);
+}
+
+.wp-tab--active {
+  color: var(--color-primary);
+}
+
+.wp-tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.wp-tab-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+/* --- Focus-visible --- */
+.wp-back-btn:focus-visible,
+.wp-danger-zone__btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-primary);
+}
+    </style>
+    <script>
+function toggleTheme() {
+  const html = document.documentElement;
+  html.classList.add('theme-transitioning');
+  html.classList.toggle('dark');
+  localStorage.setItem('wp-theme', html.classList.contains('dark') ? 'dark' : 'light');
+  updateThemeLabel();
+  setTimeout(() => html.classList.remove('theme-transitioning'), 500);
+}
+function updateThemeLabel() {
+  const sub = document.getElementById('theme-subtitle');
+  const toggle = document.getElementById('dark-mode-toggle');
+  if (!sub || !toggle) return;
+  const isDark = document.documentElement.classList.contains('dark');
+  const saved = localStorage.getItem('wp-theme');
+  if (saved === 'dark' || saved === 'light') {
+    sub.textContent = isDark ? '已开启' : '已关闭';
+  } else {
+    sub.textContent = isDark ? '跟随系统 · 当前暗色' : '跟随系统 · 当前亮色';
+  }
+  toggle.checked = isDark;
+}
+(function() {
+  const saved = localStorage.getItem('wp-theme');
+  if (saved === 'dark') document.documentElement.classList.add('dark');
+  else if (saved === 'light') document.documentElement.classList.remove('dark');
+  else if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+  updateThemeLabel();
+  document.getElementById('dark-mode-toggle').addEventListener('change', function() {
+    toggleTheme();
+  });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+    if (!localStorage.getItem('wp-theme')) {
+      if (e.matches) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+      updateThemeLabel();
+    }
+  });
+})();
+</script>
+</body>
+</html>

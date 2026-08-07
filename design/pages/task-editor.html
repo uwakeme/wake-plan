@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑任务 — Wake Plan</title>
+        <style id="theme-vars">
+/* Wake Plan — Brand Design Tokens v4 */
+/* Design Philosophy: Temporal Clarity — Bold Edition */
+/* Supports: Light (default) + Dark themes */
+/* Brand Prefix: wp */
+
+/* ===== Google Fonts Import ===== */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+/* ===== LIGHT THEME (Default) ===== */
+:root {
+  color-scheme: light;
+  --color-primary: #C48520;
+  --color-primary-hover: #A86F14;
+  --color-primary-light: rgba(196, 133, 32, 0.08);
+  --color-primary-surface: rgba(196, 133, 32, 0.04);
+  --color-bg: #F2F0EC;
+  --color-bg-elevated: #FAFAF8;
+  --color-bg-overlay: #EAE7E2;
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-hover: #F8F7F5;
+  --color-bg-input: #EAE7E2;
+  --color-text-primary: #18160F;
+  --color-text-secondary: #6E695E;
+  --color-text-tertiary: #A5A099;
+  --color-text-inverse: #FAFAF8;
+  --color-border: rgba(24, 22, 15, 0.07);
+  --color-border-strong: rgba(24, 22, 15, 0.14);
+  --color-border-subtle: rgba(24, 22, 15, 0.03);
+  --state-success: #2E9B5E;
+  --state-success-light: rgba(46, 155, 94, 0.08);
+  --state-warning: #D4901A;
+  --state-warning-light: rgba(212, 144, 26, 0.08);
+  --state-error: #C84545;
+  --state-error-light: rgba(200, 69, 69, 0.08);
+  --state-info: #3B6FB5;
+  --state-info-light: rgba(59, 111, 181, 0.08);
+  --font-display: 'DM Sans', 'Noto Sans SC', sans-serif;
+  --font-body: 'DM Sans', 'Noto Sans SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --text-2xs: 10px; --text-2xs-lh: 14px;
+  --text-xs: 11px; --text-xs-lh: 16px;
+  --text-sm: 13px; --text-sm-lh: 18px;
+  --text-base: 15px; --text-base-lh: 22px;
+  --text-lg: 17px; --text-lg-lh: 24px;
+  --text-xl: 20px; --text-xl-lh: 28px;
+  --text-2xl: 28px; --text-2xl-lh: 36px;
+  --text-3xl: 36px; --text-3xl-lh: 44px;
+  --text-display: 60px; --text-display-lh: 66px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --letter-spacing-tight: -0.04em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.06em;
+  --letter-spacing-wider: 0.12em;
+  --space-2xs: 2px; --space-xs: 4px; --space-sm: 8px; --space-md: 12px;
+  --space-lg: 16px; --space-xl: 20px; --space-2xl: 24px;
+  --space-3xl: 32px; --space-4xl: 40px; --space-5xl: 56px;
+  --radius-xs: 6px; --radius-sm: 8px; --radius-md: 12px;
+  --radius-lg: 16px; --radius-xl: 22px; --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-glow-primary: 0 0 30px rgba(196, 133, 32, 0.15), 0 0 8px rgba(196, 133, 32, 0.08);
+  --shadow-glow-success: 0 0 20px rgba(46, 155, 94, 0.12);
+  --transition-fast: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 260ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 380ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-toggle: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-spring: 480ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-bounce: 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  --noise-opacity: 0.008;
+  --toggle-off-track: rgba(24, 22, 15, 0.08);
+  --toggle-off-knob: #FFFFFF;
+  --toggle-on-track: #C48520;
+  --toggle-on-knob: #FFFFFF;
+  --tab-bar-bg: rgba(250, 250, 248, 0.90);
+}
+
+/* ===== DARK THEME ===== */
+html.dark {
+  color-scheme: dark;
+  --color-primary: #F0B44A;
+  --color-primary-hover: #D4962E;
+  --color-primary-light: rgba(240, 180, 74, 0.10);
+  --color-primary-surface: rgba(240, 180, 74, 0.05);
+  --color-bg: #090E1A;
+  --color-bg-elevated: #121A2C;
+  --color-bg-overlay: #0F1626;
+  --color-bg-card: #151E32;
+  --color-bg-card-hover: #1B2640;
+  --color-bg-input: #0F1626;
+  --color-text-primary: #F0F2F8;
+  --color-text-secondary: #8492AD;
+  --color-text-tertiary: #4F5E78;
+  --color-text-inverse: #090E1A;
+  --color-border: rgba(132, 146, 173, 0.08);
+  --color-border-strong: rgba(132, 146, 173, 0.18);
+  --color-border-subtle: rgba(132, 146, 173, 0.04);
+  --state-success: #5DB88A;
+  --state-success-light: rgba(93, 184, 138, 0.10);
+  --state-warning: #F0B44A;
+  --state-warning-light: rgba(240, 180, 74, 0.10);
+  --state-error: #E85C5C;
+  --state-error-light: rgba(232, 92, 92, 0.10);
+  --state-info: #4A90D9;
+  --state-info-light: rgba(74, 144, 217, 0.10);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-glow-primary: 0 0 30px rgba(240, 180, 74, 0.18), 0 0 8px rgba(240, 180, 74, 0.10);
+  --shadow-glow-success: 0 0 20px rgba(93, 184, 138, 0.14);
+  --noise-opacity: 0.018;
+  --toggle-off-track: rgba(132, 146, 173, 0.14);
+  --toggle-off-knob: #8492AD;
+  --toggle-on-track: #F0B44A;
+  --toggle-on-knob: #FFFFFF;
+  --tab-bar-bg: #121A2C;
+}
+
+/* ===== Shared Entrance Animations ===== */
+@keyframes wp-fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wp-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes wp-scale-in {
+  from { opacity: 0; transform: scale(0.90); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes wp-progress-fill {
+  from { width: 0; }
+}
+@keyframes wp-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wp-slide-down {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 400px; }
+}
+.wp-animate-in {
+  animation: wp-fade-in-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.wp-animate-scale {
+  animation: wp-scale-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.wp-animate-fade {
+  animation: wp-fade-in 320ms ease both;
+}
+.wp-animate-progress {
+  animation: wp-progress-fill 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ===== Accessibility ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-primary: var(--color-primary);
+    --color-border: var(--color-border);
+  }
+  @layer base {
+    body { background: var(--color-background); color: var(--color-text-primary); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+    <main>
+      <div class="wp-te-page" data-page-id="page-task-editor">
+
+        <!-- ===== Top Bar ===== -->
+        <div class="wp-te-topbar wp-animate-fade" style="animation-delay: 0ms">
+          <div class="wp-te-topbar-left">
+            <button class="wp-te-back-btn" data-dom-id="back-to-detail" aria-label="返回">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <span class="wp-te-topbar-title">编辑任务</span>
+          </div>
+          <button class="wp-te-done-btn">完成</button>
+        </div>
+
+        <!-- ===== Scrollable Content ===== -->
+        <div class="wp-te-content wp-animate-in" style="animation-delay: 80ms">
+
+          <!-- ===== Section 1: 任务信息 ===== -->
+          <div class="wp-te-section">
+            <div class="wp-te-section-title">任务信息</div>
+            <div class="wp-te-card">
+
+              <!-- Task Name -->
+              <div class="wp-te-field">
+                <div class="wp-te-field-label">任务名称</div>
+                <input type="text" class="wp-te-input" value="晨跑" placeholder="输入任务名称">
+              </div>
+
+              <!-- Notes -->
+              <div class="wp-te-field">
+                <div class="wp-te-field-label">备注</div>
+                <textarea class="wp-te-textarea" placeholder="添加备注（可选）" rows="2"></textarea>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ===== Section 2: 时间设置 ===== -->
+          <div class="wp-te-section">
+            <div class="wp-te-section-title">时间设置</div>
+            <div class="wp-te-card">
+
+              <!-- Start Time -->
+              <div class="wp-te-field">
+                <div class="wp-te-field-label">开始时间</div>
+                <div class="wp-te-time-display">
+                  <div class="wp-te-time-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                  </div>
+                  <span class="wp-te-time-value">06:35</span>
+                </div>
+              </div>
+
+              <!-- End Time -->
+              <div class="wp-te-field">
+                <div class="wp-te-field-label">结束时间</div>
+                <div class="wp-te-time-display">
+                  <div class="wp-te-time-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                  </div>
+                  <span class="wp-te-time-value">07:05</span>
+                </div>
+              </div>
+
+              <!-- Duration Pill -->
+              <div class="wp-te-duration-pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                持续 30 分钟
+              </div>
+
+              <!-- Conflict Detection (inline) -->
+              <div class="wp-te-conflict-inline" id="conflictPanel">
+                <div class="wp-te-conflict-inline-header">
+                  <div class="wp-te-conflict-inline-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                  </div>
+                  <span class="wp-te-conflict-inline-title">检测到 2 个冲突</span>
+                  <div class="wp-te-conflict-inline-chevron" onclick="document.getElementById('conflictPanel').classList.toggle('expanded')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="wp-te-conflict-inline-body">
+                  <div class="wp-te-conflict-body-inner">
+
+                    <!-- Conflict 1: Same Plan (red) -->
+                    <div class="wp-te-conflict-item wp-te-conflict-item--same-plan">
+                      <div class="wp-te-conflict-item-top">
+                        <span class="wp-te-conflict-task-name">拉伸放松</span>
+                        <span class="wp-te-conflict-plan-tag">健身计划</span>
+                      </div>
+                      <div class="wp-te-conflict-time-row">
+                        <svg class="wp-te-conflict-time-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10"/>
+                          <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span class="wp-te-conflict-time-text">07:00 — 07:05</span>
+                        <span class="wp-te-conflict-type-tag wp-te-conflict-type-tag--same">同计划</span>
+                      </div>
+                    </div>
+
+                    <!-- Conflict 2: Cross Plan (amber) -->
+                    <div class="wp-te-conflict-item wp-te-conflict-item--cross-plan">
+                      <div class="wp-te-conflict-item-top">
+                        <span class="wp-te-conflict-task-name">Kotlin 基础</span>
+                        <span class="wp-te-conflict-plan-tag">学习计划</span>
+                      </div>
+                      <div class="wp-te-conflict-time-row">
+                        <svg class="wp-te-conflict-time-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10"/>
+                          <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span class="wp-te-conflict-time-text">07:00 — 08:00</span>
+                        <span class="wp-te-conflict-type-tag wp-te-conflict-type-tag--cross">跨计划</span>
+                      </div>
+                    </div>
+
+                    <!-- Info Footer -->
+                    <div class="wp-te-conflict-info">
+                      <svg class="wp-te-conflict-info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                      </svg>
+                      <span class="wp-te-conflict-info-text">冲突仅为提示，保存不受影响</span>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ===== Section 3: 任务选项 ===== -->
+          <div class="wp-te-section">
+            <div class="wp-te-section-title">任务选项</div>
+            <div class="wp-te-card">
+
+              <!-- Auto-extend Toggle (ON) -->
+              <div class="wp-te-toggle-row">
+                <div class="wp-te-toggle-info">
+                  <div class="wp-te-toggle-label">自动延期</div>
+                  <div class="wp-te-toggle-subtitle">超时时自动推迟后续任务</div>
+                </div>
+                <label class="wp-te-switch">
+                  <input type="checkbox" checked>
+                  <span class="wp-te-switch-track"></span>
+                  <span class="wp-te-switch-thumb"></span>
+                </label>
+              </div>
+
+              <!-- Lock Toggle (OFF) -->
+              <div class="wp-te-toggle-row">
+                <div class="wp-te-toggle-info">
+                  <div class="wp-te-toggle-label">锁定时间</div>
+                  <div class="wp-te-toggle-subtitle">锁定后此任务不参与自动延期</div>
+                </div>
+                <label class="wp-te-switch">
+                  <input type="checkbox">
+                  <span class="wp-te-switch-track"></span>
+                  <span class="wp-te-switch-thumb"></span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+        <!-- End Scrollable Content -->
+
+        <!-- ===== Fixed Bottom Action ===== -->
+        <div class="wp-te-bottom-action wp-animate-fade" style="animation-delay: 160ms">
+          <button class="wp-te-save-btn" data-dom-id="save-task">保存任务</button>
+        </div>
+
+      </div>
+    </main>
+
+    <style>
+      /* ===== Reset & Base ===== */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        background: var(--color-bg);
+        color: var(--color-text-primary);
+        font-family: var(--font-body);
+        font-size: var(--text-base);
+        line-height: var(--text-base-lh);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
+      }
+
+      /* Noise texture overlay */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        pointer-events: none;
+        opacity: var(--noise-opacity);
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-size: 128px 128px;
+      }
+
+      /* ===== Page Shell ===== */
+      .wp-te-page {
+        position: relative;
+        max-width: 390px;
+        margin: 0 auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ===== Top Bar ===== */
+      .wp-te-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-md) var(--space-lg);
+        padding-top: calc(var(--space-md) + env(safe-area-inset-top, 0px));
+        background: var(--color-bg);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .wp-te-topbar-left {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        flex: 1;
+        min-width: 0;
+      }
+
+      .wp-te-back-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-md);
+        border: none;
+        background: transparent;
+        color: var(--color-text-primary);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background var(--transition-fast);
+      }
+      .wp-te-back-btn:hover { background: var(--color-bg-elevated); }
+      .wp-te-back-btn:active { transform: scale(0.92); }
+
+      .wp-te-topbar-title {
+        font-family: var(--font-body);
+        font-size: var(--text-lg);
+        line-height: var(--text-lg-lh);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-primary);
+      }
+
+      .wp-te-done-btn {
+        font-family: var(--font-body);
+        font-size: var(--text-base);
+        line-height: var(--text-base-lh);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-primary);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: var(--space-sm) var(--space-md);
+        border-radius: var(--radius-md);
+        -webkit-tap-highlight-color: transparent;
+        transition: background var(--transition-fast);
+      }
+      .wp-te-done-btn:hover { background: var(--color-primary-light); }
+      .wp-te-done-btn:active { transform: scale(0.95); }
+
+      /* ===== Scrollable Content ===== */
+      .wp-te-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: var(--space-xl) var(--space-lg);
+        padding-bottom: 120px;
+      }
+      .wp-te-content::-webkit-scrollbar { display: none; }
+      .wp-te-content { scrollbar-width: none; }
+
+      /* ===== Section ===== */
+      .wp-te-section {
+        margin-bottom: var(--space-2xl);
+      }
+
+      .wp-te-section-title {
+        font-family: var(--font-body);
+        font-size: var(--text-xs);
+        line-height: var(--text-xs-lh);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-tertiary);
+        letter-spacing: var(--letter-spacing-wider);
+        text-transform: uppercase;
+        margin-bottom: var(--space-md);
+        padding-left: var(--space-xs);
+      }
+
+      /* ===== Card ===== */
+      .wp-te-card {
+        background: var(--color-bg-card);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-border);
+        padding: var(--space-xl);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+        box-shadow: var(--shadow-sm);
+      }
+
+      /* ===== Form Field ===== */
+      .wp-te-field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-sm);
+      }
+      .wp-te-field + .wp-te-field {
+        border-top: 1px solid var(--color-border);
+        padding-top: var(--space-md);
+      }
+
+      .wp-te-field-label {
+        font-family: var(--font-body);
+        font-size: var(--text-sm);
+        line-height: var(--text-sm-lh);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-secondary);
+      }
+
+      /* ===== Text Input ===== */
+      .wp-te-input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        font-family: var(--font-display);
+        font-size: var(--text-2xl);
+        line-height: var(--text-2xl-lh);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+        caret-color: var(--color-primary);
+        letter-spacing: var(--letter-spacing-tight);
+      }
+      .wp-te-input::placeholder {
+        color: var(--color-text-tertiary);
+        font-weight: var(--font-weight-medium);
+      }
+
+      /* ===== Duration Stepper ===== */
+      .wp-te-duration-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+      }
+
+      .wp-te-stepper-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border-strong);
+        background: var(--color-bg-elevated);
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: all var(--transition-fast);
+        flex-shrink: 0;
+      }
+      .wp-te-stepper-btn:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        background: var(--color-primary-surface);
+      }
+      .wp-te-stepper-btn:active {
+        transform: scale(0.88);
+        background: var(--color-primary-light);
+        transition-duration: 100ms;
+      }
+
+      .wp-te-stepper-value {
+        font-family: var(--font-display);
+        font-size: var(--text-3xl);
+        line-height: var(--text-3xl-lh);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+        min-width: 56px;
+        text-align: center;
+        letter-spacing: var(--letter-spacing-tight);
+      }
+
+      .wp-te-stepper-unit {
+        font-family: var(--font-body);
+        font-size: var(--text-sm);
+        line-height: var(--text-sm-lh);
+        font-weight: var(--font-weight-normal);
+        color: var(--color-text-tertiary);
+      }
+
+      /* ===== Textarea ===== */
+      .wp-te-textarea {
+        width: 100%;
+        background: var(--color-bg-input);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-md);
+        outline: none;
+        font-family: var(--font-body);
+        font-size: var(--text-base);
+        line-height: var(--text-base-lh);
+        font-weight: var(--font-weight-normal);
+        color: var(--color-text-primary);
+        caret-color: var(--color-primary);
+        resize: none;
+        min-height: 72px;
+        transition: border-color var(--transition-fast);
+      }
+      .wp-te-textarea::placeholder {
+        color: var(--color-text-tertiary);
+      }
+      .wp-te-textarea:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+      }
+
+      /* ===== Time Field ===== */
+      .wp-te-time-display {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        background: var(--color-bg-input);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-md) var(--space-lg);
+        transition: border-color var(--transition-fast);
+        cursor: pointer;
+      }
+      .wp-te-time-display:hover {
+        border-color: var(--color-border-strong);
+      }
+
+      .wp-te-time-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-sm);
+        background: var(--color-primary-surface);
+        color: var(--color-primary);
+        flex-shrink: 0;
+      }
+
+      .wp-te-time-value {
+        font-family: var(--font-mono);
+        font-size: var(--text-xl);
+        line-height: var(--text-xl-lh);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-primary);
+        letter-spacing: var(--letter-spacing-wide);
+      }
+
+      /* ===== Duration Pill ===== */
+      .wp-te-duration-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding: 6px 14px;
+        background: var(--color-primary-light);
+        border: 1px solid rgba(232, 168, 62, 0.20);
+        border-radius: var(--radius-full);
+        font-family: var(--font-body);
+        font-size: var(--text-sm);
+        line-height: var(--text-sm-lh);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-primary);
+      }
+
+      /* ===== Toggle Row ===== */
+      .wp-te-toggle-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+      }
+      .wp-te-toggle-row + .wp-te-toggle-row {
+        border-top: 1px solid var(--color-border);
+        padding-top: var(--space-md);
+      }
+
+      .wp-te-toggle-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .wp-te-toggle-label {
+        font-family: var(--font-body);
+        font-size: var(--text-base);
+        line-height: var(--text-base-lh);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary);
+      }
+
+      .wp-te-toggle-subtitle {
+        font-family: var(--font-body);
+        font-size: var(--text-sm);
+        line-height: var(--text-sm-lh);
+        font-weight: var(--font-weight-normal);
+        color: var(--color-text-tertiary);
+        margin-top: 2px;
+      }
+
+      /* ===== iOS-style Toggle Switch ===== */
+      .wp-te-switch {
+        position: relative;
+        width: 51px;
+        height: 31px;
+        flex-shrink: 0;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .wp-te-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+      }
+
+      /* Touch target overlay */
+      .wp-te-switch::before {
+        content: '';
+        position: absolute;
+        inset: -7px;
+        /* 31 + 7 + 7 = 45px touch target */
+      }
+
+      .wp-te-switch-track {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--radius-full);
+        background: var(--color-bg-elevated);
+        border: 1px solid var(--color-border-strong);
+        transition: all var(--transition-toggle, 320ms cubic-bezier(0.34, 1.56, 0.64, 1));
+      }
+      .wp-te-switch input:checked + .wp-te-switch-track {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        box-shadow: 0 0 12px rgba(232, 168, 62, 0.25);
+      }
+
+      .wp-te-switch-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 27px;
+        height: 27px;
+        border-radius: var(--radius-full);
+        background: var(--color-text-primary);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.10);
+        transition: transform var(--transition-toggle, 320ms cubic-bezier(0.34, 1.56, 0.64, 1));
+        pointer-events: none;
+      }
+      .wp-te-switch input:checked ~ .wp-te-switch-thumb {
+        transform: translateX(20px);
+      }
+
+      /* ===== Conflict Panel ===== */
+      .wp-te-conflict-panel {
+        background: var(--color-bg-card);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+
+      /* ===== Inline Conflict (inside time card) ===== */
+      .wp-te-conflict-inline {
+        margin-top: var(--space-sm);
+        background: var(--state-warning-light);
+        border: 1px solid rgba(232, 168, 62, 0.15);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+
+      .wp-te-conflict-inline-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding: var(--space-sm) var(--space-md);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+      }
+
+      .wp-te-conflict-inline-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-full);
+        background: rgba(232, 168, 62, 0.15);
+        color: var(--color-primary);
+        flex-shrink: 0;
+      }
+
+      .wp-te-conflict-inline-title {
+        font-family: var(--font-body);
+        font-size: var(--text-xs);
+        line-height: var(--text-xs-lh);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-primary);
+        flex: 1;
+      }
+
+      .wp-te-conflict-inline-chevron {
+        color: var(--color-text-tertiary);
+        transition: transform var(--transition-normal);
+        flex-shrink: 0;
+        display: flex;
+        cursor: pointer;
+      }
+
+      .wp-te-conflict-inline.expanded .wp-te-conflict-inline-chevron {
+        transform: rotate(180deg);
+      }
+
+      .wp-te-conflict-inline-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .wp-te-conflict-inline.expanded .wp-te-conflict-inline-body {
+        max-height: 300px;
+      }
+
+      .wp-te-conflict-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        padding: var(--space-md) var(--space-xl);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        transition: background var(--transition-fast);
+      }
+      .wp-te-conflict-header:hover {
+        background: var(--color-bg-card-hover);
+      }
+
+      .wp-te-conflict-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: var(--radius-full);
+        background: var(--color-primary-surface);
+        color: var(--color-primary);
+        flex-shrink: 0;
+      }
+
+      .wp-te-conflict-title {
+        font-family: var(--font-body);
+        font-size: var(--text-sm);
+        line-height: var(--text-sm-lh);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-primary);
+        flex: 1;
+      }
+
+      .wp-te-conflict-chevron {
+        color: var(--color-text-tertiary);
+        transition: transform var(--transition-normal);
+        flex-shrink: 0;
+      }
+      .wp-te-conflict-panel.expanded .wp-te-conflict-chevron {
+        transform: rotate(180deg);
+      }
+
+      .wp-te-conflict-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1), padding var(--transition-slow);
+        padding: 0 var(--space-xl);
+      }
+      .wp-te-conflict-panel.expanded .wp-te-conflict-body {
+        max-height: 400px;
+        padding: 0 var(--space-xl) var(--space-xl) var(--space-xl);
+      }
+
+      .wp-te-conflict-body-inner {
+        padding-top: var(--space-md);
+        border-top: 1px solid var(--color-border);
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity 200ms ease 80ms, transform 200ms ease 80ms;
+      }
+      .wp-te-conflict-panel.expanded .wp-te-conflict-body-inner {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* ===== Conflict Item ===== */
+      .wp-te-conflict-item {
+        padding: var(--space-md) var(--space-md) var(--space-md) var(--space-lg);
+        border-radius: var(--radius-md);
+        margin-bottom: var(--space-sm);
+        position: relative;
+      }
+      .wp-te-conflict-item:last-of-type {
+        margin-bottom: 0;
+      }
+
+      .wp-te-conflict-item--same-plan {
+        background: var(--state-error-light);
+        border-left: 3px solid #D46A6A;
+      }
+
+      .wp-te-conflict-item--cross-plan {
+        background: var(--state-warning-light);
+        border-left: 3px solid #E8A83E;
+      }
+
+      .wp-te-conflict-item-top {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-xs);
+      }
+
+      .wp-te-conflict-task-name {
+        font-family: var(--font-body);
+        font-size: var(--text-base);
+        line-height: var(--text-base-lh);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary);
+        flex: 1;
+      }
+
+      .wp-te-conflict-plan-tag {
+        font-family: var(--font-body);
+        font-size: var(--text-2xs);
+        line-height: var(--text-2xs-lh);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-secondary);
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        background: var(--color-bg-elevated);
+        border: 1px solid var(--color-border);
+        white-space: nowrap;
+      }
+
+      .wp-te-conflict-time-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding-left: var(--space-2xs);
+      }
+
+      .wp-te-conflict-time-icon {
+        color: var(--color-text-tertiary);
+        flex-shrink: 0;
+      }
+
+      .wp-te-conflict-time-text {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        line-height: var(--text-sm-lh);
+        font-weight: var(--font-weight-normal);
+        color: var(--color-text-secondary);
+        letter-spacing: var(--letter-spacing-normal);
+      }
+
+      .wp-te-conflict-type-tag {
+        font-family: var(--font-body);
+        font-size: var(--text-2xs);
+        line-height: var(--text-2xs-lh);
+        font-weight: var(--font-weight-semibold);
+        letter-spacing: var(--letter-spacing-wide);
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        white-space: nowrap;
+        margin-left: auto;
+      }
+      .wp-te-conflict-type-tag--same {
+        color: #D46A6A;
+        background: var(--state-error-light);
+      }
+      .wp-te-conflict-type-tag--cross {
+        color: #E8A83E;
+        background: var(--state-warning-light);
+      }
+
+      /* ===== Conflict Info Footer ===== */
+      .wp-te-conflict-info {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        margin-top: var(--space-md);
+        padding-top: var(--space-md);
+        border-top: 1px solid var(--color-border);
+      }
+
+      .wp-te-conflict-info-icon {
+        color: var(--color-text-tertiary);
+        flex-shrink: 0;
+      }
+
+      .wp-te-conflict-info-text {
+        font-family: var(--font-body);
+        font-size: var(--text-sm);
+        line-height: var(--text-sm-lh);
+        font-weight: var(--font-weight-normal);
+        color: var(--color-text-tertiary);
+      }
+
+      /* ===== Fixed Bottom Action ===== */
+      .wp-te-bottom-action {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 390px;
+        padding: var(--space-lg);
+        padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(to top, var(--color-bg) 65%, transparent);
+        z-index: 10;
+        pointer-events: none;
+      }
+
+      .wp-te-save-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 52px;
+        border-radius: var(--radius-lg);
+        border: none;
+        background: var(--color-primary);
+        color: var(--color-text-inverse);
+        font-family: var(--font-display);
+        font-size: var(--text-base);
+        line-height: var(--text-base-lh);
+        font-weight: var(--font-weight-bold);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: all var(--transition-fast);
+        box-shadow: var(--shadow-glow-primary);
+        pointer-events: auto;
+        letter-spacing: var(--letter-spacing-normal);
+      }
+      .wp-te-save-btn:hover {
+        background: var(--color-primary-hover);
+        box-shadow: 0 0 32px rgba(232, 168, 62, 0.25);
+      }
+      .wp-te-save-btn:active {
+        transform: scale(0.97);
+      }
+
+      /* ===== Utility ===== */
+      .wp-te-mono { font-family: var(--font-mono); }
+    </style>
+
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+      :focus-visible { box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-primary); outline: none; }
+      button, .wp-te-switch, .wp-te-conflict-header, .wp-te-time-display { cursor: pointer; }
+    </style>
+    <script>
+function toggleTheme() {
+  const html = document.documentElement;
+  html.classList.add('theme-transitioning');
+  html.classList.toggle('dark');
+  localStorage.setItem('wp-theme', html.classList.contains('dark') ? 'dark' : 'light');
+  setTimeout(() => html.classList.remove('theme-transitioning'), 500);
+}
+(function() {
+  const saved = localStorage.getItem('wp-theme');
+  if (saved === 'dark') document.documentElement.classList.add('dark');
+  else if (saved === 'light') document.documentElement.classList.remove('dark');
+  else if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+})();
+</script>
+</body>
+</html>

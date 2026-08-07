@@ -1,0 +1,179 @@
+<!-- Wake Plan — Mobile Project Shell Fragment -->
+<!-- Active tab is controlled via SLOT replacement: replace <!-- SLOT: activeTab --> with one of: today, plans, settings -->
+<!-- SLOT: activeTab -->
+
+<div class="wp-shell" style="
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--color-bg, #0F172A);
+  font-family: var(--font-body, 'SF Pro Text', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  color: var(--color-text-primary, #F8FAFC);
+  overflow: hidden;
+">
+
+  <!-- Status Bar Safe Area -->
+  <div class="wp-status-bar" style="
+    height: env(safe-area-inset-top, 0px);
+    min-height: env(safe-area-inset-top, 0px);
+    flex-shrink: 0;
+    background: var(--color-bg, #0F172A);
+  "></div>
+
+  <!-- Page Content Slot -->
+  <div class="wp-page-content" style="
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0;
+  ">
+    <!-- SLOT: pageContent -->
+  </div>
+
+  <!-- Bottom Tab Bar -->
+  <nav class="wp-tab-bar" style="
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 56px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--color-bg-elevated, #1E293B);
+    border-top: 1px solid var(--color-border, rgba(148, 163, 184, 0.12));
+    position: relative;
+    z-index: 100;
+  ">
+
+    <!-- Tab: Now / Today -->
+    <button class="wp-tab" data-tab-key="today" style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex: 1;
+      height: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-text-tertiary, #64748B);
+      transition: color var(--transition-fast, 150ms ease);
+      padding: 0;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    " aria-label="Now">
+
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="
+        transition: color var(--transition-fast, 150ms ease);
+      ">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+
+      <span style="
+        font-family: var(--font-body, 'SF Pro Text', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+        font-size: var(--text-xs, 11px);
+        line-height: var(--text-xs-lh, 16px);
+        font-weight: var(--font-weight-medium, 500);
+        letter-spacing: var(--letter-spacing-wide, 0.04em);
+        transition: color var(--transition-fast, 150ms ease);
+      ">现在</span>
+    </button>
+
+    <!-- Tab: Plans -->
+    <button class="wp-tab" data-tab-key="plans" style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex: 1;
+      height: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-text-tertiary, #64748B);
+      transition: color var(--transition-fast, 150ms ease);
+      padding: 0;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    " aria-label="Plans">
+
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="
+        transition: color var(--transition-fast, 150ms ease);
+      ">
+        <rect x="3" y="3" width="7" height="7"/>
+        <rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/>
+      </svg>
+
+      <span style="
+        font-family: var(--font-body, 'SF Pro Text', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+        font-size: var(--text-xs, 11px);
+        line-height: var(--text-xs-lh, 16px);
+        font-weight: var(--font-weight-medium, 500);
+        letter-spacing: var(--letter-spacing-wide, 0.04em);
+        transition: color var(--transition-fast, 150ms ease);
+      ">计划</span>
+    </button>
+
+    <!-- Tab: Settings -->
+    <button class="wp-tab" data-tab-key="settings" style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex: 1;
+      height: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-text-tertiary, #64748B);
+      transition: color var(--transition-fast, 150ms ease);
+      padding: 0;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    " aria-label="Settings">
+
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="
+        transition: color var(--transition-fast, 150ms ease);
+      ">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+
+      <span style="
+        font-family: var(--font-body, 'SF Pro Text', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+        font-size: var(--text-xs, 11px);
+        line-height: var(--text-xs-lh, 16px);
+        font-weight: var(--font-weight-medium, 500);
+        letter-spacing: var(--letter-spacing-wide, 0.04em);
+        transition: color var(--transition-fast, 150ms ease);
+      ">设置</span>
+    </button>
+
+  </nav>
+
+</div>
+
+<!-- Active Tab State Script (applies highlight based on SLOT: activeTab replacement) -->
+<script>
+(function() {
+  // The active tab value is injected by replacing the comment placeholder above.
+  // Assemblers should place a data attribute or replace the comment.
+  // Fallback: read from the shell's own data-active-tab if set.
+  var shell = document.querySelector('.wp-shell');
+  if (!shell) return;
+  var activeTab = shell.getAttribute('data-active-tab') || 'today';
+  var tabs = shell.querySelectorAll('.wp-tab[data-tab-key]');
+  tabs.forEach(function(tab) {
+    if (tab.getAttribute('data-tab-key') === activeTab) {
+      tab.style.color = 'var(--color-primary, #F59E0B)';
+    }
+  });
+})();
+</script>
