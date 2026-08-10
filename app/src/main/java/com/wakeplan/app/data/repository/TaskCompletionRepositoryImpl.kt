@@ -28,4 +28,7 @@ class TaskCompletionRepositoryImpl @Inject constructor(
     override suspend fun upsert(completion: TaskCompletion) {
         completionDao.insert(completion.toEntity()) // OnConflictStrategy.REPLACE
     }
+
+    override suspend fun getByDateRange(start: LocalDate, end: LocalDate): List<TaskCompletion> =
+        completionDao.getByDateRange(start, end).map { it.toDomain() }
 }

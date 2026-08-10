@@ -17,4 +17,7 @@ interface TaskCompletionRepository {
     suspend fun getById(id: String): TaskCompletion?
 
     suspend fun upsert(completion: TaskCompletion)
+
+    /** 日期范围一次性查询 — Phase 5.2 统计用 */
+    suspend fun getByDateRange(start: LocalDate, end: LocalDate): List<TaskCompletion>
 }

@@ -29,15 +29,17 @@ import com.wakeplan.app.ui.plan.SegmentEditorViewModel
 import com.wakeplan.app.ui.settings.SettingsScreen
 import com.wakeplan.app.ui.task.TaskEditorScreen
 import com.wakeplan.app.ui.task.TaskEditorViewModel
+import com.wakeplan.app.ui.stats.StatsScreen
 import com.wakeplan.app.ui.template.TemplateListScreen
 import com.wakeplan.app.ui.today.TodayScreen
 
 /**
  * 根导航 — Scaffold 内嵌 BottomBar + NavHost
  *
- * 路由表（v0.1 完成）：
+ * 路由表（v0.1 完成 + Phase 5.2.1 加 stats）：
  *   today                                                            → TodayScreen
  *   plans                                                            → PlanListScreen
+ *   stats                                                            → StatsScreen
  *   plans/create                                                     → CreatePlanScreen
  *   plans/{planId}                                                   → PlanDetailScreen
  *   plans/{planId}/segments/new                                      → SegmentEditorScreen (create)
@@ -107,6 +109,9 @@ private fun AppNavGraph(
                 onCreatePlan = { navController.navigate(Route.PlanCreate) },
                 onPlanClick = { plan -> navController.navigate(Route.planDetail(plan.id)) },
             )
+        }
+        composable(BottomTab.Stats.route) {
+            StatsScreen()
         }
         composable(BottomTab.Settings.route) {
             SettingsScreen(

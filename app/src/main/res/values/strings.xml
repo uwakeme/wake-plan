@@ -6,6 +6,7 @@
     <!-- 底部 tab 标签（5.3 决策：纯中文） -->
     <string name="tab_today">现在</string>
     <string name="tab_plans">计划</string>
+    <string name="tab_stats">统计</string>
     <string name="tab_settings">设置</string>
 
     <!-- 占位屏文案 -->

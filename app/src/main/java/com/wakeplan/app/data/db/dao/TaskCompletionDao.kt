@@ -43,4 +43,17 @@ interface TaskCompletionDao {
     /** 全表清空 — Phase 4.3 备份导入用 */
     @Query("DELETE FROM task_completions")
     suspend fun deleteAll()
+
+    /**
+     * 日期范围查询 — Phase 5.2 统计用
+     * @return [start, end) 半开区间内所有 completion，按 scheduledDate + plannedStart 升序
+     */
+    @Query(
+        """
+        SELECT * FROM task_completions
+        WHERE scheduled_date >= :start AND scheduled_date < :end
+        ORDER BY scheduled_date ASC, planned_start ASC
+        """,
+    )
+    suspend fun getByDateRange(start: LocalDate, end: LocalDate): List<TaskCompletionEntity>
 }

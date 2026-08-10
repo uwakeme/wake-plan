@@ -3,13 +3,15 @@ package com.wakeplan.app.ui.nav
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.wakeplan.app.R
 
 /**
- * 底部 3 tab — 对应 `design/partials/project-shell.html` 的 现在 / 计划 / 设置
+ * 底部 4 tab — 现在 / 计划 / 统计 / 设置
+ * Phase 5.2.1 加 统计 tab
  */
 enum class BottomTab(
     val route: String,
@@ -25,6 +27,11 @@ enum class BottomTab(
         route = "plans",
         labelRes = R.string.tab_plans,
         icon = Icons.Outlined.GridView,
+    ),
+    Stats(
+        route = "stats",
+        labelRes = R.string.tab_stats,
+        icon = Icons.Outlined.BarChart,
     ),
     Settings(
         route = "settings",
