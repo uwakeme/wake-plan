@@ -114,8 +114,8 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
-    // SQLCipher 4.6.1 AAR 损坏暂不启用
-    // implementation(libs.sqlcipher.android)
+    // SQLCipher 4.6.1：阿里云 / 腾讯云镜像都完整；用于 Room openHelperFactory 加密本地 DB
+    implementation(libs.sqlcipher.android)
     implementation(libs.sqlite.ktx)
 
     // DataStore

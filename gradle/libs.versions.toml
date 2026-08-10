@@ -6,7 +6,7 @@ hilt = "2.52"
 hiltNavCompose = "1.2.0"
 hiltWork = "1.2.0"
 room = "2.6.1"
-sqlcipher = "4.6.1"  # 暂未启用：阿里云镜像的 4.6.1 AAR 损坏（classes 跟 native lib 不同步），Phase 4 备份导出时再接
+sqlcipher = "4.6.1"  # 阿里云 / 腾讯云镜像都完整（16KB 对齐，RegisterNatives 注册），Phase 5.8 集成
 sqliteKtx = "2.4.0"
 navCompose = "2.8.3"
 composeBom = "2024.10.00"
@@ -54,8 +54,8 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
-# SQLCipher 4.6.1：阿里云镜像的 AAR 损坏（classes 跟 native lib 不同步，RegisterNatives 失败）；Phase 4 备份导出时再启用
-# sqlcipher-android = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "sqlcipher" }
+# SQLCipher 4.6.1：阿里云 / 腾讯云镜像都完整；Phase 5.8 集成作为 Room SQLite 的 openHelperFactory
+sqlcipher-android = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "sqlcipher" }
 sqlite-ktx = { group = "androidx.sqlite", name = "sqlite-ktx", version.ref = "sqliteKtx" }
 
 # DataStore

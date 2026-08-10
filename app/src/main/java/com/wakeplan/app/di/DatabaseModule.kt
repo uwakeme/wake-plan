@@ -8,25 +8,28 @@ import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
 import com.wakeplan.app.data.db.dao.TaskDao
 import com.wakeplan.app.data.db.dao.TimeSegmentDao
+import com.wakeplan.app.data.security.DatabaseKeyStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import javax.inject.Singleton
 
 /**
  * Database Module — 注入 Room Database + 5 个 DAO
  *
- * **SQLCipher 状态（v0.1 临时）**：
- * 阿里云 maven 镜像的 SQLCipher 4.6.1 AAR 损坏（classes 跟 native lib 不同步，RegisterNatives 失败）。
- * 4.5.x 系列 16KB page size 不兼容 Android 15+。Maven Central HTTPS 443 网络限制访问不到。
+ * **SQLCipher 集成（Phase 5.8）**：
+ * - DB passphrase 由 [DatabaseKeyStore] 管理
+ *   - master key 走 AndroidKeyStore（AES-GCM 256，不导出）
+ *   - 32 字节随机 passphrase wrap 后存 DataStore
+ * - SupportOpenHelperFactory 拿 passphrase 打开加密 DB
+ * - App.onCreate 同步 bootstrap（runBlocking < 100ms，OK on cold start）
  *
- * **临时方案**：v0.1 阶段不用 SQLCipher，Room 默认 SQLite（数据明文存）。
- * Phase 4 备份导出时**重新设计加密方案**：
- *   - 方案 A：自己编译 SQLCipher 4.6.1 本地 AAR
- *   - 方案 B：换 androidx.sqlite 集成方式
- *   - 方案 C：换其他加密方案（sqlcypher + Room 直接集成）
+ * **数据迁移**：
+ * - v0.1 → v0.2：从明文 SQLite 切到加密 → `fallbackToDestructiveMigration` 直接清表重建
+ *   （v0.2 仍没真实用户数据；首次发布前如果需要保留旧数据，要写 v0.1→v0.2 export + import 流程）
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -36,13 +39,17 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(
         @ApplicationContext context: Context,
+        keyStore: DatabaseKeyStore,
     ): WakePlanDatabase {
+        // App.onCreate 已经同步 bootstrap 过；这里直接拿 cached
+        val passphrase = keyStore.getCachedOrThrow()
+        val factory = SupportOpenHelperFactory(passphrase)
         return Room.databaseBuilder(
             context,
             WakePlanDatabase::class.java,
             WakePlanDatabase.DB_NAME,
         )
-            // 暂不传 openHelperFactory：v0.1 用 Room 默认 SQLite（无加密）
+            .openHelperFactory(factory)
             .fallbackToDestructiveMigration() // MVP 阶段；v0.2 加 Migration 测试后去掉
             .build()
     }
