@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- App name (manifest reference) -->
+    <!-- App name (referenced by manifest, keep) -->
     <string name="app_name">Wake Plan</string>
 
     <!-- Common -->
     <string name="common_back">Back</string>
     <string name="common_cancel">Cancel</string>
-    <string name="common_confirm">OK</string>
+    <string name="common_confirm">Confirm</string>
     <string name="common_delete">Delete</string>
     <string name="common_save">Save</string>
     <string name="common_loading">Loading…</string>
@@ -19,9 +19,9 @@
     <string name="tab_stats">Stats</string>
     <string name="tab_settings">Settings</string>
 
-    <!-- Placeholder screen text (legacy, may be unused) -->
+    <!-- Placeholder screens (legacy) -->
     <string name="placeholder_today_title">Wake Plan</string>
-    <string name="placeholder_today_subtitle">Now</string>
+    <string name="placeholder_today_subtitle">Current time</string>
     <string name="placeholder_plans_title">Plan list</string>
     <string name="placeholder_settings_title">Settings</string>
 
@@ -30,9 +30,9 @@
     <string name="repeat_weekdays">Weekdays</string>
     <string name="repeat_daily">Daily</string>
     <string name="repeat_custom">Custom</string>
-    <string name="repeat_custom_invalid">CUSTOM rule must select at least 1 day</string>
+    <string name="repeat_custom_invalid">CUSTOM must select at least 1 day</string>
 
-    <!-- Weekday single-letter labels -->
+    <!-- Weekday single-letter labels (DayOfWeek tags) -->
     <string name="weekday_mon">M</string>
     <string name="weekday_tue">T</string>
     <string name="weekday_wed">W</string>
@@ -48,19 +48,23 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get started</string>
     <string name="onboarding_step1_title">Welcome to Wake Plan</string>
-    <string name="onboarding_step1_body">Keep fitness / study / side project separate.\nWhen it\'s time, the app reminds you.</string>
+    <string name="onboarding_step1_body">Manage fitness / study / side hustle separately.
+When the time comes, the app reminds you on time.</string>
     <string name="onboarding_step2_title">Enable notifications</string>
-    <string name="onboarding_step2_body">Wake Plan sends local notifications 5 min before a task starts, and when a task runs over.\nAll notifications stay on-device — no cloud upload.</string>
+    <string name="onboarding_step2_body">5 minutes before a task starts, or when a task is overdue,
+Wake Plan sends a local notification.
+All notifications stay on your device — never uploaded to any cloud.</string>
     <string name="onboarding_request_permission">Request notification permission</string>
-    <string name="onboarding_permission_granted">✓ Notification permission granted</string>
-    <string name="onboarding_step3_title">Ready to go</string>
-    <string name="onboarding_step3_body_granted">Notifications are on. You can create your first plan now.</string>
-    <string name="onboarding_step3_body_denied">Notifications are off (you can turn them on in Settings anytime).\nTap the button below to continue.</string>
+    <string name="onboarding_permission_granted">✓ Notification permission enabled</string>
+    <string name="onboarding_step3_title">You\'re all set</string>
+    <string name="onboarding_step3_body_granted">Notification is enabled. Time to create your first plan.</string>
+    <string name="onboarding_step3_body_denied">Notification is disabled (you can enable it in Settings anytime).
+Tap the button below to continue.</string>
 
     <!-- ============================================================ -->
     <!-- Today screen -->
     <!-- ============================================================ -->
-    <string name="today_title_today">Today, %1$s</string>
+    <string name="today_title_today">Today %1$s</string>
     <string name="today_title_other">Viewing %1$s</string>
     <string name="today_btn_today">Today</string>
     <string name="today_cd_prev_day">Previous day</string>
@@ -68,10 +72,10 @@
     <string name="today_timeline_title_today">Today\'s timeline</string>
     <string name="today_timeline_title_other">%1$s timeline</string>
     <string name="today_no_tasks_today">No tasks today</string>
-    <string name="today_no_tasks_other">No tasks this day</string>
-    <string name="today_empty_title_today">No plans today</string>
+    <string name="today_no_tasks_other">No tasks on this day</string>
+    <string name="today_empty_title_today">No plans for today yet</string>
     <string name="today_empty_title_other">No plans on %1$s</string>
-    <string name="today_empty_subtitle">Tap the Plans tab to create one</string>
+    <string name="today_empty_subtitle">Go to the "Plans" tab to create one</string>
     <string name="today_segment_default_title">Segment</string>
     <string name="today_segment_next_day"> — next day %1$s</string>
     <string name="today_btn_start">Start</string>
@@ -92,87 +96,84 @@
     <!-- Plan list / detail / create -->
     <!-- ============================================================ -->
     <string name="plan_list_cd_new">New plan</string>
-    <string name="plan_list_start_date">Start %1$s</string>
+    <string name="plan_list_start_date">Started %1$s</string>
     <string name="plan_list_empty_title">No plans yet</string>
-    <string name="plan_list_empty_subtitle">Tap + to create one.\nKeep fitness / study / side project separate.</string>
-
+    <string name="plan_list_empty_subtitle">Tap + to create one,
+and manage fitness / study / side hustle separately</string>
     <string name="plan_detail_title_fallback">Plan details</string>
     <string name="plan_detail_cd_delete">Delete plan</string>
     <string name="plan_detail_cd_add_segment">Add segment</string>
     <string name="plan_detail_delete_dialog_title">Delete plan?</string>
-    <string name="plan_detail_delete_dialog_text">This will delete \"%1$s\" and all its segments and tasks. This cannot be undone.</string>
-    <string name="plan_detail_header_subtitle">Start %1$s · %2$s</string>
+    <string name="plan_detail_delete_dialog_text">This will delete "%1$s" and all its segments and tasks. This cannot be undone.</string>
+    <string name="plan_detail_header_subtitle">Started %1$s · %2$s</string>
     <string name="plan_detail_status_active">Active</string>
     <string name="plan_detail_status_archived">Archived</string>
-    <string name="plan_detail_no_segments">No segments yet. Tap + to add one (e.g. \"Workout 06:30-07:30\")</string>
+    <string name="plan_detail_no_segments">No segments yet. Tap + to add a time window (e.g. "Morning workout 06:30-07:30").</string>
     <string name="plan_detail_segment_cd_edit">Edit segment</string>
     <string name="plan_detail_segment_cd_delete">Delete segment</string>
-    <string name="plan_detail_no_tasks_in_segment">No tasks in this segment</string>
+    <string name="plan_detail_no_tasks_in_segment">No tasks in this segment yet</string>
     <string name="plan_detail_add_task">Add task</string>
     <string name="plan_detail_task_cd_edit">Edit task</string>
     <string name="plan_detail_task_cd_delete">Delete task</string>
-
     <string name="plan_create_title">New plan</string>
     <string name="plan_create_section_color">Color</string>
     <string name="plan_create_section_start_date">Start date</string>
-    <string name="plan_create_default_today">%1$s (default: today)</string>
+    <string name="plan_create_default_today">%1$s (today by default)</string>
     <string name="plan_create_field_title">Title</string>
-    <string name="plan_create_field_title_placeholder">e.g. Fitness / Study / Side project</string>
+    <string name="plan_create_field_title_placeholder">e.g. Fitness / Study / Side hustle</string>
     <string name="plan_create_title_counter">1-%1$d characters</string>
-    <string name="plan_create_title_too_long">Title cannot exceed %1$d characters</string>
+    <string name="plan_create_title_too_long">Title must be at most %1$d characters</string>
     <string name="plan_create_color_selected_cd">Selected</string>
     <string name="plan_create_custom_hex_label">Custom hex (optional)</string>
     <string name="plan_create_custom_hex_placeholder">#RRGGBB, e.g. #FF5733</string>
     <string name="plan_create_current_hex">Current: %1$s</string>
 
     <!-- ============================================================ -->
-    <!-- Segment / Task editor -->
+    <!-- Segment / Task Editor -->
     <!-- ============================================================ -->
     <string name="segment_editor_title_new">New segment</string>
     <string name="segment_editor_title_edit">Edit segment</string>
     <string name="segment_editor_cd_delete">Delete segment</string>
     <string name="segment_editor_field_title_label">Segment title (optional)</string>
-    <string name="segment_editor_field_title_placeholder">e.g. Workout / Study / Side project</string>
+    <string name="segment_editor_field_title_placeholder">e.g. Workout / Study / Side hustle</string>
     <string name="segment_editor_start_label">Start %1$s</string>
     <string name="segment_editor_end_label">End %1$s</string>
     <string name="segment_editor_repeat_label">Repeat</string>
-    <string name="segment_editor_custom_days_label">Select days</string>
+    <string name="segment_editor_custom_days_label">Select weekdays</string>
     <string name="segment_editor_delete_dialog_title">Delete segment?</string>
-    <string name="segment_editor_delete_dialog_text">Tasks inside this segment will also be deleted.</string>
-    <string name="segment_editor_overlap_warning">Overlaps with %1$d other segment(s)</string>
-    <string name="segment_editor_picker_confirm">OK</string>
-
+    <string name="segment_editor_delete_dialog_text">All tasks in this segment will also be deleted.</string>
+    <string name="segment_editor_overlap_warning">Overlaps with %1$d segment(s)</string>
+    <string name="segment_editor_picker_confirm">Confirm</string>
     <string name="task_editor_title_new">New task</string>
     <string name="task_editor_title_edit">Edit task</string>
     <string name="task_editor_cd_delete">Delete task</string>
     <string name="task_editor_field_title_label">Task title</string>
     <string name="task_editor_field_title_placeholder">e.g. Run 30 min</string>
-    <string name="task_editor_field_duration_label">Planned duration (min)</string>
-    <string name="task_editor_field_auto_extend_label">Auto-extend</string>
-    <string name="task_editor_field_auto_extend_desc">Drag later tasks when this one runs over</string>
+    <string name="task_editor_field_duration_label">Planned duration (minutes)</string>
+    <string name="task_editor_field_auto_extend_label">Auto extend</string>
+    <string name="task_editor_field_auto_extend_desc">Push back following tasks when this one over-runs</string>
     <string name="task_editor_field_locked_label">Pin to scheduled time</string>
-    <string name="task_editor_field_locked_desc">Locked tasks do not auto-extend</string>
+    <string name="task_editor_field_locked_desc">Pinned tasks are not affected by auto-extend</string>
     <string name="task_editor_field_note_label">Note (optional)</string>
     <string name="task_editor_delete_dialog_title">Delete task?</string>
     <string name="task_editor_delete_dialog_text">This cannot be undone.</string>
-    <string name="task_editor_overload_warning">Segment overloaded by +%1$d min</string>
-    <string name="task_editor_overflow_warning">Segment is %1$d min; savable but tasks will overflow</string>
+    <string name="task_editor_overload_warning">Segment over-loaded by +%1$d min</string>
+    <string name="task_editor_overflow_warning">Segment is %1$d min; you can save but tasks will overflow</string>
 
     <!-- ============================================================ -->
     <!-- Template list / detail -->
     <!-- ============================================================ -->
     <string name="template_list_title">Templates</string>
-    <string name="template_list_hint">Tap a template to preview segments and tasks</string>
+    <string name="template_list_hint">Tap a card to preview segments + tasks; 5.4.2 adds "Apply template"</string>
     <string name="template_list_built_in">Built-in</string>
     <string name="template_list_user">User</string>
-
     <string name="template_detail_title_fallback">Template details</string>
     <string name="template_detail_summary_today">Built-in template has no segments</string>
     <string name="template_detail_summary_user">User template has no segments</string>
     <string name="template_detail_stats">%1$d segments · %2$d tasks</string>
-    <string name="template_detail_apply">Apply template</string>
+    <string name="template_detail_apply">Apply this template</string>
     <string name="template_detail_applying">Creating…</string>
-    <string name="template_detail_segment_no_tasks">No tasks in this segment</string>
+    <string name="template_detail_segment_no_tasks">No tasks in this segment yet</string>
 
     <!-- ============================================================ -->
     <!-- Settings screen -->
@@ -181,52 +182,49 @@
     <string name="settings_section_templates">Templates</string>
     <string name="settings_section_templates_subtitle">3 built-in templates (Morning workout / Study / Weekend reading)</string>
     <string name="settings_section_notifications">Notifications</string>
-    <string name="settings_item_starting_title">Starting reminder</string>
-    <string name="settings_item_starting_subtitle">Push N minutes before task starts</string>
-    <string name="settings_item_overdue_title">Overdue reminder</string>
-    <string name="settings_item_overdue_subtitle">Repeatedly remind if task runs over</string>
-    <string name="settings_item_completed_title">Completion confirmation</string>
-    <string name="settings_item_completed_subtitle">Reserved for v0.1, enabled in v0.2</string>
+    <string name="settings_item_starting_title">Task starting reminder</string>
+    <string name="settings_item_starting_subtitle">Notify N minutes before a task starts</string>
+    <string name="settings_item_overdue_title">Task overdue reminder</string>
+    <string name="settings_item_overdue_subtitle">Loop reminders while a task is overdue</string>
+    <string name="settings_item_completed_title">Task completion confirmation</string>
+    <string name="settings_item_completed_subtitle">Placeholder in v0.1, enabled in v0.2</string>
     <string name="settings_item_recap_title">Daily plan recap</string>
-    <string name="settings_item_recap_subtitle">Push at 21:00 daily (reserved for v0.1)</string>
-    <string name="settings_item_lead_minutes_title">%1$d min</string>
-    <string name="settings_item_lead_minutes_subtitle">Push N minutes before task starts</string>
-    <string name="settings_item_lead_minutes_value_zero">No lead</string>
+    <string name="settings_item_recap_subtitle">Sent at 21:00 daily (placeholder in v0.1)</string>
+    <string name="settings_item_lead_minutes_title">%1$d minutes</string>
+    <string name="settings_item_lead_minutes_subtitle">How many minutes before a task to send the notification</string>
+    <string name="settings_item_lead_minutes_value_zero">Don\'t notify early</string>
     <string name="settings_item_lead_minutes_value_n">%1$d min</string>
     <string name="settings_test_notification_title">Test notification</string>
     <string name="settings_test_notification_btn">Send test notification</string>
-
-    <string name="settings_section_backup">Backup</string>
-    <string name="settings_backup_intro">Export data to a local file, or restore from a backup file.\nEncrypted backups use AES-256 + PBKDF2 — keep your passphrase safe.</string>
+    <string name="settings_section_backup">Data backup</string>
+    <string name="settings_backup_intro">Export your data to a local file, or restore from a backup.
+Encrypted backups use AES-256 + PBKDF2. Keep your password safe — it cannot be recovered.</string>
     <string name="settings_backup_export_plain">Export plain</string>
     <string name="settings_backup_export_encrypted">Export encrypted</string>
     <string name="settings_backup_import">Import backup</string>
     <string name="settings_backup_exporting">Exporting…</string>
     <string name="settings_backup_importing">Importing…</string>
-
     <string name="settings_export_plain_dialog_title">Export plain backup</string>
-    <string name="settings_export_plain_dialog_text">Plain backups are not encrypted — the JSON can be read directly.\nOpen it in any text editor.</string>
-    <string name="settings_export_pick_location">Pick location</string>
-
+    <string name="settings_export_plain_dialog_text">Plain backups are not encrypted; file content can be read directly.
+Exported JSON can be opened with any text editor.</string>
+    <string name="settings_export_pick_location">Pick a location</string>
     <string name="settings_export_encrypted_dialog_title">Export encrypted backup</string>
-    <string name="settings_export_encrypted_dialog_message">Set a passphrase of at least %1$d characters.\nIf you forget the passphrase, the data cannot be recovered.</string>
+    <string name="settings_export_encrypted_dialog_message">Set a password of at least %1$d characters.
+Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="settings_import_encrypted_dialog_title">Import encrypted backup</string>
-    <string name="settings_import_encrypted_dialog_message">This is an encrypted backup. Enter the passphrase.</string>
-
+    <string name="settings_import_encrypted_dialog_message">This is an encrypted backup. Please enter the password.</string>
     <string name="settings_passphrase_field_label">Passphrase</string>
     <string name="settings_passphrase_field_repeat_label">Enter again</string>
     <string name="settings_passphrase_error_empty">Passphrase cannot be empty</string>
     <string name="settings_passphrase_error_too_short">Passphrase must be at least %1$d characters</string>
-    <string name="settings_passphrase_error_mismatch">The two passphrases do not match</string>
-
+    <string name="settings_passphrase_error_mismatch">The two entries do not match</string>
     <string name="settings_import_confirm_title">Confirm import?</string>
-    <string name="settings_import_confirm_text">Importing a backup will completely overwrite all current plans, segments, tasks and completions.</string>
-    <string name="settings_import_confirm_subtext">This cannot be undone. We recommend exporting your current data first.</string>
-    <string name="settings_import_confirm_action">Overwrite and import</string>
-
-    <string name="settings_export_success">Exported: %1$d KB</string>
+    <string name="settings_import_confirm_text">Importing will completely overwrite all current plans, segments, tasks and completions.</string>
+    <string name="settings_import_confirm_subtext">This cannot be undone. Recommended: export a current-data backup first.</string>
+    <string name="settings_import_confirm_action">Overwrite &amp; import</string>
+    <string name="settings_export_success">Export successful: %1$d KB</string>
     <string name="settings_export_failed">Export failed: %1$s</string>
-    <string name="settings_import_success">Imported: %1$d plans / %2$d tasks / %3$d completions</string>
+    <string name="settings_import_success">Import successful: %1$d plans / %2$d tasks / %3$d completions</string>
     <string name="settings_import_failed">Import failed: %1$s</string>
     <string name="settings_import_failed_needs_passphrase">Backup file is encrypted</string>
 
@@ -240,12 +238,12 @@
     <string name="stats_metric_on_time_rate">On-time rate</string>
     <string name="stats_metric_avg_overrun">Avg overrun</string>
     <string name="stats_metric_avg_overrun_empty">—</string>
-    <string name="stats_metric_skipped_missed">Skipped / missed</string>
+    <string name="stats_metric_skipped_missed">Skipped/Missed</string>
     <string name="stats_per_plan_title">Completions by plan</string>
     <string name="stats_per_plan_empty">No tasks completed in this range</string>
-    <string name="stats_empty_title">No data</string>
-    <string name="stats_empty_subtitle">Once you complete tasks, stats will show here</string>
+    <string name="stats_empty_title">No data yet</string>
+    <string name="stats_empty_subtitle">Once you complete tasks, stats will appear here</string>
     <string name="stats_per_day_title">Daily completions</string>
     <string name="stats_per_day_empty">No tasks completed in this range</string>
-    <string name="stats_per_plan_bar_title">Completions by plan</string>
+    <string name="stats_per_plan_bar_title">Completions by plan (bar)</string>
 </resources>
