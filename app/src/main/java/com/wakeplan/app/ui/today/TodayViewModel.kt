@@ -21,8 +21,10 @@ import com.wakeplan.app.notification.StartingAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -90,6 +92,32 @@ class TodayViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val today: LocalDate = LocalDate.now(clock)
+
+    /**
+     * 可撤销动作 — Phase 5.1
+     *
+     * 用户做状态机操作后，ViewModel 把"操作前的快照"emit 出来，UI 弹 Snackbar
+     * 用户点"撤销"时调 [undo] 把快照写回；不点则 5s 后 UI 自动 consume 掉
+     * 只存最近一个动作（不做撤销栈，简化 v0.2）
+     */
+    sealed interface UndoableAction {
+        val completionId: String
+        val timestamp: Long
+        val previous: TaskCompletion
+
+        data class Start(override val completionId: String, override val previous: TaskCompletion) : UndoableAction {
+            override val timestamp: Long = System.currentTimeMillis()
+        }
+        data class Complete(override val completionId: String, override val previous: TaskCompletion) : UndoableAction {
+            override val timestamp: Long = System.currentTimeMillis()
+        }
+        data class Skip(override val completionId: String, override val previous: TaskCompletion) : UndoableAction {
+            override val timestamp: Long = System.currentTimeMillis()
+        }
+    }
+
+    private val _undoableAction = MutableStateFlow<UndoableAction?>(null)
+    val undoableAction: StateFlow<UndoableAction?> = _undoableAction.asStateFlow()
 
     /** 每 60s tick 一次，刷新 now；首次进入立即 emit */
     private val tickFlow: Flow<LocalDateTime> = flow {
@@ -198,6 +226,7 @@ class TodayViewModel @Inject constructor(
                 actualStart = now,
             ))
             startingAlarmScheduler.cancelStartingAlarm(completionId)
+            _undoableAction.value = UndoableAction.Start(completionId, c)
         }
     }
 
@@ -213,6 +242,7 @@ class TodayViewModel @Inject constructor(
                 actualEnd = now,
                 overrunMinutes = overrun,
             ))
+            _undoableAction.value = UndoableAction.Complete(completionId, c)
         }
     }
 
@@ -223,6 +253,35 @@ class TodayViewModel @Inject constructor(
             if (c.status == TaskStatus.COMPLETED || c.status == TaskStatus.SKIPPED) return@launch
             taskCompletionRepository.upsert(c.copy(status = TaskStatus.SKIPPED))
             startingAlarmScheduler.cancelStartingAlarm(completionId)
+            _undoableAction.value = UndoableAction.Skip(completionId, c)
         }
+    }
+
+    // ===== Phase 5.1 撤销 =====
+
+    /**
+     * 撤销最近一个动作（如果有）
+     * 把 [UndoableAction.previous] 快照写回 repository
+     * 副作用：可能跟 next tick 的 AutoExtend 重算冲突（用户撤销"complete"后 next tick 又会重算）
+     * 但这种情况用户预期是"撤销 = 回到之前的状态"，符合直觉
+     */
+    fun undo() {
+        val action = _undoableAction.value ?: return
+        _undoableAction.value = null
+        viewModelScope.launch {
+            // 直接 upsert 回去；如果当前 state 已经被人手动改了，previous 是旧值，写回就是用户要的
+            taskCompletionRepository.upsert(action.previous)
+            // 撤销 PENDING 的话不需要 re-schedule（用户撤回到 PENDING，auto-extend 下次 tick 会重算）
+            // 撤销 IN_PROGRESS 也是同理
+            // 撤销 COMPLETED → SKIPPED 同理
+            // 简单起见不重设 alarm；用户下次进 app 触发 ensureTodayCompletions 会重排
+        }
+    }
+
+    /**
+     * 清除 UndoableAction（UI 在 5s 过期或用户点其他地方时调）
+     */
+    fun consumeUndo() {
+        _undoableAction.value = null
     }
 }

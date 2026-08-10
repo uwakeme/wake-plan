@@ -31,6 +31,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -86,8 +90,11 @@ fun TodayScreen() {
     val viewModel: TodayViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val highlightedTaskId by HighlightBus.highlightedTaskId.collectAsState()
+    val undoableAction by viewModel.undoableAction.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.ensureTodayCompletions()
@@ -106,12 +113,33 @@ fun TodayScreen() {
         }
     }
 
+    // 撤销 Snackbar：5s 窗口，点了撤销调 viewModel.undo()
+    LaunchedEffect(undoableAction) {
+        val action = undoableAction ?: return@LaunchedEffect
+        val message = when (action) {
+            is TodayViewModel.UndoableAction.Start -> "已开始"
+            is TodayViewModel.UndoableAction.Complete -> "已完成"
+            is TodayViewModel.UndoableAction.Skip -> "已跳过"
+        }
+        val result = snackbarHostState.showSnackbar(
+            message = message,
+            actionLabel = "撤销",
+            withDismissAction = true,
+            duration = SnackbarDuration.Short,  // ~5s
+        )
+        when (result) {
+            SnackbarResult.ActionPerformed -> viewModel.undo()
+            SnackbarResult.Dismissed -> viewModel.consumeUndo()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("今日 ${state.date.format(DATE_FMT)}") },
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         if (state.planItems.isEmpty()) {
             EmptyTodayState(modifier = Modifier.padding(padding))
