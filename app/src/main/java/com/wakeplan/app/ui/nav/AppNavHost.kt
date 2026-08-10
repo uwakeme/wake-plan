@@ -214,7 +214,11 @@ private fun AppNavGraph(
         ) {
             TemplateDetailScreen(
                 onBack = { navController.popBackStack() },
-                onApply = { /* Phase 5.4.2: 调 createPlanFromTemplate + 跳新 plan 详情 */ },
+                onApply = { newPlanId ->
+                    // 应用模板成功 → 跳到新 plan 详情；先 popBackStack TemplateList，再 navigate
+                    navController.popBackStack(route = Route.Templates, inclusive = false)
+                    navController.navigate(Route.planDetail(newPlanId))
+                },
             )
         }
     }

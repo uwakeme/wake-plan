@@ -26,11 +26,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,13 +50,13 @@ import com.wakeplan.app.domain.model.TimeSegment
 import java.time.DayOfWeek
 
 /**
- * 模板详情屏 — Phase 5.4.1
+ * 模板详情屏 — Phase 5.4.1 + 5.4.2
  *
  * 布局：
  * - TopAppBar: 返回 + 模板标题
  * - 头部：色点 + 标题 + "内置模板/用户模板" 标签 + 简短描述
  * - 段卡片列表（只读；显示时间 + 重复规则 + 内嵌任务列表）
- * - 底部："应用此模板" 按钮（5.4.2 实装，目前显示但 disabled）
+ * - 底部："应用此模板" 按钮（5.4.2：enable，按下后调 viewModel.applyTemplate，成功后通知 onApply(newPlanId)）
  *
  * 设计：跟 PlanDetailScreen 形态相似但只读；不要让用户编辑模板内容
  */
@@ -60,10 +64,27 @@ import java.time.DayOfWeek
 @Composable
 fun TemplateDetailScreen(
     onBack: () -> Unit,
-    onApply: (PlanTemplate) -> Unit = {},
+    onApply: (newPlanId: String) -> Unit = {},
     viewModel: TemplateDetailViewModel = hiltViewModel(),
 ) {
     val template by viewModel.template.collectAsStateWithLifecycle()
+    val applyState by viewModel.applyState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // 监听 applyState 变化：Success → onApply(newPlanId) + 重置；Error → Snackbar
+    LaunchedEffect(applyState) {
+        when (val s = applyState) {
+            is TemplateDetailViewModel.ApplyState.Success -> {
+                onApply(s.newPlanId)
+                viewModel.consumeApplyResult()
+            }
+            is TemplateDetailViewModel.ApplyState.Error -> {
+                snackbarHostState.showSnackbar(s.message)
+                viewModel.consumeApplyResult()
+            }
+            else -> Unit
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -76,6 +97,7 @@ fun TemplateDetailScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         val current = template
         if (current == null) {
@@ -90,8 +112,9 @@ fun TemplateDetailScreen(
 
         TemplateDetailBody(
             template = current,
+            applyState = applyState,
             contentPadding = padding,
-            onApply = onApply,
+            onApplyClick = { viewModel.applyTemplate() },
         )
     }
 }
@@ -99,8 +122,9 @@ fun TemplateDetailScreen(
 @Composable
 private fun TemplateDetailBody(
     template: PlanTemplate,
+    applyState: TemplateDetailViewModel.ApplyState,
     contentPadding: PaddingValues,
-    onApply: (PlanTemplate) -> Unit,
+    onApplyClick: () -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -113,7 +137,7 @@ private fun TemplateDetailBody(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { TemplateHeader(template) }
-        item { ApplyButtonRow(template, onApply) }
+        item { ApplyButtonRow(applyState = applyState, onClick = onApplyClick) }
 
         if (template.segments.isEmpty()) {
             item {
@@ -186,16 +210,16 @@ private fun TemplateHeader(template: PlanTemplate) {
 
 @Composable
 private fun ApplyButtonRow(
-    template: PlanTemplate,
-    onApply: (PlanTemplate) -> Unit,
+    applyState: TemplateDetailViewModel.ApplyState,
+    onClick: () -> Unit,
 ) {
-    // 5.4.1：按钮显示但走占位（enable=false），5.4.2 接 createPlanFromTemplate
+    val running = applyState is TemplateDetailViewModel.ApplyState.Running
     Button(
-        onClick = { onApply(template) },
-        enabled = false,  // TODO 5.4.2: enable = true
+        onClick = onClick,
+        enabled = !running,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text("应用此模板（5.4.2 实装）")
+        Text(if (running) "正在创建…" else "应用此模板")
     }
 }
 
