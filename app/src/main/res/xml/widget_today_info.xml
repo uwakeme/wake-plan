@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AppWidget metadata — 4x2 mini timeline
+  Phase 5.6 MVP：1 个固定 4x2 widget，updatePeriodMillis=30 分钟
+  （系统最小值 30min，更新频率不能更高；想更准可改用 AlarmManager）
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="100dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_loading"
+    android:previewLayout="@layout/widget_today"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:configure=""
+    android:description="@string/widget_title" />

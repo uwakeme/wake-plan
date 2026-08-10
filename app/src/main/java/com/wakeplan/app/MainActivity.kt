@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.notification.NotificationBuilder
 import com.wakeplan.app.ui.common.HighlightBus
+import com.wakeplan.app.ui.common.NavEventBus
 import com.wakeplan.app.ui.nav.AppNavHost
 import com.wakeplan.app.ui.onboarding.OnboardingScreen
 import com.wakeplan.app.ui.theme.WakePlanTheme
@@ -58,9 +59,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDeepLink(intent: Intent?) {
-        val taskId = intent?.getStringExtra(NotificationBuilder.EXTRA_TASK_ID) ?: return
+        if (intent == null) return
+        // 5.6 widget 入口：跳 Today tab
+        if (intent.getBooleanExtra(com.wakeplan.app.widget.TodayWidgetProvider.EXTRA_NAV_TO_TODAY, false)) {
+            NavEventBus.emit(NavEventBus.Event.NavToToday)
+            intent.removeExtra(com.wakeplan.app.widget.TodayWidgetProvider.EXTRA_NAV_TO_TODAY)
+        }
+        // 通知 deep link：跳到对应 task 高亮
+        val taskId = intent.getStringExtra(NotificationBuilder.EXTRA_TASK_ID) ?: return
         HighlightBus.emit(taskId)
-        // 清除 extras 避免重复触发
         intent.removeExtra(NotificationBuilder.EXTRA_TASK_ID)
         intent.removeExtra(NotificationBuilder.EXTRA_COMPLETION_ID)
     }

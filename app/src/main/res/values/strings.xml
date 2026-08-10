@@ -248,4 +248,17 @@
     <string name="stats_per_day_title">每日完成数</string>
     <string name="stats_per_day_empty">这段时间还没完成过任务</string>
     <string name="stats_per_plan_bar_title">按计划完成柱状</string>
+
+    <!-- ============================================================ -->
+    <!-- AppWidget (Phase 5.6) -->
+    <!-- ============================================================ -->
+    <string name="widget_title">今日</string>
+    <string name="widget_loading">Wake Plan…</string>
+    <string name="widget_progress_label_zero">—</string>
+    <string name="widget_progress_label_pct">已过 %1$d%%</string>
+    <string name="widget_task_count_zero">0 任务</string>
+    <string name="widget_task_count_n">%1$d 任务</string>
+    <string name="widget_next_task_empty">点击查看今日计划</string>
+    <string name="widget_next_task_at">下一个 %1$s · %2$s</string>
+    <string name="widget_no_plan">还没有计划</string>
 </resources>

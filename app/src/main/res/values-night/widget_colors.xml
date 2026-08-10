@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 5.6 AppWidget dark mode 配色 -->
+    <color name="widget_surface">#FF1F1A12</color>          <!-- deep warm dark -->
+    <color name="widget_outline">#FF3A3225</color>          <!-- subtle outline -->
+    <color name="widget_text_primary">#FFFAF6EF</color>     <!-- warm white -->
+    <color name="widget_text_secondary">#FFB8A98A</color>   <!-- warm muted -->
+    <color name="widget_progress">#FFE9A547</color>         <!-- brighter primary in dark -->
+    <color name="widget_progress_bg">#FF3A3225</color>      <!-- dark progress bg -->
+</resources>

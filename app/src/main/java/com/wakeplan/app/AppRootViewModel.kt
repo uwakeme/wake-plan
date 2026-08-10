@@ -14,6 +14,9 @@ import javax.inject.Inject
  *
  * 决定 MainActivity 显示 OnboardingScreen 还是 AppNavHost
  * 读 `UserPreferences.hasShownOnboarding` Flow
+ *
+ * Phase 5.6：跨 Activity 边界的导航指令走 [com.wakeplan.app.ui.common.NavEventBus]，
+ * AppNavHost 自行 collect（不在这层 ViewModel）
  */
 @HiltViewModel
 class AppRootViewModel @Inject constructor(

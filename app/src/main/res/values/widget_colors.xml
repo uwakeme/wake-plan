@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 5.6 AppWidget 配色 — 跟 Compose 主题 dark/light mode 自动切换 -->
+    <color name="widget_surface">#FFFAF6EF</color>          <!-- light: warm white -->
+    <color name="widget_outline">#FFD9CFB8</color>          <!-- light: 沙色描边 -->
+    <color name="widget_text_primary">#FF1F1A12</color>     <!-- warm black -->
+    <color name="widget_text_secondary">#FF756B57</color>   <!-- muted brown -->
+    <color name="widget_progress">#FFC48520</color>         <!-- 晨光金 primary -->
+    <color name="widget_progress_bg">#FFE6DDC8</color>      <!-- 浅米色 progress 背景 -->
+</resources>

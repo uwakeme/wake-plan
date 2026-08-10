@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  5.6 AppWidget layout — 4x2 mini timeline
+  组件：
+  - 标题行：今日日期 + 周几
+  - 24h progress bar：当前时刻占 24h 比例（用 ProgressBar）
+  - 下一个 task 文本：标题 + 开始时间（hardcoded placeholder v0.2）
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_background">
+
+    <!-- 标题行：今日 + 日期 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/widget_title"
+            android:textColor="@color/widget_text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="11sp"
+            android:singleLine="true" />
+    </LinearLayout>
+
+    <!-- 24h 时间线 progress：0-100 表示一天进度 -->
+    <ProgressBar
+        android:id="@+id/widget_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="6dp"
+        android:max="100"
+        android:progress="0"
+        android:progressTint="@color/widget_progress"
+        android:progressBackgroundTint="@color/widget_progress_bg" />
+
+    <!-- 进度百分比 + 任务数 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_progress_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/widget_progress_label_zero"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/widget_task_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_task_count_zero"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <!-- 下一个 task 标题（占 1 行，超出 ellipsize） -->
+    <TextView
+        android:id="@+id/widget_next_task"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="6dp"
+        android:gravity="center_vertical"
+        android:text="@string/widget_next_task_empty"
+        android:textColor="@color/widget_text_primary"
+        android:textSize="13sp"
+        android:singleLine="true"
+        android:ellipsize="end" />
+
+</LinearLayout>

@@ -8,6 +8,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -20,6 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.wakeplan.app.ui.common.NavEventBus
 import com.wakeplan.app.ui.plan.CreatePlanScreen
 import com.wakeplan.app.ui.plan.PlanDetailScreen
 import com.wakeplan.app.ui.plan.PlanDetailViewModel
@@ -57,6 +59,21 @@ fun AppNavHost() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+
+    // Phase 5.6: 跨 Activity 边界的导航指令 — widget / Quick Settings Tile 触发
+    LaunchedEffect(Unit) {
+        NavEventBus.events.collect { event ->
+            when (event) {
+                is NavEventBus.Event.NavToToday -> {
+                    navController.navigate(BottomTab.Today.route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {

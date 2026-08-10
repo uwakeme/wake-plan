@@ -246,4 +246,17 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="stats_per_day_title">Daily completions</string>
     <string name="stats_per_day_empty">No tasks completed in this range</string>
     <string name="stats_per_plan_bar_title">Completions by plan (bar)</string>
+
+    <!-- ============================================================ -->
+    <!-- AppWidget (Phase 5.6) -->
+    <!-- ============================================================ -->
+    <string name="widget_title">Today</string>
+    <string name="widget_loading">Wake Plan…</string>
+    <string name="widget_progress_label_zero">—</string>
+    <string name="widget_progress_label_pct">%1$d%% through the day</string>
+    <string name="widget_task_count_zero">0 tasks</string>
+    <string name="widget_task_count_n">%1$d tasks</string>
+    <string name="widget_next_task_empty">Tap to see today\'s plan</string>
+    <string name="widget_next_task_at">Next: %1$s · %2$s</string>
+    <string name="widget_no_plan">No plans yet</string>
 </resources>

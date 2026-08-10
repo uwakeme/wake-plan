@@ -44,6 +44,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- 今日 mini timeline 桌面小组件 — Phase 5.6
+             AppWidgetProvider 系统会主动 broadcast（widget update / enable） -->
+        <receiver
+            android:name=".widget.TodayWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_today_info" />
+        </receiver>
+
         <!-- 禁用 WorkManager 自动初始化 — App.onCreate 用 HiltWorkerFactory 手动初始化
              （让 @HiltWorker 注解的 Worker 拿到 Hilt 注入的依赖） -->
         <provider
