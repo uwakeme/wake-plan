@@ -30,6 +30,8 @@ import com.wakeplan.app.ui.settings.SettingsScreen
 import com.wakeplan.app.ui.task.TaskEditorScreen
 import com.wakeplan.app.ui.task.TaskEditorViewModel
 import com.wakeplan.app.ui.stats.StatsScreen
+import com.wakeplan.app.ui.template.TemplateDetailScreen
+import com.wakeplan.app.ui.template.TemplateDetailViewModel
 import com.wakeplan.app.ui.template.TemplateListScreen
 import com.wakeplan.app.ui.today.TodayScreen
 
@@ -48,6 +50,7 @@ import com.wakeplan.app.ui.today.TodayScreen
  *   plans/{planId}/segments/{segmentId}/tasks/{taskId}               → TaskEditorScreen (edit)
  *   settings                                                         → SettingsScreen
  *   settings/templates                                               → TemplateListScreen
+ *   settings/templates/{templateId}                                  → TemplateDetailScreen
  */
 @Composable
 fun AppNavHost() {
@@ -200,7 +203,18 @@ private fun AppNavGraph(
         composable(Route.Templates) {
             TemplateListScreen(
                 onBack = { navController.popBackStack() },
-                onTemplateClick = { /* Phase 1.5 / 2.0 实装"从模板新建" */ },
+                onTemplateClick = { tpl -> navController.navigate(Route.templateDetail(tpl.id)) },
+            )
+        }
+        composable(
+            route = Route.TemplateDetailPattern,
+            arguments = listOf(
+                navArgument(TemplateDetailViewModel.ARG_TEMPLATE_ID) { type = NavType.StringType },
+            ),
+        ) {
+            TemplateDetailScreen(
+                onBack = { navController.popBackStack() },
+                onApply = { /* Phase 5.4.2: 调 createPlanFromTemplate + 跳新 plan 详情 */ },
             )
         }
     }
@@ -215,6 +229,7 @@ object Route {
     const val TaskEditorCreatePattern = "plans/{planId}/segments/{segmentId}/tasks/new"
     const val TaskEditorEditPattern = "plans/{planId}/segments/{segmentId}/tasks/{taskId}"
     const val Templates = "settings/templates"
+    const val TemplateDetailPattern = "settings/templates/{templateId}"
 
     fun planDetail(planId: String) = "plans/$planId"
     fun segmentEditorCreate(planId: String) = "plans/$planId/segments/new"
@@ -223,4 +238,5 @@ object Route {
         "plans/$planId/segments/$segmentId/tasks/new"
     fun taskEditorEdit(planId: String, segmentId: String, taskId: String) =
         "plans/$planId/segments/$segmentId/tasks/$taskId"
+    fun templateDetail(templateId: String) = "settings/templates/$templateId"
 }

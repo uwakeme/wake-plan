@@ -1,6 +1,7 @@
 package com.wakeplan.app.ui.template
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,7 +43,8 @@ import com.wakeplan.app.domain.model.PlanTemplate
 
 /**
  * 模板库屏
- * Phase 1.4 仅展示 3 个内置模板；从模板新建计划留 Phase 1.5 / Phase 2 实装
+ * Phase 5.4.1：列表展示 3 个内置模板，**点卡片 → TemplateDetailScreen 看 segment/task 预览**
+ * Phase 5.4.2：详情屏加 "应用此模板" 按钮
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +79,7 @@ fun TemplateListScreen(
         ) {
             item {
                 Text(
-                    text = "从模板一键创建计划（暂未实装\"应用模板\"）",
+                    text = "点开看段 + 任务，5.4.2 会上线「应用模板」",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 4.dp),
@@ -101,7 +104,8 @@ private fun TemplateCard(
         tonalElevation = 1.dp,
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -127,6 +131,12 @@ private fun TemplateCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Icon(
+                Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
+
