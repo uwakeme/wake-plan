@@ -11,16 +11,20 @@
 
 ## 当前阶段
 
-**Phase 0 · 骨架**（参考 `docs/plan/00-roadmap.md` 第 5 节）。
-正在做的事：
-- Gradle 工程（阿里云镜像 + 版本目录 + wrapper）
-- Hilt + Room 空壳（5 entity 已声明，DAO 暂空）
-- Compose 主题 + 3 tab 导航（Today / Plans / Settings，3 个 Screen 占位）
-- AGENTS.md / README.md 到位
-- 推 GitHub `wake-plan`（`uwakeme/wake-plan`）
+**v0.2 · 全部完成**（8 个 sub-phase，5.1-5.8 全部推送到 `main`，235 个 JVM 单测全过）。
+完整进展：`docs/plan/00-roadmap.md` 第 10 节。
 
-**已完成 P0 US**：无（骨架阶段尚无可演示功能）
-**下一阶段**：Phase 1 CRUD（计划/段/任务/模板基础 CRUD）
+完成的事（v0.1+v0.2 全量）：
+- Gradle 工程（阿里云镜像 + 版本目录 + wrapper all 变体）
+- Hilt + Room + SQLCipher 4.6.1（v0.2 集成，AES-256 加密本地数据库）
+- Compose Material3 主题 + 4 tab 导航（Today / Plans / Stats / Settings）
+- 计划/段/任务/模板 CRUD + 开始/完成 + 自动延期 + 冲突检测
+- 4 渠道本地通知（WorkManager + AlarmManager）+ 通知权限引导
+- JSON 备份导出导入（明文 + 可选 AES-256-GCM 加密）+ SAF
+- v0.2 加：自动延期撤销 / 完成统计数字 + Canvas 图表 / 时间线日期切换 / 模板预览 + 一键新建 / i18n（中英双语）/ 桌面 AppWidget / 快捷设置 Tile
+- 密钥管理：AndroidKeyStore master key + DataStore 存 wrapped passphrase
+
+**下一阶段**：v0.2 release 收尾（versionName 0.2.0-alpha 已升）；v0.3 候选待 PRD review
 
 ## 关键路径
 
@@ -57,27 +61,32 @@
 
 ```
 app/src/main/java/com/wakeplan/app/
-├── App.kt                    # @HiltAndroidApp
+├── App.kt                    # @HiltAndroidApp + SQLCipher loadLibrary + DatabaseKeyStore bootstrap
 ├── MainActivity.kt           # @AndroidEntryPoint + setContent { WakePlanTheme { AppNavHost() } }
 ├── ui/
 │   ├── theme/                # Color/Type/Shape/Theme
-│   ├── nav/                  # AppNavHost + BottomTabBar
-│   ├── today/                # 当前时刻屏
+│   ├── nav/                  # AppNavHost + 4-tab BottomBar (Today/Plans/Stats/Settings)
+│   ├── today/                # 当前时刻屏 + 24h 时间线
 │   ├── plan/                 # 计划列表 / 详情 / 新建
 │   ├── task/                 # 任务编辑
-│   ├── template/             # 模板库
-│   ├── settings/             # 设置
-│   └── common/               # 通用 Composable
+│   ├── template/             # 模板库（列表 + 详情 + 一键新建）
+│   ├── stats/                # 完成统计数字面板 + Canvas 图表
+│   ├── settings/             # 设置（含备份 + 通知配置 + 模板入口）
+│   ├── onboarding/           # 首次启动引导（3 页 + 通知权限申请）
+│   ├── widget/               # AppWidget RemoteViews + TileService
+│   └── common/               # 通用 Composable（HighlightBus + NavEventBus + ...)
 ├── domain/
 │   ├── model/                # 纯 Kotlin data class（无 Android 依赖）
 │   ├── repository/           # Repository 接口
-│   └── usecase/              # 业务用例（AutoExtendCalculator / ConflictDetector）
+│   └── usecase/              # 业务用例（AutoExtend / ConflictDetector / Stats）
 ├── data/
-│   ├── db/                   # Room: entity / dao / converter / WakePlanDatabase
+│   ├── db/                   # Room: entity / dao / converter / WakePlanDatabase / seeder
 │   ├── prefs/                # DataStore
 │   ├── repository/           # Repository 实现
-│   └── backup/               # JSON 备份导出/导入 + 加密
-└── di/                       # Hilt Modules
+│   ├── backup/               # JSON 备份导出/导入 + AES-256-GCM
+│   ├── security/             # DatabaseKeyStore + MasterKeyProvider（Phase 5.8）
+│   └── notification/         # 4 渠道 + Builder + ContentBuilder + WorkScheduler
+└── di/                       # Hilt Modules（DB / Security / Repository / DataStore / Clock / Backup）
 ```
 
 **规则**：
@@ -110,7 +119,7 @@ app/src/main/java/com/wakeplan/app/
 
 1. **KSP 而不是 KAPT** —— Hilt 和 Room 都用 KSP，编译快很多
 2. **Room schema export** —— `app/build.gradle.kts` 配 `room.schemaLocation` 把 schema JSON 导出到 `app/schemas/`，commit 上去便于写 Migration
-3. **SQLCipher** —— 用 `net.zetetic:android-database-sqlcipher` + `androidx.sqlite:sqlite-ktx`；数据库打开走 `SupportFactory(passphrase)`，`passphrase` 存 Android Keystore
+3. **SQLCipher** —— v0.2 集成 `net.zetetic:sqlcipher-android:4.6.1`（4.5.x 4KB 对齐不支持 Android 15+ 16KB）；数据库打开走 `SupportOpenHelperFactory(passphrase)`；`passphrase` 走 `DatabaseKeyStore`（AndroidKeyStore master key + DataStore 存 wrapped Base64，详见 `data/security/DatabaseKeyStore.kt`）；App.onCreate **必须**先调 `System.loadLibrary("sqlcipher")` 再触发 Hilt 注入链
 4. **Compose Material3 主题** —— `WakePlanTheme` 是 `MaterialTheme` 的薄包装，token 来自 `design/colors_and_type.css`；不要另起 `MaterialTheme` 子品牌
 5. **不要用 `&&` 在 PowerShell 里** —— 改用 `;` / `if ($?) { ... }`
 6. **网络约束** —— 本机 HTTPS 443 不通，SSH 22 通；GitHub 走 SSH URL（`git@github.com:uwakeme/wake-plan.git`）
