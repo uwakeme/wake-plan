@@ -27,7 +27,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -94,6 +96,26 @@ class TodayViewModel @Inject constructor(
     private val today: LocalDate = LocalDate.now(clock)
 
     /**
+     * 当前查看的日期 — Phase 5.3
+     * 默认 = today；用户点 ← / → 切换
+     * 切换到非 today 时 ensureTodayCompletions 不再触发（避免给历史日期瞎建 completion）
+     */
+    private val _selectedDate = MutableStateFlow(today)
+    val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
+
+    /**
+     * 当前 selectedDate 是否就是日历上的今天
+     * UI 用这个决定"今天"按钮 / 标题前缀是否显示
+     */
+    val isViewingToday: StateFlow<Boolean> = _selectedDate
+        .map { it == today }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = true,
+        )
+
+    /**
      * 可撤销动作 — Phase 5.1
      *
      * 用户做状态机操作后，ViewModel 把"操作前的快照"emit 出来，UI 弹 Snackbar
@@ -127,15 +149,19 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    val uiState: StateFlow<TodayUiState> = combine(
-        planRepository.observeAll(),
-        segmentRepository.observeAll(),
-        taskRepository.observeAll(),
-        taskCompletionRepository.observeByDate(today),
-        tickFlow,
-    ) { plans, segments, tasks, completions, now ->
-        buildState(plans, segments, tasks, completions, now)
-    }
+    val uiState: StateFlow<TodayUiState> = _selectedDate
+        .flatMapLatest { date ->
+            val completionsFlow = taskCompletionRepository.observeByDate(date)
+            combine(
+                planRepository.observeAll(),
+                segmentRepository.observeAll(),
+                taskRepository.observeAll(),
+                completionsFlow,
+                tickFlow,
+            ) { plans, segments, tasks, completions, now ->
+                buildState(plans, segments, tasks, completions, now, date)
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -148,6 +174,7 @@ class TodayViewModel @Inject constructor(
         allTasks: List<Task>,
         completions: List<TaskCompletion>,
         now: LocalDateTime,
+        date: LocalDate,
     ): TodayUiState {
         val activePlans = plans.filter { it.isActive }
         val planItems = activePlans.map { plan ->
@@ -164,9 +191,9 @@ class TodayViewModel @Inject constructor(
             )
         }
         val adjusted = autoExtendCalculator(completions, allTasks, now)
-        val conflicts = conflictDetector(adjusted, today)
+        val conflicts = conflictDetector(adjusted, date)
         return TodayUiState(
-            date = today,
+            date = date,
             now = now,
             planItems = planItems,
             adjustedCompletions = adjusted,
@@ -177,13 +204,16 @@ class TodayViewModel @Inject constructor(
     /**
      * 给当天缺 PENDING 的 task 补建 completion
      * upsert 后 Room Flow 重新 emit，下一轮 buildState 看到新数据
+     * 只在 selectedDate == today 时跑（切换到历史日期不能给历史建 completion）
      */
     fun ensureTodayCompletions() {
+        val targetDate = _selectedDate.value
+        if (targetDate != today) return  // 预览历史/未来，不动 DB
         viewModelScope.launch {
             val plans = planRepository.observeAll().first()
             val segments = segmentRepository.observeAll().first()
             val tasks = taskRepository.observeAll().first()
-            val existing = taskCompletionRepository.observeByDate(today).first()
+            val existing = taskCompletionRepository.observeByDate(targetDate).first()
             val existingTaskIds = existing.map { it.taskId }.toSet()
 
             plans.filter { it.isActive }.forEach { plan ->
@@ -193,12 +223,12 @@ class TodayViewModel @Inject constructor(
                     plan = plan,
                     segments = planSegments,
                     tasks = planTasks,
-                    date = today,
+                    date = targetDate,
                 ).filter { it.taskId !in existingTaskIds }
                 pending.forEach { taskCompletionRepository.upsert(it) }
             }
             // 同步：重新拿一次当天的 completions（含新建的 PENDING） + 调度 starting alarms
-            val todaysCompletions = taskCompletionRepository.observeByDate(today).first()
+            val todaysCompletions = taskCompletionRepository.observeByDate(targetDate).first()
             val now = LocalDateTime.now(clock)
             val leadMinutes = userPreferences.taskStartingLeadMinutes.first()
             val startingEnabled = userPreferences.taskStartingEnabled.first()
@@ -283,5 +313,23 @@ class TodayViewModel @Inject constructor(
      */
     fun consumeUndo() {
         _undoableAction.value = null
+    }
+
+    // ===== Phase 5.3 日期切换 =====
+
+    /**
+     * 切换到指定日期
+     * @param date 要预览的日期；不在范围内会被忽略
+     */
+    fun switchDate(date: LocalDate) {
+        if (date == _selectedDate.value) return
+        _selectedDate.value = date
+    }
+
+    /**
+     * 切换到今天（"今天"按钮）
+     */
+    fun goToToday() {
+        switchDate(today)
     }
 }

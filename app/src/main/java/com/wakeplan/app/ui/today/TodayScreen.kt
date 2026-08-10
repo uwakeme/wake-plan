@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
@@ -37,6 +39,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -133,19 +136,53 @@ fun TodayScreen() {
         }
     }
 
+    val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
+    val isViewingToday by viewModel.isViewingToday.collectAsStateWithLifecycle()
+    val titlePrefix = if (isViewingToday) "今日" else "查看"
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("今日 ${state.date.format(DATE_FMT)}") },
+                title = { Text("$titlePrefix ${state.date.format(DATE_FMT)}") },
+                navigationIcon = {
+                    IconButton(
+                        onClick = { viewModel.switchDate(state.date.minusDays(1)) },
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
+                            contentDescription = "前一天",
+                        )
+                    }
+                },
+                actions = {
+                    if (!isViewingToday) {
+                        TextButton(onClick = { viewModel.goToToday() }) {
+                            Text("今天")
+                        }
+                    }
+                    IconButton(
+                        onClick = { viewModel.switchDate(state.date.plusDays(1)) },
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                            contentDescription = "后一天",
+                        )
+                    }
+                },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         if (state.planItems.isEmpty()) {
-            EmptyTodayState(modifier = Modifier.padding(padding))
+            EmptyTodayState(
+                isViewingToday = isViewingToday,
+                date = state.date,
+                modifier = Modifier.padding(padding),
+            )
         } else {
             TodayContent(
                 state = state,
+                isViewingToday = isViewingToday,
                 contentPadding = padding,
                 listState = listState,
                 highlightedTaskId = highlightedTaskId,
@@ -161,6 +198,7 @@ fun TodayScreen() {
 @Composable
 private fun TodayContent(
     state: TodayUiState,
+    isViewingToday: Boolean,
     contentPadding: PaddingValues,
     listState: androidx.compose.foundation.lazy.LazyListState,
     highlightedTaskId: String?,
@@ -183,6 +221,7 @@ private fun TodayContent(
         item(key = "timeline") {
             TodayTimeLine(
                 date = state.date,
+                isViewingToday = isViewingToday,
                 now = state.now,
                 planItems = state.planItems,
                 conflicts = state.conflicts,
@@ -197,6 +236,7 @@ private fun TodayContent(
                 item = item,
                 adjustedCompletions = state.adjustedCompletions.filter { it.planId == item.plan.id },
                 conflicts = planConflicts,
+                isViewingToday = isViewingToday,
                 plansById = state.planItems.associate { it.plan.id to it.plan },
                 highlightedTaskId = highlightedTaskId,
                 onStartTask = onStartTask,
@@ -214,6 +254,7 @@ private fun TodayContent(
 @Composable
 private fun TodayTimeLine(
     date: LocalDate,
+    isViewingToday: Boolean,
     now: LocalDateTime,
     planItems: List<TodayPlanItem>,
     conflicts: List<TaskConflict>,
@@ -243,7 +284,7 @@ private fun TodayTimeLine(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = "今日时间线",
+                text = "${if (isViewingToday) "今日" else date.format(DATE_FMT)}时间线",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
             )
@@ -345,6 +386,7 @@ private fun TodayPlanCard(
     conflicts: List<TaskConflict>,
     plansById: Map<String, Plan>,
     highlightedTaskId: String?,
+    isViewingToday: Boolean,
     onStartTask: (String) -> Unit,
     onCompleteTask: (String) -> Unit,
     onSkipTask: (String) -> Unit,
@@ -393,7 +435,7 @@ private fun TodayPlanCard(
 
             if (bySegment.isEmpty()) {
                 Text(
-                    text = "今日无任务",
+                    text = if (isViewingToday) "今日无任务" else "该日无任务",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -606,14 +648,18 @@ private fun ConflictBanner(
 }
 
 @Composable
-private fun EmptyTodayState(modifier: Modifier = Modifier) {
+private fun EmptyTodayState(
+    isViewingToday: Boolean,
+    date: LocalDate,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier.fillMaxSize().padding(24.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "今天还没有计划",
+                text = if (isViewingToday) "今天还没有计划" else "${date.format(DATE_FMT)} 没有计划",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
