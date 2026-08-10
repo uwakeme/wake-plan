@@ -237,9 +237,34 @@ Room DAO / DataStore
 | 3 | `757c0f0 / fce73f8 / 213e0da` | 31 | DataStore 偏好 + 4 渠道 + Builder + AlarmManager + WorkManager + Onboarding + Settings 通知配置 + deep link |
 | 4 | `de4bba7 / 99273fb / 89d1242 / b00d597` | 87 | BackupEnvelope + 5 DTO + AES-256-GCM + PBKDF2-SHA256 600k + BackupImporter (完全覆盖) + BackupManager + BackupViewModel + Passphrase/Confirm dialogs + SAF |
 
-**SQLCipher 状态**：4.5.x 4KB page size 不支持 Android 15+ 16KB 要求；阿里云 4.6.1 AAR 损坏（Maven Central HTTPS 443 被封无法同步）。v0.1 暂用 Room 默认 SQLite，备份加密走应用层 AES-256 + PBKDF2（PRD 5.3 #7）。
+**SQLCipher 状态**：4.5.x 4KB page size 不支持 Android 15+ 16KB 要求。v0.1 暂用 Room 默认 SQLite + 应用层加密（备份）。v0.2 5.8 重新评估并集成 4.6.1（验证阿里云/腾讯云镜像都完整 16KB 对齐可用，之前记录的"AAR 损坏"是误判）。
 
-**v0.1 状态**：所有 5 个 Phase 完成，177 个测试全过，编译通过。准备 v0.1 release（清理 demo seed / 调试 log / BuildConfig guard，AGP warning，签名配置）。
+---
 
-**v0.2 候选**：时间线预览 (US-08) · 完成统计 (US-12) · 自动延期撤销 · i18n · 模板库打磨 · SQLCipher 重新评估 · AppWidget · Quick Settings Tile。
+## 10. v0.2 当前进度（2026-08-11 更新）
+
+**v0.2 状态**：8 个 sub-phase 全部完成并推送到 `main`，**235 个 JVM 单测全过**，编译通过，emulator 验证通过。准备 v0.2 release。
+
+| Sub-phase | commit | 测试数累计 | 关键产出 |
+|---|---|---|---|
+| 5.1 自动延期撤销 | `245663e` | 189 | UndoableAction + Snackbar undo 按钮 + 5s 窗口 |
+| 5.2.1 完成统计数字面板 | `fbebf6c` | 203 | StatsUseCase + StatsViewModel + 4-tab 导航（Today/Plans/Stats/Settings） |
+| 5.2.2 Canvas 图表 | `230a6e6` | 203 | 每日完成数折线 + 按计划柱状 + Y 轴去重 |
+| 5.3 时间线日期切换 | `01416db` | 208 | ←/今天/→ + isViewingToday + 动态标题 |
+| 5.4.1 模板预览 | `623bbfa` | 217 | BuiltInTemplates + TemplateDetailScreen + observeById |
+| 5.4.2 一键新建 | `b81b8c5` | 221 | createPlanFromTemplate + ApplyState + 跳新 plan 详情 |
+| 5.5 i18n 英文版 | `204203d` | 221 | `values-en/strings.xml` 199 keys 一一对应 + 撇号转义 |
+| 5.6 AppWidget | `f82bf7f` | 225 | RemoteViews 4x2 mini timeline + PendingIntent 跳 Today |
+| 5.7 Quick Settings Tile | `fefe73b` | 225 | TileService + NavEventBus + BIND_QUICK_SETTINGS_TILE |
+| 5.8 SQLCipher 集成 | `2ae2926` | 235 | 4.6.1 + DatabaseKeyStore (Keystore + DataStore wrap) + 10 单测 |
+
+**v0.2 验证状态**：
+- ✅ 8/8 sub-phase 全部 commit + push 到 main
+- ✅ 235 个 JVM 单测全过（JUnit 5 + mockk，无 Robolectric 依赖）
+- ✅ assembleDebug 通过（APK 大小未显著变化；SQLCipher .so +5MB）
+- ✅ emulator 启动不崩，无 UnsatisfiedLinkError
+- ✅ 数据库 header 16 字节完全是密文随机字节（明文 SQLite 应是 `SQLite format 3\0`）
+- ✅ 重启后 DB header 字节一致 → DatabaseKeyStore unwrap 路径走通
+
+**v0.2 → v0.3 路线图候选**：v0.2 仍用 `fallbackToDestructiveMigration`（首次加密部署会清表重建；v0.3 加 Migration 测试）；其它候选待 PRD review 后再列。
 
