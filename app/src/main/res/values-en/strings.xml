@@ -259,4 +259,8 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="widget_next_task_empty">Tap to see today\'s plan</string>
     <string name="widget_next_task_at">Next: %1$s · %2$s</string>
     <string name="widget_no_plan">No plans yet</string>
+    <!-- ============================================================ -->
+    <!-- Quick Settings Tile — Phase 5.7 -->
+    <!-- ============================================================ -->
+    <string name="tile_subtitle_open_today">Open today</string>
 </resources>

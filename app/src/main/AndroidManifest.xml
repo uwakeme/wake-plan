@@ -57,6 +57,23 @@
                 android:resource="@xml/widget_today_info" />
         </receiver>
 
+        <!-- Quick Settings Tile — Phase 5.7
+             点击 tile 启动 MainActivity + emit NavEventBus.NavToToday → 跳 Today tab
+             system 主动 bind 这个 service（BIND_QUICK_SETTINGS_TILE permission） -->
+        <service
+            android:name=".widget.WakePlanTileService"
+            android:label="@string/app_name"
+            android:icon="@drawable/widget_background"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="false" />
+        </service>
+
         <!-- 禁用 WorkManager 自动初始化 — App.onCreate 用 HiltWorkerFactory 手动初始化
              （让 @HiltWorker 注解的 Worker 拿到 Hilt 注入的依赖） -->
         <provider

@@ -261,4 +261,9 @@
     <string name="widget_next_task_empty">点击查看今日计划</string>
     <string name="widget_next_task_at">下一个 %1$s · %2$s</string>
     <string name="widget_no_plan">还没有计划</string>
+
+    <!-- ============================================================ -->
+    <!-- Quick Settings Tile — Phase 5.7 -->
+    <!-- ============================================================ -->
+    <string name="tile_subtitle_open_today">跳到今日</string>
 </resources>
