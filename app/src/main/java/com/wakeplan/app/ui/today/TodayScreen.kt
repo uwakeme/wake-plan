@@ -58,16 +58,18 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wakeplan.app.R
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
@@ -80,12 +82,14 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * 当前时刻屏 — Phase 2.4b
+ * 当前时刻屏 — Phase 5.3 + Phase 5.5
  *
  * 布局：
- * 1. TopAppBar (今日日期)
+ * 1. TopAppBar (今日日期 + ←/今天/→ 按钮)
  * 2. 24h 水平时间线（段背景 + 任务色块 + 当前时刻红线 + 时间刻度）
  * 3. 跨计划卡片列表（每 plan 一卡 + 段内任务 + 开始/完成/跳过按钮 + 内联冲突警告）
+ *
+ * i18n: 所有 user-facing 文案走 R.string；values-en/strings.xml 英文版
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,26 +142,33 @@ fun TodayScreen() {
 
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     val isViewingToday by viewModel.isViewingToday.collectAsStateWithLifecycle()
-    val titlePrefix = if (isViewingToday) "今日" else "查看"
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("$titlePrefix ${state.date.format(DATE_FMT)}") },
+                title = {
+                    Text(
+                        if (isViewingToday) {
+                            stringResource(R.string.today_title_today, state.date.format(DATE_FMT))
+                        } else {
+                            stringResource(R.string.today_title_other, state.date.format(DATE_FMT))
+                        },
+                    )
+                },
                 navigationIcon = {
                     IconButton(
                         onClick = { viewModel.switchDate(state.date.minusDays(1)) },
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
-                            contentDescription = "前一天",
+                            contentDescription = stringResource(R.string.today_cd_prev_day),
                         )
                     }
                 },
                 actions = {
                     if (!isViewingToday) {
                         TextButton(onClick = { viewModel.goToToday() }) {
-                            Text("今天")
+                            Text(stringResource(R.string.today_btn_today))
                         }
                     }
                     IconButton(
@@ -165,7 +176,7 @@ fun TodayScreen() {
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                            contentDescription = "后一天",
+                            contentDescription = stringResource(R.string.today_cd_next_day),
                         )
                     }
                 },
@@ -236,7 +247,6 @@ private fun TodayContent(
                 item = item,
                 adjustedCompletions = state.adjustedCompletions.filter { it.planId == item.plan.id },
                 conflicts = planConflicts,
-                isViewingToday = isViewingToday,
                 plansById = state.planItems.associate { it.plan.id to it.plan },
                 highlightedTaskId = highlightedTaskId,
                 onStartTask = onStartTask,
@@ -284,7 +294,11 @@ private fun TodayTimeLine(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = "${if (isViewingToday) "今日" else date.format(DATE_FMT)}时间线",
+                text = if (isViewingToday) {
+                    stringResource(R.string.today_timeline_title_today)
+                } else {
+                    stringResource(R.string.today_timeline_title_other, date.format(DATE_FMT))
+                },
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
             )
@@ -327,7 +341,7 @@ private fun TodayTimeLine(
                     // 任务色块（不透明）
                     item.completions.forEach { c ->
                         val startMin = minuteOfDay(c.plannedStart, date).coerceIn(0, maxMinutes)
-                        val endMin = minuteOfDay(c.plannedEnd, date).coerceIn(startMin + 1, maxMinutes)
+                        val endMin = minuteOfDay(c.plannedEnd, date).coerceAtLeast(startMin + 1).coerceAtMost(maxMinutes)
                         drawRect(
                             color = planColor,
                             topLeft = Offset(startMin * minuteWidth, rowTop + 1),
@@ -386,7 +400,6 @@ private fun TodayPlanCard(
     conflicts: List<TaskConflict>,
     plansById: Map<String, Plan>,
     highlightedTaskId: String?,
-    isViewingToday: Boolean,
     onStartTask: (String) -> Unit,
     onCompleteTask: (String) -> Unit,
     onSkipTask: (String) -> Unit,
@@ -435,7 +448,7 @@ private fun TodayPlanCard(
 
             if (bySegment.isEmpty()) {
                 Text(
-                    text = if (isViewingToday) "今日无任务" else "该日无任务",
+                    text = stringResource(R.string.today_no_tasks_today),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -514,98 +527,52 @@ private fun TaskRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .background(bg, RoundedCornerShape(8.dp))
-            .padding(horizontal = 4.dp, vertical = 2.dp),
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 状态图标
-        Box(
-            modifier = Modifier.size(20.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            when (completion.status) {
-                TaskStatus.PENDING -> Text(
-                    "○",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-                TaskStatus.IN_PROGRESS -> Text(
-                    "▶",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                TaskStatus.COMPLETED -> Text(
-                    "✓",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                TaskStatus.SKIPPED -> Text(
-                    "—",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        val isInProgressOrDone = completion.status == TaskStatus.IN_PROGRESS ||
+                                 completion.status == TaskStatus.COMPLETED ||
+                                 completion.status == TaskStatus.SKIPPED
+        val statusLabel = when (completion.status) {
+            TaskStatus.COMPLETED -> stringResource(R.string.today_cd_completed)
+            TaskStatus.SKIPPED -> stringResource(R.string.today_cd_skipped)
+            else -> taskTitle
         }
-        Spacer(Modifier.width(8.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = taskTitle,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = if (completion.status == TaskStatus.COMPLETED)
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                else MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = buildString {
-                    append(formatTime(completion.plannedStart))
-                    append(" — ")
-                    append(formatTime(completion.plannedEnd))
-                    if (completion.status == TaskStatus.IN_PROGRESS && completion.overrunMinutes > 0) {
-                        append("  +${completion.overrunMinutes}min")
-                    }
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(Modifier.width(8.dp))
-        when (completion.status) {
-            TaskStatus.PENDING -> {
-                Button(onClick = onStart) {
-                    Icon(Icons.Outlined.PlayArrow, contentDescription = "开始")
-                    Spacer(Modifier.width(4.dp))
-                    Text("开始")
-                }
+        Text(
+            text = statusLabel,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (completion.status == TaskStatus.COMPLETED) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .weight(1f)
+                .background(bg)
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+        )
+        if (!isInProgressOrDone) {
+            OutlinedButton(onClick = onStart) {
+                Icon(Icons.Outlined.PlayArrow, contentDescription = stringResource(R.string.today_cd_start))
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(R.string.today_btn_start))
             }
-            TaskStatus.IN_PROGRESS -> {
-                Button(onClick = onComplete) {
-                    Icon(Icons.Outlined.Check, contentDescription = "完成")
-                    Spacer(Modifier.width(4.dp))
-                    Text("完成")
-                }
-            }
-            TaskStatus.COMPLETED, TaskStatus.SKIPPED -> {
-                // 终态 — 显示 icon only
-                Icon(
-                    imageVector = if (completion.status == TaskStatus.COMPLETED) Icons.Outlined.Check else Icons.Outlined.Close,
-                    contentDescription = if (completion.status == TaskStatus.COMPLETED) "已完成" else "已跳过",
-                    tint = if (completion.status == TaskStatus.COMPLETED)
-                        MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (completion.status == TaskStatus.PENDING || completion.status == TaskStatus.IN_PROGRESS) {
             Spacer(Modifier.width(4.dp))
-            IconButton(onClick = onSkip) {
-                Icon(
-                    Icons.Outlined.Close,
-                    contentDescription = "跳过",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            OutlinedButton(onClick = onSkip) {
+                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.today_cd_skip))
+            }
+        } else if (completion.status == TaskStatus.IN_PROGRESS) {
+            OutlinedButton(onClick = onComplete) {
+                Icon(Icons.Outlined.Check, contentDescription = stringResource(R.string.today_cd_complete))
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(R.string.today_btn_complete))
+            }
+            Spacer(Modifier.width(4.dp))
+            OutlinedButton(onClick = onSkip) {
+                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.today_cd_skip))
+            }
+        } else {
+            // COMPLETED / SKIPPED — 也提供"重新开始"按钮（撤销可走 Snackbar）
+            Spacer(Modifier.width(4.dp))
+            OutlinedButton(onClick = onStart) {
+                Icon(Icons.Outlined.PlayArrow, contentDescription = stringResource(R.string.today_cd_start))
             }
         }
     }
@@ -616,31 +583,33 @@ private fun ConflictBanner(
     conflicts: List<TaskConflict>,
     plansById: Map<String, Plan>,
 ) {
-    val firstConflict = conflicts.first()
-    val otherPlan = plansById[
-        if (firstConflict.taskA.planId == plansById.values.firstOrNull { it.id == firstConflict.taskA.planId }?.id)
-            firstConflict.taskB.planId
-        else firstConflict.taskA.planId
-    ]
     val maxOverlap = conflicts.maxOf { it.overlapMinutes }
+    val otherPlan = conflicts.firstOrNull()?.let { c ->
+        plansById[c.taskA.planId]?.takeIf { it.id != c.taskB.planId }
+            ?: plansById[c.taskB.planId]
+    }
     Surface(
-        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.errorContainer,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 Icons.Outlined.Warning,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.size(16.dp),
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
-                text = "与 ${otherPlan?.title ?: "其他计划"} 冲突 $maxOverlap 分钟",
-                style = MaterialTheme.typography.bodyMedium,
+                text = stringResource(
+                    R.string.today_conflict,
+                    otherPlan?.title ?: stringResource(R.string.today_conflict_other_plan),
+                    maxOverlap,
+                ),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer,
             )
         }
@@ -659,13 +628,17 @@ private fun EmptyTodayState(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = if (isViewingToday) "今天还没有计划" else "${date.format(DATE_FMT)} 没有计划",
+                text = if (isViewingToday) {
+                    stringResource(R.string.today_empty_title_today)
+                } else {
+                    stringResource(R.string.today_empty_title_other, date.format(DATE_FMT))
+                },
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "去「计划」tab 创建一个",
+                text = stringResource(R.string.today_empty_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -673,15 +646,12 @@ private fun EmptyTodayState(
     }
 }
 
-// ====================================================================
-// helpers
-// ====================================================================
+// helper：把分钟数（0..1440，跨日可 >1440）格式化为 HH:mm
+private fun formatMinutes(minutes: Int): String {
+    val total = ((minutes % 1440) + 1440) % 1440  // 折叠到 0..1439
+    val h = total / 60
+    val m = total % 60
+    return "%02d:%02d".format(h, m)
+}
 
-private val TIME_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 private val DATE_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("M月d日")
-
-private fun formatTime(dt: LocalDateTime): String = dt.format(TIME_FMT)
-private fun formatMinutes(min: Int): String = String.format("%02d:%02d", min / 60, min % 60)
-
-@Suppress("unused")
-private val Unused: Color = Color.Unspecified

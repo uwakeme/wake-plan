@@ -42,10 +42,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wakeplan.app.R
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TimeSegment
@@ -73,16 +75,16 @@ fun PlanDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(plan?.title ?: "计划详情") },
+                title = { Text(plan?.title ?: stringResource(R.string.plan_detail_title_fallback)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (plan != null) {
                         IconButton(onClick = { showDeletePlanDialog = true }) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "删除计划")
+                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.plan_detail_cd_delete))
                         }
                     }
                 },
@@ -90,14 +92,14 @@ fun PlanDetailScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddSegment) {
-                Icon(Icons.Outlined.Add, contentDescription = "添加段")
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.plan_detail_cd_add_segment))
             }
         },
     ) { padding ->
         val currentPlan = plan
         if (currentPlan == null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("加载中…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.common_loading), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             return@Scaffold
         }
@@ -118,9 +120,9 @@ fun PlanDetailScreen(
     if (showDeletePlanDialog && plan != null) {
         AlertDialog(
             onDismissRequest = { showDeletePlanDialog = false },
-            title = { Text("删除计划？") },
+            title = { Text(stringResource(R.string.plan_detail_delete_dialog_title)) },
             text = {
-                Text("将删除 \"${plan!!.title}\" 及其所有段、任务。此操作不可撤销。")
+                Text(stringResource(R.string.plan_detail_delete_dialog_text, plan!!.title))
             },
             confirmButton = {
                 TextButton(
@@ -128,10 +130,10 @@ fun PlanDetailScreen(
                         showDeletePlanDialog = false
                         viewModel.deletePlan(onDone = onBack)
                     }
-                ) { Text("删除", color = MaterialTheme.colorScheme.error) }
+                ) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeletePlanDialog = false }) { Text("取消") }
+                TextButton(onClick = { showDeletePlanDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             },
         )
     }
@@ -207,7 +209,11 @@ private fun PlanHeader(plan: Plan) {
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "起始 ${plan.startDate} · ${if (plan.isActive) "活跃" else "归档"}",
+                    text = stringResource(
+                        R.string.plan_detail_header_subtitle,
+                        plan.startDate.toString(),
+                        stringResource(if (plan.isActive) R.string.plan_detail_status_active else R.string.plan_detail_status_archived),
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -224,7 +230,7 @@ private fun EmptySegmentsHint(modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Text(
-            text = "还没有段，点 + 添加时间段（如 \"晨练 06:30-07:30\"）",
+            text = stringResource(R.string.plan_detail_no_segments),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(20.dp),
@@ -268,7 +274,7 @@ private fun SegmentCard(
                     shape = RoundedCornerShape(6.dp),
                 ) {
                     Text(
-                        text = repeatLabel(segment),
+                        text = rememberRepeatLabel(segment),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -283,12 +289,12 @@ private fun SegmentCard(
                     )
                 }
                 IconButton(onClick = onSegmentClick) {
-                    Icon(Icons.Outlined.Schedule, contentDescription = "编辑段")
+                    Icon(Icons.Outlined.Schedule, contentDescription = stringResource(R.string.plan_detail_segment_cd_edit))
                 }
                 IconButton(onClick = onDeleteSegment) {
                     Icon(
                         Icons.Outlined.Delete,
-                        contentDescription = "删除段",
+                        contentDescription = stringResource(R.string.plan_detail_segment_cd_delete),
                         tint = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -297,7 +303,7 @@ private fun SegmentCard(
             // 任务列表
             if (tasks.isEmpty()) {
                 Text(
-                    text = "段内还没有任务",
+                    text = stringResource(R.string.plan_detail_no_tasks_in_segment),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -314,7 +320,7 @@ private fun SegmentCard(
             TextButton(onClick = onAddTask) {
                 Icon(Icons.Outlined.Add, contentDescription = null)
                 Spacer(Modifier.width(4.dp))
-                Text("添加任务")
+                Text(stringResource(R.string.plan_detail_add_task))
             }
         }
     }
@@ -345,7 +351,7 @@ private fun TaskRow(
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = "${task.plannedDurationMinutes} 分钟",
+            text = stringResource(R.string.common_minutes, task.plannedDurationMinutes),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -356,7 +362,7 @@ private fun TaskRow(
                 shape = RoundedCornerShape(4.dp),
             ) {
                 Text(
-                    text = "钉",
+                    text = stringResource(R.string.common_pinned),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
@@ -364,12 +370,12 @@ private fun TaskRow(
             }
         }
         IconButton(onClick = onClick) {
-            Icon(Icons.Outlined.Schedule, contentDescription = "编辑任务")
+            Icon(Icons.Outlined.Schedule, contentDescription = stringResource(R.string.plan_detail_task_cd_edit))
         }
         IconButton(onClick = onDelete) {
             Icon(
                 Icons.Outlined.Delete,
-                contentDescription = "删除任务",
+                contentDescription = stringResource(R.string.plan_detail_task_cd_delete),
                 tint = MaterialTheme.colorScheme.error,
             )
         }
@@ -389,30 +395,41 @@ private fun formatTime(minutes: Int): String {
     return "%02d:%02d%s".format(h, m, dayShift)
 }
 
-private fun repeatLabel(seg: TimeSegment): String = when (seg.repeatRule) {
-    com.wakeplan.app.domain.model.RepeatRule.ONCE -> "仅一次"
-    com.wakeplan.app.domain.model.RepeatRule.WEEKDAYS -> "工作日"
-    com.wakeplan.app.domain.model.RepeatRule.DAILY -> "每天"
-    com.wakeplan.app.domain.model.RepeatRule.CUSTOM -> {
-        if (seg.customDays.isEmpty()) "自定义"
-        else {
-            val order = listOf(
-                DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
-                DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY,
-            )
-            order.filter { it in seg.customDays }
-                .joinToString("") {
-                    when (it) {
-                        DayOfWeek.MONDAY -> "一"
-                        DayOfWeek.TUESDAY -> "二"
-                        DayOfWeek.WEDNESDAY -> "三"
-                        DayOfWeek.THURSDAY -> "四"
-                        DayOfWeek.FRIDAY -> "五"
-                        DayOfWeek.SATURDAY -> "六"
-                        DayOfWeek.SUNDAY -> "日"
-                        else -> "?"
-                    }
-                }
+@Composable
+private fun rememberRepeatLabel(seg: TimeSegment): String {
+    val once = stringResource(R.string.repeat_once)
+    val weekdays = stringResource(R.string.repeat_weekdays)
+    val daily = stringResource(R.string.repeat_daily)
+    val custom = stringResource(R.string.repeat_custom)
+    val mon = stringResource(R.string.weekday_mon)
+    val tue = stringResource(R.string.weekday_tue)
+    val wed = stringResource(R.string.weekday_wed)
+    val thu = stringResource(R.string.weekday_thu)
+    val fri = stringResource(R.string.weekday_fri)
+    val sat = stringResource(R.string.weekday_sat)
+    val sun = stringResource(R.string.weekday_sun)
+    return when (seg.repeatRule) {
+        com.wakeplan.app.domain.model.RepeatRule.ONCE -> once
+        com.wakeplan.app.domain.model.RepeatRule.WEEKDAYS -> weekdays
+        com.wakeplan.app.domain.model.RepeatRule.DAILY -> daily
+        com.wakeplan.app.domain.model.RepeatRule.CUSTOM -> {
+            if (seg.customDays.isEmpty()) custom
+            else {
+                val order = listOf(
+                    DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                    DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY,
+                )
+                val labelByDay = mapOf(
+                    DayOfWeek.MONDAY to mon,
+                    DayOfWeek.TUESDAY to tue,
+                    DayOfWeek.WEDNESDAY to wed,
+                    DayOfWeek.THURSDAY to thu,
+                    DayOfWeek.FRIDAY to fri,
+                    DayOfWeek.SATURDAY to sat,
+                    DayOfWeek.SUNDAY to sun,
+                )
+                order.filter { it in seg.customDays }.joinToString("") { labelByDay[it] ?: "?" }
+            }
         }
     }
 }

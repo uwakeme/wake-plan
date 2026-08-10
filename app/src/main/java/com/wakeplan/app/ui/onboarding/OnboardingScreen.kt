@@ -29,9 +29,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.wakeplan.app.R
 import com.wakeplan.app.notification.NotificationPermissionChecker
 
 /**
@@ -118,7 +120,7 @@ fun OnboardingScreen(
             ) {
                 if (step > 0) {
                     OutlinedButton(onClick = { step-- }) {
-                        Text("上一步")
+                        Text(stringResource(R.string.onboarding_prev))
                     }
                 } else {
                     Spacer(Modifier)
@@ -132,7 +134,10 @@ fun OnboardingScreen(
                         }
                     },
                 ) {
-                    Text(if (step < 2) "下一步" else "开始使用")
+                    Text(
+                        if (step < 2) stringResource(R.string.onboarding_next)
+                        else stringResource(R.string.onboarding_get_started),
+                    )
                 }
             }
         }
@@ -148,14 +153,14 @@ private fun StepWelcome() {
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "欢迎使用 Wake Plan",
+            text = stringResource(R.string.onboarding_step1_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            text = "把健身 / 学习 / 副业分开管理。\n到了时间点，App 会准时提醒你。",
+            text = stringResource(R.string.onboarding_step1_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -175,14 +180,14 @@ private fun StepNotificationPermission(
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "开启通知",
+            text = stringResource(R.string.onboarding_step2_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            text = "任务开始前 5 分钟、任务超时未完成时，\nWake Plan 会发本地通知提醒你。\n所有通知在本地处理，不会上传到云端。",
+            text = stringResource(R.string.onboarding_step2_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -190,12 +195,12 @@ private fun StepNotificationPermission(
         if (!granted) {
             Spacer(Modifier.height(16.dp))
             OutlinedButton(onClick = onRequest) {
-                Text("申请通知权限")
+                Text(stringResource(R.string.onboarding_request_permission))
             }
         } else {
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "✓ 通知权限已开启",
+                text = stringResource(R.string.onboarding_permission_granted),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -212,7 +217,7 @@ private fun StepFinish(notificationGranted: Boolean) {
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "准备就绪",
+            text = stringResource(R.string.onboarding_step3_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
@@ -220,9 +225,9 @@ private fun StepFinish(notificationGranted: Boolean) {
         Spacer(Modifier.height(12.dp))
         Text(
             text = if (notificationGranted) {
-                "通知权限已开启，可以开始创建你的第一个计划了。"
+                stringResource(R.string.onboarding_step3_body_granted)
             } else {
-                "通知权限未开启（你随时可以在「设置」里开启）。\n点下方按钮继续。"
+                stringResource(R.string.onboarding_step3_body_denied)
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

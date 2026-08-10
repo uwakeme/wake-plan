@@ -64,7 +64,7 @@ fun PlanListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onCreatePlan) {
-                Icon(Icons.Outlined.Add, contentDescription = "新建计划")
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.plan_list_cd_new))
             }
         },
     ) { padding ->
@@ -138,7 +138,7 @@ private fun PlanCard(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "起始 ${plan.startDate}",
+                    text = stringResource(R.string.plan_list_start_date, plan.startDate.toString()),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -163,12 +163,12 @@ private fun EmptyPlansState(modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "还没有计划",
+                text = stringResource(R.string.plan_list_empty_title),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "点 + 新建一个，\n把健身 / 学习 / 副业分开管理",
+                text = stringResource(R.string.plan_list_empty_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

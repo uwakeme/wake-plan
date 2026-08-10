@@ -1,17 +1,251 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 5.3 决策：纯中文 MVP，strings 不抽。app_name 保留是 manifest 引用。 -->
+    <!-- App 名称（manifest 引用，保留） -->
     <string name="app_name">Wake Plan</string>
 
-    <!-- 底部 tab 标签（5.3 决策：纯中文） -->
+    <!-- 通用 -->
+    <string name="common_back">返回</string>
+    <string name="common_cancel">取消</string>
+    <string name="common_confirm">确定</string>
+    <string name="common_delete">删除</string>
+    <string name="common_save">保存</string>
+    <string name="common_loading">加载中…</string>
+    <string name="common_minutes">%1$d 分钟</string>
+    <string name="common_pinned">钉</string>
+
+    <!-- 底部 tab 标签 -->
     <string name="tab_today">现在</string>
     <string name="tab_plans">计划</string>
     <string name="tab_stats">统计</string>
     <string name="tab_settings">设置</string>
 
-    <!-- 占位屏文案 -->
+    <!-- 占位屏文案（历史遗留，可能未用） -->
     <string name="placeholder_today_title">Wake Plan</string>
     <string name="placeholder_today_subtitle">当前时刻</string>
     <string name="placeholder_plans_title">计划列表</string>
     <string name="placeholder_settings_title">设置</string>
+
+    <!-- 重复规则 -->
+    <string name="repeat_once">仅一次</string>
+    <string name="repeat_weekdays">工作日</string>
+    <string name="repeat_daily">每天</string>
+    <string name="repeat_custom">自定义</string>
+    <string name="repeat_custom_invalid">CUSTOM 规则必须至少选 1 天</string>
+
+    <!-- 星期缩写（DayOfWeek 标签） -->
+    <string name="weekday_mon">一</string>
+    <string name="weekday_tue">二</string>
+    <string name="weekday_wed">三</string>
+    <string name="weekday_thu">四</string>
+    <string name="weekday_fri">五</string>
+    <string name="weekday_sat">六</string>
+    <string name="weekday_sun">日</string>
+
+    <!-- ============================================================ -->
+    <!-- Onboarding 引导页 -->
+    <!-- ============================================================ -->
+    <string name="onboarding_prev">上一步</string>
+    <string name="onboarding_next">下一步</string>
+    <string name="onboarding_get_started">开始使用</string>
+    <string name="onboarding_step1_title">欢迎使用 Wake Plan</string>
+    <string name="onboarding_step1_body">把健身 / 学习 / 副业分开管理。\n到了时间点，App 会准时提醒你。</string>
+    <string name="onboarding_step2_title">开启通知</string>
+    <string name="onboarding_step2_body">任务开始前 5 分钟、任务超时未完成时，\nWake Plan 会发本地通知提醒你。\n所有通知在本地处理，不会上传到云端。</string>
+    <string name="onboarding_request_permission">申请通知权限</string>
+    <string name="onboarding_permission_granted">✓ 通知权限已开启</string>
+    <string name="onboarding_step3_title">准备就绪</string>
+    <string name="onboarding_step3_body_granted">通知权限已开启，可以开始创建你的第一个计划了。</string>
+    <string name="onboarding_step3_body_denied">通知权限未开启（你随时可以在「设置」里开启）。\n点下方按钮继续。</string>
+
+    <!-- ============================================================ -->
+    <!-- Today 屏 -->
+    <!-- ============================================================ -->
+    <string name="today_title_today">今日 %1$s</string>
+    <string name="today_title_other">查看 %1$s</string>
+    <string name="today_btn_today">今天</string>
+    <string name="today_cd_prev_day">前一天</string>
+    <string name="today_cd_next_day">后一天</string>
+    <string name="today_timeline_title_today">今日时间线</string>
+    <string name="today_timeline_title_other">%1$s时间线</string>
+    <string name="today_no_tasks_today">今日无任务</string>
+    <string name="today_no_tasks_other">该日无任务</string>
+    <string name="today_empty_title_today">今天还没有计划</string>
+    <string name="today_empty_title_other">%1$s 没有计划</string>
+    <string name="today_empty_subtitle">去「计划」tab 创建一个</string>
+    <string name="today_segment_default_title">段</string>
+    <string name="today_segment_next_day"> — 次日 %1$s</string>
+    <string name="today_btn_start">开始</string>
+    <string name="today_btn_complete">完成</string>
+    <string name="today_cd_start">开始</string>
+    <string name="today_cd_complete">完成</string>
+    <string name="today_cd_completed">已完成</string>
+    <string name="today_cd_skipped">已跳过</string>
+    <string name="today_cd_skip">跳过</string>
+    <string name="today_undo_started">已开始</string>
+    <string name="today_undo_completed">已完成</string>
+    <string name="today_undo_skipped">已跳过</string>
+    <string name="today_undo_action">撤销</string>
+    <string name="today_conflict">与 %1$s 冲突 %2$d 分钟</string>
+    <string name="today_conflict_other_plan">其他计划</string>
+
+    <!-- ============================================================ -->
+    <!-- Plan 列表 / 详情 / 创建 -->
+    <!-- ============================================================ -->
+    <string name="plan_list_cd_new">新建计划</string>
+    <string name="plan_list_start_date">起始 %1$s</string>
+    <string name="plan_list_empty_title">还没有计划</string>
+    <string name="plan_list_empty_subtitle">点 + 新建一个，\n把健身 / 学习 / 副业分开管理</string>
+
+    <string name="plan_detail_title_fallback">计划详情</string>
+    <string name="plan_detail_cd_delete">删除计划</string>
+    <string name="plan_detail_cd_add_segment">添加段</string>
+    <string name="plan_detail_delete_dialog_title">删除计划？</string>
+    <string name="plan_detail_delete_dialog_text">将删除 "%1$s" 及其所有段、任务。此操作不可撤销。</string>
+    <string name="plan_detail_header_subtitle">起始 %1$s · %2$s</string>
+    <string name="plan_detail_status_active">活跃</string>
+    <string name="plan_detail_status_archived">归档</string>
+    <string name="plan_detail_no_segments">还没有段，点 + 添加时间段（如 \"晨练 06:30-07:30\"）</string>
+    <string name="plan_detail_segment_cd_edit">编辑段</string>
+    <string name="plan_detail_segment_cd_delete">删除段</string>
+    <string name="plan_detail_no_tasks_in_segment">段内还没有任务</string>
+    <string name="plan_detail_add_task">添加任务</string>
+    <string name="plan_detail_task_cd_edit">编辑任务</string>
+    <string name="plan_detail_task_cd_delete">删除任务</string>
+
+    <string name="plan_create_title">新建计划</string>
+    <string name="plan_create_section_color">颜色</string>
+    <string name="plan_create_section_start_date">起始日期</string>
+    <string name="plan_create_default_today">%1$s （默认今天）</string>
+    <string name="plan_create_field_title">标题</string>
+    <string name="plan_create_field_title_placeholder">例如：健身 / 学习 / 副业</string>
+    <string name="plan_create_title_counter">1-%1$d 字符</string>
+    <string name="plan_create_title_too_long">标题不能超过 %1$d 字</string>
+    <string name="plan_create_color_selected_cd">已选</string>
+    <string name="plan_create_custom_hex_label">自定义 hex（可选）</string>
+    <string name="plan_create_custom_hex_placeholder">#RRGGBB，例如 #FF5733</string>
+    <string name="plan_create_current_hex">当前：%1$s</string>
+
+    <!-- ============================================================ -->
+    <!-- Segment / Task Editor -->
+    <!-- ============================================================ -->
+    <string name="segment_editor_title_new">新建段</string>
+    <string name="segment_editor_title_edit">编辑段</string>
+    <string name="segment_editor_cd_delete">删除段</string>
+    <string name="segment_editor_field_title_label">段标题（可选）</string>
+    <string name="segment_editor_field_title_placeholder">例如：晨练 / 学习 / 副业</string>
+    <string name="segment_editor_start_label">开始 %1$s</string>
+    <string name="segment_editor_end_label">结束 %1$s</string>
+    <string name="segment_editor_repeat_label">重复</string>
+    <string name="segment_editor_custom_days_label">选择星期</string>
+    <string name="segment_editor_delete_dialog_title">删除段？</string>
+    <string name="segment_editor_delete_dialog_text">段内任务也会一起删除。</string>
+    <string name="segment_editor_overlap_warning">与 %1$d 个段重叠</string>
+    <string name="segment_editor_picker_confirm">确定</string>
+
+    <string name="task_editor_title_new">新建任务</string>
+    <string name="task_editor_title_edit">编辑任务</string>
+    <string name="task_editor_cd_delete">删除任务</string>
+    <string name="task_editor_field_title_label">任务标题</string>
+    <string name="task_editor_field_title_placeholder">例如：跑步 30 分钟</string>
+    <string name="task_editor_field_duration_label">计划时长（分钟）</string>
+    <string name="task_editor_field_auto_extend_label">自动延期</string>
+    <string name="task_editor_field_auto_extend_desc">超时后是否拖动后续任务</string>
+    <string name="task_editor_field_locked_label">钉在原定时点</string>
+    <string name="task_editor_field_locked_desc">锁定后不参与自动延期</string>
+    <string name="task_editor_field_note_label">备注（可选）</string>
+    <string name="task_editor_delete_dialog_title">删除任务？</string>
+    <string name="task_editor_delete_dialog_text">此操作不可撤销。</string>
+    <string name="task_editor_overload_warning">段超载 +%1$d 分钟</string>
+    <string name="task_editor_overflow_warning">段时长 %1$d 分钟；可保存但任务会溢出</string>
+
+    <!-- ============================================================ -->
+    <!-- Template 库 / 详情 -->
+    <!-- ============================================================ -->
+    <string name="template_list_title">模板库</string>
+    <string name="template_list_hint">点开看段 + 任务，5.4.2 会上线「应用模板」</string>
+    <string name="template_list_built_in">内置模板</string>
+    <string name="template_list_user">用户模板</string>
+
+    <string name="template_detail_title_fallback">模板详情</string>
+    <string name="template_detail_summary_today">内置模板还没有段</string>
+    <string name="template_detail_summary_user">用户模板还没有段</string>
+    <string name="template_detail_stats">%1$d 段 · %2$d 任务</string>
+    <string name="template_detail_apply">应用此模板</string>
+    <string name="template_detail_applying">正在创建…</string>
+    <string name="template_detail_segment_no_tasks">段内还没有任务</string>
+
+    <!-- ============================================================ -->
+    <!-- Settings 屏 -->
+    <!-- ============================================================ -->
+    <string name="settings_title">设置</string>
+    <string name="settings_section_templates">模板库</string>
+    <string name="settings_section_templates_subtitle">3 个内置模板（标准晨练 / 标准学习 / 周末阅读）</string>
+    <string name="settings_section_notifications">通知</string>
+    <string name="settings_item_starting_title">任务开始提醒</string>
+    <string name="settings_item_starting_subtitle">任务开始前 N 分钟推送</string>
+    <string name="settings_item_overdue_title">任务超时提醒</string>
+    <string name="settings_item_overdue_subtitle">任务超时未完成时循环提醒</string>
+    <string name="settings_item_completed_title">任务完成确认</string>
+    <string name="settings_item_completed_subtitle">v0.1 占位，v0.2 启用</string>
+    <string name="settings_item_recap_title">每日计划回顾</string>
+    <string name="settings_item_recap_subtitle">每日 21:00 推送（v0.1 占位）</string>
+    <string name="settings_item_lead_minutes_title">%1$d 分钟</string>
+    <string name="settings_item_lead_minutes_subtitle">任务开始前多少分钟推送通知</string>
+    <string name="settings_item_lead_minutes_value_zero">不提前</string>
+    <string name="settings_item_lead_minutes_value_n">%1$d 分钟</string>
+    <string name="settings_test_notification_title">测试通知</string>
+    <string name="settings_test_notification_btn">发测试通知</string>
+
+    <string name="settings_section_backup">数据备份</string>
+    <string name="settings_backup_intro">把数据导出到本地文件，或从备份文件恢复。\n加密备份用 AES-256 + PBKDF2，密码请妥善保管。</string>
+    <string name="settings_backup_export_plain">导出明文</string>
+    <string name="settings_backup_export_encrypted">导出加密</string>
+    <string name="settings_backup_import">导入备份</string>
+    <string name="settings_backup_exporting">导出中…</string>
+    <string name="settings_backup_importing">导入中…</string>
+
+    <string name="settings_export_plain_dialog_title">导出明文备份</string>
+    <string name="settings_export_plain_dialog_text">明文备份不加密，文件内容可以直接查看。\n导出的 JSON 可以用文本编辑器打开。</string>
+    <string name="settings_export_pick_location">选位置</string>
+
+    <string name="settings_export_encrypted_dialog_title">导出加密备份</string>
+    <string name="settings_export_encrypted_dialog_message">设置一个至少 %1$d 位的密码。\n忘记密码无法恢复，请妥善保管。</string>
+    <string name="settings_import_encrypted_dialog_title">导入加密备份</string>
+    <string name="settings_import_encrypted_dialog_message">这是加密备份，请输入密码。</string>
+
+    <string name="settings_passphrase_field_label">密码</string>
+    <string name="settings_passphrase_field_repeat_label">再输入一次</string>
+    <string name="settings_passphrase_error_empty">密码不能为空</string>
+    <string name="settings_passphrase_error_too_short">密码至少 %1$d 位</string>
+    <string name="settings_passphrase_error_mismatch">两次输入不一致</string>
+
+    <string name="settings_import_confirm_title">确认导入？</string>
+    <string name="settings_import_confirm_text">导入备份会完全覆盖当前所有计划、段、任务和完成记录。</string>
+    <string name="settings_import_confirm_subtext">此操作不可撤销。建议先导出一份当前数据的备份。</string>
+    <string name="settings_import_confirm_action">覆盖导入</string>
+
+    <string name="settings_export_success">导出成功：%1$d KB</string>
+    <string name="settings_export_failed">导出失败：%1$s</string>
+    <string name="settings_import_success">导入成功：%1$d 计划 / %2$d 任务 / %3$d 完成</string>
+    <string name="settings_import_failed">导入失败：%1$s</string>
+    <string name="settings_import_failed_needs_passphrase">备份文件已加密</string>
+
+    <!-- ============================================================ -->
+    <!-- Stats 屏 -->
+    <!-- ============================================================ -->
+    <string name="stats_title">统计</string>
+    <string name="stats_range_7d">近 7 天</string>
+    <string name="stats_range_30d">近 30 天</string>
+    <string name="stats_metric_completed">已完成</string>
+    <string name="stats_metric_on_time_rate">准时率</string>
+    <string name="stats_metric_avg_overrun">平均延期</string>
+    <string name="stats_metric_avg_overrun_empty">—</string>
+    <string name="stats_metric_skipped_missed">跳过/未完成</string>
+    <string name="stats_per_plan_title">按计划完成数</string>
+    <string name="stats_per_plan_empty">这段时间还没完成任务</string>
+    <string name="stats_empty_title">暂无数据</string>
+    <string name="stats_empty_subtitle">完成任务后，这里会显示统计概览</string>
+    <string name="stats_per_day_title">每日完成数</string>
+    <string name="stats_per_day_empty">这段时间还没完成过任务</string>
+    <string name="stats_per_plan_bar_title">按计划完成柱状</string>
 </resources>
