@@ -145,6 +145,8 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(platform(composeBom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    // v0.3 Migration 测试 — MigrationTestHelper 在 androidx.room:room-testing
+    androidTestImplementation(libs.room.testing)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
 

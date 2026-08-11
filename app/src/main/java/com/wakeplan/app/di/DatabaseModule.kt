@@ -50,7 +50,9 @@ object DatabaseModule {
             WakePlanDatabase.DB_NAME,
         )
             .openHelperFactory(factory)
-            .fallbackToDestructiveMigration() // MVP 阶段；v0.2 加 Migration 测试后去掉
+            // v0.3: 去掉 fallbackToDestructiveMigration，启用 v1→v2 migration
+            // 失败时抛 IllegalStateException（不要悄悄清表）—— 用户能感知
+            .addMigrations(WakePlanDatabase.MIGRATION_1_2)
             .build()
     }
 
