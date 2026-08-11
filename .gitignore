@@ -31,3 +31,49 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# === Local dev artifacts (v0.3 cleanup 2026-08-11) ===
+# temp Python / PowerShell scripts created during ad-hoc investigation
+#   不会写成 .py / .ps1 的版本管理文件；用 submodule 复用或写到 /tools/ 再说
+*.py
+*.ps1
+
+# Screenshots / uiautomator dumps (root only — these are conversation
+# artifacts, not test fixtures; 截图走 docs/screenshots/ 这种显式目录)
+s[0-9]*.png
+u*.xml
+ui*.xml
+wake-plan-screen.png
+today-*.png
+onb[0-9].png
+notify.png
+before-v03.png
+
+# Extracted AAR / SQLCipher sources (one-time inspection)
+*.aar
+*.zip
+sqlcipher-*/
+aliyun-*/
+tencent-*/
+i18n-bak/
+
+# Build output / logcat dumps
+*.out
+*.patch
+*.pid
+wakeplan.db*
+wp.db
+locale-prefs.xml
+
+# === Local-only root dotfiles (we keep .gitignore, .github/, AGENTS.md) ===
+# 任何在 repo 根、以 . 开头、长度 > 2 的隐藏文件默认 ignore
+# 避免之前那种 "我创建了 .add-ctx.py 写完没清" 反复堆积
+.[!.]*
+.[!.]*/
+
+# but explicitly allow
+!.gitignore
+!.github/
+!.editorconfig
+!AGENTS.md
+!CLAUDE.md
