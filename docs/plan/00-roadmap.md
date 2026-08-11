@@ -268,3 +268,35 @@ Room DAO / DataStore
 
 **v0.2 → v0.3 路线图候选**：v0.2 仍用 `fallbackToDestructiveMigration`（首次加密部署会清表重建；v0.3 加 Migration 测试）；其它候选待 PRD review 后再列。
 
+---
+
+## 11. v0.3 当前进度（2026-08-11 更新）
+
+**v0.3 状态**：4 个 sub-phase 全部完成并推送到 `main`，**235 个 JVM 单测全过**（+ 2 个 androidTest Migration 测试待 CI 跑），编译通过，emulator 验证通过。准备 v0.3 release。
+
+| Sub-phase | commit | 测试数累计 | 关键产出 |
+|---|---|---|---|
+| 6.1 隐私政策 + 关于 section | `1267a06` | 235 | 设置页底部「关于」：隐私政策 dialog + 版本 + 源代码；中英双语 11 个 key |
+| 6.2 文档 i18n 收尾 | `204203d` (5.5) | 221 | values + values-en strings 双语 199 keys（v0.2 5.5 已完成） |
+| 6.3 Migration 测试基础设施 | `ce9778a` | 235 + 2 androidTest | PlanEntity.archived 字段 + WakePlanDatabase v1→v2 + MIGRATION_1_2 + `MigrationTestHelper` 走 SQLCipher 路径 |
+| 6.4 Per-app locale 语言切换 | `85858b7` | 235 | LocaleHelper（自管 SharedPreferences）+ Android 13+ `LocaleManager` + appcompat 1.7.0 兜底 + `locales_config.xml` + 设置页「语言」section + 3 状态 dialog |
+
+**v0.3 关键决策**：
+
+- **Per-app locale 走系统路径，不绕弯**：API 33+ 直接 `LocaleManager.applicationLocales = LocaleList(...)`；< API 33 走 appcompat 1.7.0 兜底。实测 Android 16 模拟器上 `AppCompatDelegate.setApplicationLocales` 写入被吞（`getApplicationLocales()` 立刻返回 `[]`），切到 `LocaleManager` 立刻稳。Android 13+ 系统设置「应用语言」能直接发现并切换。
+
+- **隐私政策必须先有再发版**：Google Play 审核问这个，没隐私政策会被拒。v0.3 dialog 4 条 bullet（无网络 / 无数据收集 / 本地加密 / 无第三方 SDK）+ GitHub issue 邀请。
+
+- **Migration 测试要覆盖加密路径**：`MigrationTestHelper` 默认走 Room 框架层；WakePlanDatabaseMigrationTest 显式注 `SupportOpenHelperFactory(passphrase)`，确保 SQLCipher 路径也走通（不只是 Room 自身的 SQL 兼容）。
+
+- **PlanEntity.archived 字段是 v0.4 留位**：v0.3 不实现归档功能，只加字段 + 默认值 `0`，Migration 一次走完，v0.4 直接挂 UI 不用再 schema 升级。
+
+**v0.3 验证状态**：
+- ✅ 4/4 sub-phase 全部 commit + push 到 main
+- ✅ 235 个 JVM 单测全过
+- ✅ `assembleDebug` + `assembleDebugAndroidTest` 通过
+- ✅ 模拟器 3 状态切换实测：跟随系统（`app-locale: []`）/ 中文（`[zh-CN]`）/ English（`[en]`）
+- ✅ force-stop + restart 持久化通过（系统 locale store 负责）
+
+**v0.3 → v0.4 路线图候选**：v0.4 是「正式对外内测」预备：计划归档 / 撤回撤销栈 / 冲突可视化 / PRD 5.4 P1 US 完整覆盖（按月统计 / 导出 CSV / 番茄钟关联）。具体优先级等 v0.3 内测反馈再排。
+
