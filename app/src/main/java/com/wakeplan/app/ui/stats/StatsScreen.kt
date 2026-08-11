@@ -275,6 +275,15 @@ private fun EmptyStatsState() {
 @Composable
 private fun PerDayLineChart(result: StatsUseCase.StatsResult) {
     val perDay = result.perDay
+    // maxOf 在空集合上抛 NoSuchElementException — 空数据时直接给空态
+    if (perDay.isEmpty() || perDay.all { it.completedCount == 0 }) {
+        Text(
+            text = stringResource(R.string.stats_per_day_empty),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
     val maxY = max(1, perDay.maxOf { it.completedCount })
     val primaryColor = MaterialTheme.colorScheme.primary
     val outlineColor = MaterialTheme.colorScheme.outlineVariant
@@ -398,6 +407,15 @@ private val X_LABEL_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d")
 @Composable
 private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
     val perPlan = result.perPlan
+    // maxOf 在空集合上抛 NoSuchElementException — 新装 App 没有任何完成记录时直接 crash
+    if (perPlan.isEmpty()) {
+        Text(
+            text = stringResource(R.string.stats_per_plan_empty),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
     val maxY = max(1, perPlan.maxOf { it.completedCount })
     val outlineColor = MaterialTheme.colorScheme.outlineVariant
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
