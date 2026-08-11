@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import com.wakeplan.app.data.db.DatabaseSeeder
+import com.wakeplan.app.data.prefs.LocaleHelper
 import com.wakeplan.app.data.security.DatabaseKeyStore
 import com.wakeplan.app.notification.NotificationChannels
 import com.wakeplan.app.notification.OverdueWorkScheduler
@@ -24,6 +25,7 @@ import javax.inject.Inject
  * - DatabaseSeeder.seedIfEmpty（首启 seed 3 个内置模板）
  * - NotificationChannels.createAll（4 个通知渠道）
  * - OverdueWorkScheduler.start（启动 10min 周期检查）
+ * - LocaleHelper.restoreOnStartup：用户上次切过语言时恢复（Per-app locale）
  *
  * Phase 5.8 SQLCipher：
  * - System.loadLibrary("sqlcipher") 必须在任何 SupportOpenHelperFactory 代码路径前跑
@@ -40,6 +42,7 @@ class App : Application(), Configuration.Provider {
     @Inject lateinit var workManagerConfigProvider: WorkManagerConfigProvider
     @Inject lateinit var overdueWorkScheduler: OverdueWorkScheduler
     @Inject lateinit var databaseKeyStore: DatabaseKeyStore
+    @Inject lateinit var localeHelper: LocaleHelper
 
     override fun onCreate() {
         super.onCreate()
@@ -57,6 +60,9 @@ class App : Application(), Configuration.Provider {
         NotificationChannels.createAll(this)
         // 6. 启动 10min 周期 overdue 检查（KEEP 策略：已有同名 work 就不重建）
         overdueWorkScheduler.start()
+        // 7. v0.3 Per-app locale：恢复用户上次选的语言（SharedPreferences → AppCompatDelegate）
+        //    第一次启动 prefs 为空 → AppCompatDelegate 保留 system default（中文系统就是中文）
+        localeHelper.restoreOnStartup()
     }
 
     // WorkManager Configuration.Provider — WorkManager.getInstance(context) 时如果未初始化会调这个

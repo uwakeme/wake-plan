@@ -63,7 +63,9 @@ import java.time.format.DateTimeFormatter
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wakeplan.app.MainActivity
 import com.wakeplan.app.R
+import com.wakeplan.app.data.prefs.LocaleHelper
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -101,6 +103,10 @@ fun SettingsScreen(
 
     // ===== Phase 6.1 关于 state =====
     var showPrivacyPolicy by remember { mutableStateOf(false) }
+
+    // ===== Phase 6.3 语言 state =====
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    val currentLocale = viewModel.currentLocale
 
     // SAF 导出 launcher
     val exportLauncher = rememberLauncherForActivityResult(
@@ -185,6 +191,20 @@ fun SettingsScreen(
                 title = "模板库",
                 subtitle = "3 个内置模板（标准晨练 / 标准学习 / 周末阅读）",
                 onClick = onTemplatesClick,
+            )
+
+            // ===== Phase 6.3 语言 section（v0.3 P1 US：per-app locale）=====
+            Spacer(Modifier.height(8.dp))
+            SectionHeader(stringResource(R.string.language_section))
+
+            SettingsItem(
+                title = stringResource(R.string.language_title),
+                subtitle = when (currentLocale) {
+                    LocaleHelper.LocaleChoice.SYSTEM -> stringResource(R.string.language_summary_system)
+                    LocaleHelper.LocaleChoice.ZH -> stringResource(R.string.language_summary_zh)
+                    LocaleHelper.LocaleChoice.EN -> stringResource(R.string.language_summary_en)
+                },
+                onClick = { showLanguageDialog = true },
             )
 
             Spacer(Modifier.height(8.dp))
@@ -448,7 +468,72 @@ fun SettingsScreen(
             )
         }
 
+        // 6. 语言切换（Phase 6.3 v0.3 P1 US：per-app locale）
+        if (showLanguageDialog) {
+            LanguageChoiceDialog(
+                current = currentLocale,
+                onSelect = { choice ->
+                    showLanguageDialog = false
+                    if (choice != viewModel.currentLocale) {
+                        viewModel.setLocale(choice)
+                        // AppCompatDelegate.setApplicationLocales 已 set；recreate Activity 立即生效
+                        (context as? MainActivity)?.recreate()
+                    }
+                },
+                onDismiss = { showLanguageDialog = false },
+            )
+        }
     }
+}
+
+/**
+ * 语言选择 dialog（v0.3 P1 US：per-app locale）
+ * 三个选项：跟随系统 / 中文（简体）/ English
+ * 当前选中的选项前面用 RadioButton 标记
+ */
+@Composable
+private fun LanguageChoiceDialog(
+    current: LocaleHelper.LocaleChoice,
+    onSelect: (LocaleHelper.LocaleChoice) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val options = listOf(
+        LocaleHelper.LocaleChoice.SYSTEM to R.string.language_option_system,
+        LocaleHelper.LocaleChoice.ZH to R.string.language_option_zh,
+        LocaleHelper.LocaleChoice.EN to R.string.language_option_en,
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.language_dialog_title)) },
+        text = {
+            Column {
+                options.forEach { (choice, labelRes) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(choice) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.RadioButton(
+                            selected = current == choice,
+                            onClick = { onSelect(choice) },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(labelRes),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.about_privacy_policy_close))
+            }
+        },
+    )
 }
 
 @Composable
@@ -596,6 +681,7 @@ private fun SettingsItem(
 class SettingsViewModel @Inject constructor(
     private val preferences: UserPreferences,
     private val appVersionProvider: com.wakeplan.app.data.backup.AppVersionProvider,
+    private val localeHelper: LocaleHelper,
 ) : ViewModel() {
 
     val leadMinutes = preferences.taskStartingLeadMinutes
@@ -613,6 +699,18 @@ class SettingsViewModel @Inject constructor(
     /** v0.3 P1 US：暴露给 About section 显示 */
     val versionName: String get() = appVersionProvider.versionName
     val versionCode: Int get() = appVersionProvider.versionCode
+
+    /** v0.3 P1 US：当前选的语言（系统 / 中文 / 英文）— 给「语言」section 显示 */
+    val currentLocale: LocaleHelper.LocaleChoice get() = localeHelper.current
+
+    /**
+     * 用户在 dialog 里改了语言：
+     * 1. 写 SharedPreferences + AppCompatDelegate.setApplicationLocales
+     * 2. 返回新 Choice 让 UI 弹 Snackbar / recreate Activity
+     */
+    fun setLocale(choice: LocaleHelper.LocaleChoice) {
+        localeHelper.apply(choice)
+    }
 
     fun setLeadMinutes(minutes: Int) {
         viewModelScope.launch { preferences.setTaskStartingLeadMinutes(minutes) }

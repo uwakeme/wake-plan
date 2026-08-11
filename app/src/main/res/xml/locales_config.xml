@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Per-app locale config — v0.3
+  列出 App 支持的语言；Android 13+ 系统设置"应用语言"会读这个文件展示选项。
+  也给 AppCompatDelegate.setApplicationLocales 提供官方 source of truth。
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="zh-CN" />
+    <locale android:name="en" />
+</locale-config>

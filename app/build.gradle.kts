@@ -121,6 +121,10 @@ dependencies {
     // DataStore
     implementation(libs.datastore.preferences)
 
+    // AppCompat — v0.3 Per-app locale (AppCompatDelegate.setApplicationLocales)
+    // 跨 API 26-35 都能用：API 33+ 走 system LocaleManager，< 33 走 appcompat 自己的实现
+    implementation(libs.appcompat)
+
     // Serialization
     implementation(libs.kotlinx.serialization.json)
 

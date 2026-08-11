@@ -278,4 +278,17 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="about_source_code_url">https://github.com/uwakeme/wake-plan</string>
     <string name="about_source_code_summary">github.com/uwakeme/wake-plan</string>
 
+
+    <!-- ============================================================ -->
+    <!-- Language switcher — Phase 6.3 (v0.3 P1 US) -->
+    <!-- ============================================================ -->
+    <string name="language_section">Language</string>
+    <string name="language_title">App language</string>
+    <string name="language_summary_system">Follow system</string>
+    <string name="language_summary_zh">Chinese (Simplified)</string>
+    <string name="language_summary_en">English</string>
+    <string name="language_dialog_title">Choose app language</string>
+    <string name="language_option_system">Follow system</string>
+    <string name="language_option_zh">Chinese (Simplified)</string>
+    <string name="language_option_en">English</string>
 </resources>

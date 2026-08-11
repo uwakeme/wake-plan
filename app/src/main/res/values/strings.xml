@@ -282,4 +282,18 @@
     <string name="about_source_code_url">https://github.com/uwakeme/wake-plan</string>
     <string name="about_source_code_summary">github.com/uwakeme/wake-plan</string>
 
+
+    <!-- ============================================================ -->
+    <!-- Language switcher — Phase 6.3 (v0.3 P1 US) -->
+    <!-- 设置页「语言」section：跟随系统 / 中文 / English -->
+    <!-- ============================================================ -->
+    <string name="language_section">语言</string>
+    <string name="language_title">App 语言</string>
+    <string name="language_summary_system">跟随系统</string>
+    <string name="language_summary_zh">中文（简体）</string>
+    <string name="language_summary_en">English</string>
+    <string name="language_dialog_title">选择 App 语言</string>
+    <string name="language_option_system">跟随系统</string>
+    <string name="language_option_zh">中文（简体）</string>
+    <string name="language_option_en">English</string>
 </resources>

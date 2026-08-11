@@ -13,6 +13,7 @@ composeBom = "2024.10.00"
 lifecycle = "2.8.6"
 activityCompose = "1.9.3"
 datastore = "1.1.1"
+appcompat = "1.7.0"
 serialization = "1.7.3"
 coroutines = "1.8.1"
 desugar = "2.1.2"
@@ -60,6 +61,9 @@ sqlite-ktx = { group = "androidx.sqlite", name = "sqlite-ktx", version.ref = "sq
 
 # DataStore
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+
+# AppCompat — v0.3 Per-app locale 支持（AppCompatDelegate.setApplicationLocales）
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 # Serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
