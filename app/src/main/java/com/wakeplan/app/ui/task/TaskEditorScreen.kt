@@ -41,13 +41,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.wakeplan.app.R
 
-/**
- * 任务编辑器屏
- * - create / edit 模式
- * - autoExtend / isLocked 开关
- * - 段超载内联提示（PRD AC-03.3：可保存但有警告）
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskEditorScreen(
@@ -74,10 +71,10 @@ fun TaskEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isEdit) "编辑任务" else "新建任务") },
+                title = { Text(if (isEdit) stringResource(R.string.task_edit_title) else stringResource(R.string.task_new_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -85,7 +82,7 @@ fun TaskEditorScreen(
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
                                 Icons.Outlined.Delete,
-                                contentDescription = "删除任务",
+                                contentDescription = stringResource(R.string.task_delete),
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         }
@@ -105,8 +102,8 @@ fun TaskEditorScreen(
             OutlinedTextField(
                 value = title,
                 onValueChange = viewModel::setTitle,
-                label = { Text("任务标题") },
-                placeholder = { Text("例如：跑步 30 分钟") },
+                label = { Text(stringResource(R.string.task_title_label)) },
+                placeholder = { Text(stringResource(R.string.task_title_hint)) },
                 singleLine = true,
                 isError = title.isNotEmpty() && title.length > TaskEditorViewModel.MAX_TITLE_LENGTH,
                 supportingText = {
@@ -122,7 +119,7 @@ fun TaskEditorScreen(
                     val v = input.toIntOrNull() ?: 0
                     viewModel.setPlannedDurationMinutes(v)
                 },
-                label = { Text("计划时长（分钟）") },
+                label = { Text(stringResource(R.string.task_duration_label_runtime)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
@@ -135,16 +132,16 @@ fun TaskEditorScreen(
 
             // autoExtend 开关
             ToggleRow(
-                label = "自动延期",
-                description = "超时后是否拖动后续任务",
+                label = stringResource(R.string.task_auto_extend),
+                description = stringResource(R.string.task_auto_extend_help),
                 checked = autoExtend,
                 onCheckedChange = viewModel::setAutoExtend,
             )
 
             // isLocked 开关
             ToggleRow(
-                label = "钉在原定时点",
-                description = "锁定后不参与自动延期",
+                label = stringResource(R.string.task_pinned_label),
+                description = stringResource(R.string.task_pinned_sub),
                 checked = isLocked,
                 onCheckedChange = viewModel::setIsLocked,
             )
@@ -153,7 +150,7 @@ fun TaskEditorScreen(
             OutlinedTextField(
                 value = note,
                 onValueChange = viewModel::setNote,
-                label = { Text("备注（可选）") },
+                label = { Text(stringResource(R.string.task_notes_label)) },
                 minLines = 2,
                 maxLines = 4,
                 modifier = Modifier.fillMaxWidth(),
@@ -165,7 +162,7 @@ fun TaskEditorScreen(
                 enabled = isValid,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("保存")
+                Text(stringResource(R.string.task_save))
             }
         }
     }
@@ -173,18 +170,18 @@ fun TaskEditorScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("删除任务？") },
-            text = { Text("此操作不可撤销。") },
+            title = { Text(stringResource(R.string.task_delete_title)) },
+            text = { Text(stringResource(R.string.task_delete_msg)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
                         viewModel.delete()
                     }
-                ) { Text("删除", color = MaterialTheme.colorScheme.error) }
+                ) { Text(stringResource(R.string.plan_seg_delete_confirm), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
+                TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.plan_seg_delete_cancel)) }
             },
         )
     }
@@ -237,12 +234,12 @@ private fun OverloadWarning(overload: Int, segmentMinutes: Int) {
             Spacer(Modifier.width(8.dp))
             Column {
                 Text(
-                    text = "段超载 +$overload 分钟",
+                    text = stringResource(R.string.task_overload_warning_runtime),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Text(
-                    text = "段时长 $segmentMinutes 分钟；可保存但任务会溢出",
+                    text = stringResource(R.string.task_overflow_warning_runtime),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )

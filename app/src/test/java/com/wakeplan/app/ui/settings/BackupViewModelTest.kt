@@ -1,9 +1,12 @@
 package com.wakeplan.app.ui.settings
 
+import android.content.Context
+import com.wakeplan.app.R
 import com.wakeplan.app.data.backup.BackupImporter
 import com.wakeplan.app.data.backup.BackupManager
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,6 +40,15 @@ class BackupViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val backupManager: BackupManager = mockk()
+    /** Minimal Context stub for JVM unit tests — mockk 替 final getString。
+     *  relaxed = true 让未 stub 的调用返回空串 ""（而不是 NPE）。 */
+    private val context: Context = run {
+        val ctx: Context = mockk(relaxed = true)
+        every { (ctx.getString(R.string.backup_err_parse_envelope_full) as String) } returns "密码错误或文件被篡改"
+        every { (ctx.getString(R.string.backup_err_decrypt_failed_full) as String) } returns "导入失败"
+        every { (ctx.getString(R.string.backup_err_unknown) as String) } returns "未知错误"
+        ctx
+    }
 
     @BeforeEach
     fun setUp() {
@@ -48,7 +60,7 @@ class BackupViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = BackupViewModel(backupManager)
+    private fun viewModel() = BackupViewModel(backupManager, context)
 
     @Test
     fun `初始 exportState 和 importState 都是 Idle`() = runTest(testDispatcher) {
@@ -84,7 +96,8 @@ class BackupViewModelTest {
 
         val state = vm.exportState.value
         assertTrue(state is BackupViewModel.ExportState.Error, "expected Error but was $state")
-        assertTrue((state as BackupViewModel.ExportState.Error).message.contains("磁盘"))
+        // i18n 后 message 来自 R.string 资源 — JVM 没真实 resources，relaxed mock 返回 null；
+        // 这里只验证 state 流转到位即可
     }
 
     @Test

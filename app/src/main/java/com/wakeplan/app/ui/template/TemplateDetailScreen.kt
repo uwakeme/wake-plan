@@ -48,18 +48,10 @@ import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TimeSegment
 import java.time.DayOfWeek
+import androidx.compose.ui.res.stringResource
+import com.wakeplan.app.R
 
-/**
- * 模板详情屏 — Phase 5.4.1 + 5.4.2
- *
- * 布局：
- * - TopAppBar: 返回 + 模板标题
- * - 头部：色点 + 标题 + "内置模板/用户模板" 标签 + 简短描述
- * - 段卡片列表（只读；显示时间 + 重复规则 + 内嵌任务列表）
- * - 底部："应用此模板" 按钮（5.4.2：enable，按下后调 viewModel.applyTemplate，成功后通知 onApply(newPlanId)）
- *
- * 设计：跟 PlanDetailScreen 形态相似但只读；不要让用户编辑模板内容
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplateDetailScreen(
@@ -70,6 +62,7 @@ fun TemplateDetailScreen(
     val template by viewModel.template.collectAsStateWithLifecycle()
     val applyState by viewModel.applyState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     // 监听 applyState 变化：Success → onApply(newPlanId) + 重置；Error → Snackbar
     LaunchedEffect(applyState) {
@@ -89,10 +82,10 @@ fun TemplateDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(template?.title ?: "模板详情") },
+                title = { Text(template?.title ?: stringResource(R.string.tpl_detail_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
             )
@@ -105,7 +98,7 @@ fun TemplateDetailScreen(
                 Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("加载中…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.tpl_detail_loading), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             return@Scaffold
         }
@@ -142,7 +135,7 @@ private fun TemplateDetailBody(
         if (template.segments.isEmpty()) {
             item {
                 EmptySegmentsHint(
-                    summary = if (template.isBuiltIn) "内置模板还没有段" else "用户模板还没有段",
+                    summary = if (template.isBuiltIn) stringResource(R.string.tpl_detail_empty_built_in) else stringResource(R.string.tpl_detail_empty_user),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -190,7 +183,7 @@ private fun TemplateHeader(template: PlanTemplate) {
                         shape = RoundedCornerShape(6.dp),
                     ) {
                         Text(
-                            text = if (template.isBuiltIn) "内置模板" else "用户模板",
+                            text = if (template.isBuiltIn) stringResource(R.string.tpl_list_label_built_in) else stringResource(R.string.tpl_list_label_user),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -198,7 +191,7 @@ private fun TemplateHeader(template: PlanTemplate) {
                     }
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "${template.segments.size} 段 · ${template.tasks.size} 任务",
+                        text = stringResource(R.string.tpl_detail_segments_tasks_count_runtime, template.segments.size, template.tasks.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -219,7 +212,7 @@ private fun ApplyButtonRow(
         enabled = !running,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text(if (running) "正在创建…" else "应用此模板")
+        Text(if (running) stringResource(R.string.tpl_detail_creating_runtime) else stringResource(R.string.tpl_detail_apply))
     }
 }
 
@@ -244,6 +237,7 @@ private fun TemplateSegmentCard(
     segment: TimeSegment,
     tasks: List<Task>,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -270,7 +264,7 @@ private fun TemplateSegmentCard(
                     shape = RoundedCornerShape(6.dp),
                 ) {
                     Text(
-                        text = repeatLabel(segment),
+                        text = repeatLabel(context, segment),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -289,7 +283,7 @@ private fun TemplateSegmentCard(
             // 任务列表
             if (tasks.isEmpty()) {
                 Text(
-                    text = "段内还没有任务",
+                    text = stringResource(R.string.tpl_detail_no_segment_runtime),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -331,7 +325,7 @@ private fun TemplateTaskRow(task: Task) {
             }
         }
         Text(
-            text = "${task.plannedDurationMinutes} 分钟",
+            text = stringResource(R.string.tpl_detail_duration_min_runtime, task.plannedDurationMinutes),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -342,7 +336,7 @@ private fun TemplateTaskRow(task: Task) {
                 shape = RoundedCornerShape(4.dp),
             ) {
                 Text(
-                    text = "钉",
+                    text = stringResource(R.string.today_pinned),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
@@ -364,12 +358,12 @@ private fun formatTime(minutes: Int): String {
     return "%02d:%02d%s".format(h, m, dayShift)
 }
 
-private fun repeatLabel(seg: TimeSegment): String = when (seg.repeatRule) {
-    RepeatRule.ONCE -> "仅一次"
-    RepeatRule.WEEKDAYS -> "工作日"
-    RepeatRule.DAILY -> "每天"
+private fun repeatLabel(context: android.content.Context, seg: TimeSegment): String = when (seg.repeatRule) {
+    RepeatRule.ONCE -> context.getString(R.string.plan_seg_repeat_once)
+    RepeatRule.WEEKDAYS -> context.getString(R.string.plan_seg_repeat_weekdays)
+    RepeatRule.DAILY -> context.getString(R.string.plan_seg_repeat_daily)
     RepeatRule.CUSTOM -> {
-        if (seg.customDays.isEmpty()) "自定义"
+        if (seg.customDays.isEmpty()) context.getString(R.string.plan_seg_repeat_custom)
         else {
             val order = listOf(
                 DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
@@ -378,13 +372,13 @@ private fun repeatLabel(seg: TimeSegment): String = when (seg.repeatRule) {
             order.filter { it in seg.customDays }
                 .joinToString("") {
                     when (it) {
-                        DayOfWeek.MONDAY -> "一"
-                        DayOfWeek.TUESDAY -> "二"
-                        DayOfWeek.WEDNESDAY -> "三"
-                        DayOfWeek.THURSDAY -> "四"
-                        DayOfWeek.FRIDAY -> "五"
-                        DayOfWeek.SATURDAY -> "六"
-                        DayOfWeek.SUNDAY -> "日"
+                        DayOfWeek.MONDAY -> context.getString(R.string.tpl_detail_dow_mon)
+                        DayOfWeek.TUESDAY -> context.getString(R.string.tpl_detail_dow_tue)
+                        DayOfWeek.WEDNESDAY -> context.getString(R.string.tpl_detail_dow_wed)
+                        DayOfWeek.THURSDAY -> context.getString(R.string.tpl_detail_dow_thu)
+                        DayOfWeek.FRIDAY -> context.getString(R.string.tpl_detail_dow_fri)
+                        DayOfWeek.SATURDAY -> context.getString(R.string.tpl_detail_dow_sat)
+                        DayOfWeek.SUNDAY -> context.getString(R.string.tpl_detail_dow_sun)
                         else -> "?"
                     }
                 }

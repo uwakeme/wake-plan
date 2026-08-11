@@ -1,11 +1,14 @@
 package com.wakeplan.app.ui.settings
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wakeplan.app.R
 import com.wakeplan.app.data.backup.BackupImporter
 import com.wakeplan.app.data.backup.BackupManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,20 +17,11 @@ import kotlinx.coroutines.launch
 import javax.crypto.AEADBadTagException
 import javax.inject.Inject
 
-/**
- * 备份 ViewModel — Phase 4.4
- *
- * UI 状态机（exportState / importState 各跑各的）：
- * - Idle: 待机
- * - Running: 跑中（显示 spinner）
- * - Success: 成功（带摘要，可 Snackbar 提示）
- * - Error: 失败（带 message，可再试）
- *
- * passphrase 走 CharArray 调用者持有，import 用完清；ViewModel 不持久化
- */
+
 @HiltViewModel
 class BackupViewModel @Inject constructor(
     private val backupManager: BackupManager,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     sealed interface ExportState {
@@ -50,11 +44,7 @@ class BackupViewModel @Inject constructor(
     private val _importState = MutableStateFlow<ImportState>(ImportState.Idle)
     val importState: StateFlow<ImportState> = _importState.asStateFlow()
 
-    /**
-     * 导出到用户选的 Uri
-     * @param uri SAF 给的目标 Uri
-     * @param passphrase null = 明文；非空 = 加密（调用方负责用完清）
-     */
+    
     fun export(uri: Uri, passphrase: CharArray? = null) {
         if (_exportState.value is ExportState.Running) return  // 防止重复点
         _exportState.update { ExportState.Running }
@@ -70,9 +60,7 @@ class BackupViewModel @Inject constructor(
         }
     }
 
-    /**
-     * 从用户选的 Uri 导入
-     */
+    
     fun `import`(uri: Uri, passphrase: CharArray? = null) {
         if (_importState.value is ImportState.Running) return
         _importState.update { ImportState.Running }
@@ -81,9 +69,9 @@ class BackupViewModel @Inject constructor(
                 val result = backupManager.importFromUri(uri, passphrase)
                 _importState.update { ImportState.Success(result) }
             } catch (e: AEADBadTagException) {
-                _importState.update { ImportState.Error("密码错误或文件被篡改") }
+                _importState.update { ImportState.Error(context.getString(R.string.backup_err_parse_envelope_full)) }
             } catch (e: IllegalStateException) {
-                _importState.update { ImportState.Error(e.message ?: "导入失败") }
+                _importState.update { ImportState.Error(e.message ?: context.getString(R.string.backup_err_decrypt_failed_full)) }
             } catch (e: Exception) {
                 _importState.update { ImportState.Error(formatError(e)) }
             } finally {
@@ -92,7 +80,7 @@ class BackupViewModel @Inject constructor(
         }
     }
 
-    /** 错误信息复位到 Idle（UI 关闭 Snackbar / Dialog 时调） */
+    
     fun consumeExportError() {
         if (_exportState.value is ExportState.Error) {
             _exportState.update { ExportState.Idle }
@@ -119,17 +107,17 @@ class BackupViewModel @Inject constructor(
 
     private fun formatError(e: Exception): String = when {
         e.message?.contains("permission", ignoreCase = true) == true ->
-            "权限不足：${e.message}"
+            context.getString(R.string.backup_err_permission_runtime, e.message)
         e.message?.contains("space", ignoreCase = true) == true ->
-            "磁盘空间不足：${e.message}"
+            context.getString(R.string.backup_err_no_space_runtime, e.message)
         e is java.io.IOException ->
-            "文件读写失败：${e.message ?: "未知 IO 错误"}"
+            context.getString(R.string.backup_err_write_failed_runtime, e.message ?: context.getString(R.string.backup_err_unknown))
         else ->
-            e.message ?: e::class.simpleName ?: "未知错误"
+            e.message ?: e::class.simpleName ?: context.getString(R.string.backup_err_unknown)
     }
 
     companion object {
-        /** 最低密码长度 — 加密备份建议 8 字符以上 */
+        
         const val MIN_PASSPHRASE_LENGTH = 8
     }
 }

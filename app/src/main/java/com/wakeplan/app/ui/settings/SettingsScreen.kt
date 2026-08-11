@@ -71,10 +71,7 @@ import com.wakeplan.app.domain.model.TaskStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
-/**
- * 设置屏 — Phase 3.3 加通知配置 + Phase 4.4 加备份
- * 包含 lead minutes 选择 + 4 渠道开关 + 测试通知按钮 + 备份入口
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -130,14 +127,19 @@ fun SettingsScreen(
     }
 
     // Snackbar 反馈 export / import 结果
+    val exportSuccessMsg = stringResource(R.string.settings_export_success_runtime_template)
+    val exportFailedMsg = stringResource(R.string.settings_export_failed_runtime_template)
+    val importSuccessMsg = stringResource(R.string.settings_import_success_runtime_template)
+    val importFailedMsg = stringResource(R.string.settings_import_failed_runtime_template)
+    val testNotificationTitle = stringResource(R.string.settings_test_notification_title)
     LaunchedEffect(exportState) {
         when (val s = exportState) {
             is BackupViewModel.ExportState.Success -> {
-                snackbarHostState.showSnackbar("导出成功：${s.bytesWritten / 1024} KB")
+                snackbarHostState.showSnackbar(exportSuccessMsg.format(s.bytesWritten / 1024))
                 backupViewModel.consumeExportSuccess()
             }
             is BackupViewModel.ExportState.Error -> {
-                snackbarHostState.showSnackbar("导出失败：${s.message}")
+                snackbarHostState.showSnackbar(exportFailedMsg.format(s.message))
                 backupViewModel.consumeExportError()
             }
             else -> Unit
@@ -148,12 +150,12 @@ fun SettingsScreen(
             is BackupViewModel.ImportState.Success -> {
                 val r = s.result
                 snackbarHostState.showSnackbar(
-                    "导入成功：${r.plansImported} 计划 / ${r.tasksImported} 任务 / ${r.completionsImported} 完成",
+                    importSuccessMsg.format(r.plansImported, r.tasksImported, r.completionsImported),
                 )
                 backupViewModel.consumeImportSuccess()
             }
             is BackupViewModel.ImportState.Error -> {
-                snackbarHostState.showSnackbar("导入失败：${s.message}")
+                snackbarHostState.showSnackbar(importFailedMsg.format(s.message))
                 backupViewModel.consumeImportError()
             }
             else -> Unit
@@ -174,7 +176,7 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("设置") })
+            TopAppBar(title = { Text(stringResource(R.string.settings_title)) })
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
@@ -188,8 +190,8 @@ fun SettingsScreen(
         ) {
             // 模板库入口（Phase 1.4 保留）
             SettingsItem(
-                title = "模板库",
-                subtitle = "3 个内置模板（标准晨练 / 标准学习 / 周末阅读）",
+                title = stringResource(R.string.tpl_list_title),
+                subtitle = stringResource(R.string.settings_templates_subtitle),
                 onClick = onTemplatesClick,
             )
 
@@ -208,7 +210,7 @@ fun SettingsScreen(
             )
 
             Spacer(Modifier.height(8.dp))
-            SectionHeader("通知")
+            SectionHeader(stringResource(R.string.settings_section_notifications))
 
             // lead minutes 选择
             LeadMinutesRow(
@@ -218,26 +220,26 @@ fun SettingsScreen(
 
             // 4 渠道开关
             ToggleRow(
-                title = "任务开始提醒",
-                subtitle = "任务开始前 N 分钟推送",
+                title = stringResource(R.string.settings_notifications_starting),
+                subtitle = stringResource(R.string.settings_notifications_starting_sub),
                 checked = startingEnabled,
                 onChange = { viewModel.setStartingEnabled(it) },
             )
             ToggleRow(
-                title = "任务超时提醒",
-                subtitle = "任务超时未完成时循环提醒",
+                title = stringResource(R.string.settings_notifications_overdue),
+                subtitle = stringResource(R.string.settings_notifications_overdue_sub),
                 checked = overdueEnabled,
                 onChange = { viewModel.setOverdueEnabled(it) },
             )
             ToggleRow(
-                title = "任务完成确认",
-                subtitle = "v0.1 占位，v0.2 启用",
+                title = stringResource(R.string.settings_notifications_completed),
+                subtitle = stringResource(R.string.settings_notifications_completed_sub),
                 checked = completedEnabled,
                 onChange = { viewModel.setCompletedEnabled(it) },
             )
             ToggleRow(
-                title = "每日计划回顾",
-                subtitle = "每日 21:00 推送（v0.1 占位）",
+                title = stringResource(R.string.settings_notifications_recap),
+                subtitle = stringResource(R.string.settings_notifications_recap_sub),
                 checked = recapEnabled,
                 onChange = { viewModel.setRecapEnabled(it) },
             )
@@ -259,7 +261,7 @@ fun SettingsScreen(
                         val notification = NotificationBuilder.buildStarting(
                             context = context,
                             completion = testCompletion,
-                            taskTitle = "测试通知",
+                            taskTitle = testNotificationTitle,
                             leadMinutes = leadMinutes,
                         )
                         NotificationManagerCompat.from(context).notify(
@@ -270,15 +272,15 @@ fun SettingsScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("发测试通知")
+                Text(stringResource(R.string.settings_test_notification))
             }
 
             // ===== Phase 4.4 备份 =====
             Spacer(Modifier.height(16.dp))
-            SectionHeader("数据备份")
+            SectionHeader(stringResource(R.string.settings_section_backup))
 
             Text(
-                "把数据导出到本地文件，或从备份文件恢复。\n加密备份用 AES-256 + PBKDF2，密码请妥善保管。",
+                stringResource(R.string.settings_backup_intro_runtime),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -293,14 +295,14 @@ fun SettingsScreen(
                     enabled = exportState !is BackupViewModel.ExportState.Running,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("导出明文")
+                    Text(stringResource(R.string.settings_backup_export_plain))
                 }
                 OutlinedButton(
                     onClick = { showExportEncryptedDialog = true },
                     enabled = exportState !is BackupViewModel.ExportState.Running,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("导出加密")
+                    Text(stringResource(R.string.settings_backup_export_encrypted))
                 }
             }
             Spacer(Modifier.height(4.dp))
@@ -309,7 +311,7 @@ fun SettingsScreen(
                 enabled = importState !is BackupViewModel.ImportState.Running,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("导入备份")
+                Text(stringResource(R.string.settings_backup_import))
             }
 
             // 进度指示
@@ -321,7 +323,7 @@ fun SettingsScreen(
                         strokeWidth = 2.dp,
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("导出中…", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.settings_backup_exporting), style = MaterialTheme.typography.bodySmall)
                 }
             }
             if (importState is BackupViewModel.ImportState.Running) {
@@ -332,7 +334,7 @@ fun SettingsScreen(
                         strokeWidth = 2.dp,
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("导入中…", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.settings_backup_importing), style = MaterialTheme.typography.bodySmall)
                 }
             }
 
@@ -375,10 +377,10 @@ fun SettingsScreen(
         if (showExportPlainDialog) {
             AlertDialog(
                 onDismissRequest = { showExportPlainDialog = false },
-                title = { Text("导出明文备份") },
+                title = { Text(stringResource(R.string.settings_export_plain_dialog_title)) },
                 text = {
                     Text(
-                        "明文备份不加密，文件内容可以直接查看。\n导出的 JSON 可以用文本编辑器打开。",
+                        stringResource(R.string.settings_export_plain_dialog_text_runtime),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 },
@@ -389,12 +391,12 @@ fun SettingsScreen(
                         val ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
                         exportLauncher.launch("wakeplan-backup-$ts.json")
                     }) {
-                        Text("选位置")
+                        Text(stringResource(R.string.settings_pick_location))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showExportPlainDialog = false }) {
-                        Text("取消")
+                        Text(stringResource(R.string.plan_seg_delete_cancel))
                     }
                 },
             )
@@ -403,8 +405,8 @@ fun SettingsScreen(
         // 2. 导出加密：先弹密码输入，完了再启 SAF
         if (showExportEncryptedDialog) {
             PassphraseDialog(
-                title = "导出加密备份",
-                message = "设置一个至少 8 位的密码。\n忘记密码无法恢复，请妥善保管。",
+                title = stringResource(R.string.settings_export_encrypted_dialog_title),
+                message = stringResource(R.string.settings_export_encrypted_dialog_message_runtime),
                 onConfirm = { pass ->
                     showExportEncryptedDialog = false
                     pendingExportPassphrase = pass
@@ -424,47 +426,6 @@ fun SettingsScreen(
                     importLauncher.launch(arrayOf("application/json", "*/*"))
                 },
                 onDismiss = { showImportConfirmDialog = false },
-            )
-        }
-
-        // 4. 导入加密备份：明文 import 失败后，弹密码输入再试
-        if (showImportConfirmDialog && pendingImportUri != null && pendingImportEncrypted) {
-            PassphraseDialog(
-                title = "导入加密备份",
-                message = "这是加密备份，请输入密码。",
-                onConfirm = { pass ->
-                    showImportConfirmDialog = false
-                    val uri = pendingImportUri
-                    pendingImportUri = null
-                    pendingImportEncrypted = false
-                    if (uri != null) {
-                        backupViewModel.import(uri, passphrase = pass)
-                    }
-                },
-                onDismiss = {
-                    showImportConfirmDialog = false
-                    pendingImportUri = null
-                    pendingImportEncrypted = false
-                },
-            )
-        }
-
-        // 5. 隐私政策（Phase 6.1 v0.3 P1 US）
-        if (showPrivacyPolicy) {
-            AlertDialog(
-                onDismissRequest = { showPrivacyPolicy = false },
-                title = { Text(stringResource(R.string.about_privacy_policy_title)) },
-                text = {
-                    Text(
-                        stringResource(R.string.about_privacy_policy_content),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = { showPrivacyPolicy = false }) {
-                        Text(stringResource(R.string.about_privacy_policy_close))
-                    }
-                },
             )
         }
 
@@ -568,24 +529,26 @@ private fun LeadMinutesRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "提前提醒",
+                    text = stringResource(R.string.settings_lead_time_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "任务开始前多少分钟推送通知",
+                    text = stringResource(R.string.settings_lead_time_sub),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             TextButton(onClick = { expanded = true }) {
-                Text(if (currentValue == 0) "不提前" else "$currentValue 分钟")
+                Text(if (currentValue == 0) stringResource(R.string.settings_lead_time_zero)
+                     else stringResource(R.string.settings_lead_time_n_minutes, currentValue))
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 options.forEach { v ->
                     DropdownMenuItem(
-                        text = { Text(if (v == 0) "不提前" else "$v 分钟") },
+                        text = { Text(if (v == 0) stringResource(R.string.settings_lead_time_zero)
+                                     else stringResource(R.string.settings_lead_time_n_minutes, v)) },
                         onClick = {
                             onChange(v)
                             expanded = false
@@ -673,10 +636,7 @@ private fun SettingsItem(
     }
 }
 
-/**
- * Settings ViewModel — Phase 3.3
- * 包装 UserPreferences，把 lead minutes + 4 toggle 暴露成 StateFlow
- */
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val preferences: UserPreferences,
@@ -696,18 +656,14 @@ class SettingsViewModel @Inject constructor(
     val planRecapEnabled = preferences.planRecapEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
-    /** v0.3 P1 US：暴露给 About section 显示 */
+    
     val versionName: String get() = appVersionProvider.versionName
     val versionCode: Int get() = appVersionProvider.versionCode
 
-    /** v0.3 P1 US：当前选的语言（系统 / 中文 / 英文）— 给「语言」section 显示 */
+    
     val currentLocale: LocaleHelper.LocaleChoice get() = localeHelper.current
 
-    /**
-     * 用户在 dialog 里改了语言：
-     * 1. 写 SharedPreferences + AppCompatDelegate.setApplicationLocales
-     * 2. 返回新 Choice 让 UI 弹 Snackbar / recreate Activity
-     */
+    
     fun setLocale(choice: LocaleHelper.LocaleChoice) {
         localeHelper.apply(choice)
     }

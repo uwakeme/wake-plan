@@ -21,24 +21,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.stringResource
+import com.wakeplan.app.R
 
-/**
- * 备份对话框（Compose）— Phase 4.4
- *
- * 包含 3 个对话框：
- * - PassphraseDialog：让用户输入密码（明文 → 跳过；加密 → 必填 + 二次确认）
- * - ImportConfirmDialog：导入前的"会覆盖现有数据"提示
- * - 暂时不抽 ResultDialog，success / error 走 Snackbar
- */
 
-/**
- * 密码输入对话框
- * @param title 标题，比如 "加密备份" 或 "导入加密备份"
- * @param message 副标题
- * @param onConfirm 确认回调，传入密码（用完 ViewModel 会清）；传 null 表示明文导出
- * @param onDismiss 取消回调
- * @param requireConfirmation 是否需要二次输入确认（默认 true 防止输错）
- */
+
+
 @Composable
 fun PassphraseDialog(
     title: String,
@@ -51,6 +39,13 @@ fun PassphraseDialog(
     var confirmation by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf<String?>(null) }
 
+    // hoist strings used in onClick lambda
+    val errEmpty = stringResource(R.string.backup_passphrase_empty)
+    val errTooShort = stringResource(R.string.backup_passphrase_too_short_template, BackupViewModel.MIN_PASSPHRASE_LENGTH)
+    val errMismatch = stringResource(R.string.backup_passphrase_mismatch)
+    val confirmLabel = stringResource(R.string.common_confirm)
+    val cancelLabel = stringResource(R.string.common_cancel)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -61,7 +56,7 @@ fun PassphraseDialog(
                 OutlinedTextField(
                     value = passphrase,
                     onValueChange = { passphrase = it; showError = null },
-                    label = { Text("密码") },
+                    label = { Text(stringResource(R.string.backup_passphrase_label)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -72,7 +67,7 @@ fun PassphraseDialog(
                     OutlinedTextField(
                         value = confirmation,
                         onValueChange = { confirmation = it; showError = null },
-                        label = { Text("再输入一次") },
+                        label = { Text(stringResource(R.string.backup_passphrase_repeat)) },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -92,44 +87,41 @@ fun PassphraseDialog(
         confirmButton = {
             TextButton(onClick = {
                 when {
-                    passphrase.isEmpty() -> showError = "密码不能为空"
-                    passphrase.length < BackupViewModel.MIN_PASSPHRASE_LENGTH ->
-                        showError = "密码至少 ${BackupViewModel.MIN_PASSPHRASE_LENGTH} 位"
-                    requireConfirmation && passphrase != confirmation ->
-                        showError = "两次输入不一致"
+                    passphrase.isEmpty() -> showError = errEmpty
+                    passphrase.length < BackupViewModel.MIN_PASSPHRASE_LENGTH -> showError = errTooShort
+                    requireConfirmation && passphrase != confirmation -> showError = errMismatch
                     else -> onConfirm(passphrase.toCharArray())
                 }
             }) {
-                Text("确认")
+                Text(confirmLabel)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(cancelLabel)
             }
         },
     )
 }
 
-/**
- * 导入确认对话框 — 强提示"会覆盖现有数据"
- */
+
 @Composable
 fun ImportConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val cancelLabel = stringResource(R.string.common_cancel)
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("确认导入？") },
+        title = { Text(stringResource(R.string.backup_import_confirm_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    "导入备份会完全覆盖当前所有计划、段、任务和完成记录。",
+                    stringResource(R.string.backup_import_confirm_text),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    "此操作不可撤销。建议先导出一份当前数据的备份。",
+                    stringResource(R.string.backup_import_confirm_subtext),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -137,12 +129,12 @@ fun ImportConfirmDialog(
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("覆盖导入", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.backup_import_confirm_action), color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(cancelLabel)
             }
         },
     )

@@ -40,12 +40,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.domain.model.PlanTemplate
+import androidx.compose.ui.res.stringResource
+import com.wakeplan.app.R
 
-/**
- * 模板库屏
- * Phase 5.4.1：列表展示 3 个内置模板，**点卡片 → TemplateDetailScreen 看 segment/task 预览**
- * Phase 5.4.2：详情屏加 "应用此模板" 按钮
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplateListScreen(
@@ -58,10 +56,10 @@ fun TemplateListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("模板库") },
+                title = { Text(stringResource(R.string.tpl_list_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
             )
@@ -79,7 +77,7 @@ fun TemplateListScreen(
         ) {
             item {
                 Text(
-                    text = "点开看段 + 任务，5.4.2 会上线「应用模板」",
+                    text = stringResource(R.string.tpl_list_dev_hint_runtime),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 4.dp),
@@ -126,7 +124,7 @@ private fun TemplateCard(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = if (tpl.isBuiltIn) "内置模板" else "用户模板",
+                    text = if (tpl.isBuiltIn) stringResource(R.string.tpl_list_label_built_in) else stringResource(R.string.tpl_list_label_user),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -81,19 +81,11 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-/**
- * 当前时刻屏 — Phase 5.3 + Phase 5.5
- *
- * 布局：
- * 1. TopAppBar (今日日期 + ←/今天/→ 按钮)
- * 2. 24h 水平时间线（段背景 + 任务色块 + 当前时刻红线 + 时间刻度）
- * 3. 跨计划卡片列表（每 plan 一卡 + 段内任务 + 开始/完成/跳过按钮 + 内联冲突警告）
- *
- * i18n: 所有 user-facing 文案走 R.string；values-en/strings.xml 英文版
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodayScreen() {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val viewModel: TodayViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val highlightedTaskId by HighlightBus.highlightedTaskId.collectAsState()
@@ -121,16 +113,20 @@ fun TodayScreen() {
     }
 
     // 撤销 Snackbar：5s 窗口，点了撤销调 viewModel.undo()
+    val startedMsg = stringResource(R.string.today_status_started)
+    val completedMsg = stringResource(R.string.stats_metric_completed)
+    val skippedMsg = stringResource(R.string.today_status_skipped)
+    val undoLabel = stringResource(R.string.today_undo)
     LaunchedEffect(undoableAction) {
         val action = undoableAction ?: return@LaunchedEffect
         val message = when (action) {
-            is TodayViewModel.UndoableAction.Start -> "已开始"
-            is TodayViewModel.UndoableAction.Complete -> "已完成"
-            is TodayViewModel.UndoableAction.Skip -> "已跳过"
+            is TodayViewModel.UndoableAction.Start -> startedMsg
+            is TodayViewModel.UndoableAction.Complete -> completedMsg
+            is TodayViewModel.UndoableAction.Skip -> skippedMsg
         }
         val result = snackbarHostState.showSnackbar(
             message = message,
-            actionLabel = "撤销",
+            actionLabel = undoLabel,
             withDismissAction = true,
             duration = SnackbarDuration.Short,  // ~5s
         )
@@ -149,9 +145,9 @@ fun TodayScreen() {
                 title = {
                     Text(
                         if (isViewingToday) {
-                            stringResource(R.string.today_title_today, state.date.format(DATE_FMT))
+                            stringResource(R.string.today_title_today, state.date.format(dateFmt(context)))
                         } else {
-                            stringResource(R.string.today_title_other, state.date.format(DATE_FMT))
+                            stringResource(R.string.today_title_other, state.date.format(dateFmt(context)))
                         },
                     )
                 },
@@ -269,6 +265,7 @@ private fun TodayTimeLine(
     planItems: List<TodayPlanItem>,
     conflicts: List<TaskConflict>,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer()
     val tickLabelStyle = MaterialTheme.typography.labelSmall.copy(
@@ -297,7 +294,7 @@ private fun TodayTimeLine(
                 text = if (isViewingToday) {
                     stringResource(R.string.today_timeline_title_today)
                 } else {
-                    stringResource(R.string.today_timeline_title_other, date.format(DATE_FMT))
+                    stringResource(R.string.today_timeline_title_other, date.format(dateFmt(context)))
                 },
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
@@ -484,11 +481,11 @@ private fun SegmentSection(
     Column {
         Text(
             text = buildString {
-                append(segment.title ?: "段")
+                append(segment.title ?: stringResource(R.string.tpl_detail_segment_char))
                 append(" · ")
                 append(formatMinutes(segment.startMinutes))
                 if (segment.endMinutes > 24 * 60) {
-                    append(" — 次日 ")
+                    append(stringResource(R.string.today_next_day))
                     append(formatMinutes(segment.endMinutes - 24 * 60))
                 } else {
                     append(" — ")
@@ -583,6 +580,7 @@ private fun ConflictBanner(
     conflicts: List<TaskConflict>,
     plansById: Map<String, Plan>,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val maxOverlap = conflicts.maxOf { it.overlapMinutes }
     val otherPlan = conflicts.firstOrNull()?.let { c ->
         plansById[c.taskA.planId]?.takeIf { it.id != c.taskB.planId }
@@ -622,6 +620,7 @@ private fun EmptyTodayState(
     date: LocalDate,
     modifier: Modifier = Modifier,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Box(
         modifier = modifier.fillMaxSize().padding(24.dp),
         contentAlignment = Alignment.Center,
@@ -631,7 +630,7 @@ private fun EmptyTodayState(
                 text = if (isViewingToday) {
                     stringResource(R.string.today_empty_title_today)
                 } else {
-                    stringResource(R.string.today_empty_title_other, date.format(DATE_FMT))
+                    stringResource(R.string.today_empty_title_other, date.format(dateFmt(context)))
                 },
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -654,4 +653,5 @@ private fun formatMinutes(minutes: Int): String {
     return "%02d:%02d".format(h, m)
 }
 
-private val DATE_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("M月d日")
+private fun dateFmt(context: android.content.Context): DateTimeFormatter =
+    DateTimeFormatter.ofPattern(context.getString(R.string.today_date_pattern))

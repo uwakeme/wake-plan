@@ -48,11 +48,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.stringResource
+import com.wakeplan.app.R
 
-/**
- * 新建计划屏
- * 5.3 决策：标题 1-30 字符，10 色预设 + hex 自定义，起始日期默认今天
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePlanScreen(
@@ -72,10 +71,10 @@ fun CreatePlanScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("新建计划") },
+                title = { Text(stringResource(R.string.plan_create_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
             )
@@ -93,7 +92,7 @@ fun CreatePlanScreen(
                 onChange = viewModel::setTitle,
             )
 
-            SectionLabel("颜色")
+            SectionLabel(stringResource(R.string.plan_create_color))
             ColorPresetGrid(
                 selected = colorHex,
                 onSelect = viewModel::setColorHex,
@@ -103,9 +102,9 @@ fun CreatePlanScreen(
                 onValidHex = viewModel::setColorHex,
             )
 
-            SectionLabel("起始日期")
+            SectionLabel(stringResource(R.string.plan_create_start_date))
             Text(
-                text = "$startDate （默认今天）",
+                text = stringResource(R.string.plan_create_start_date_default_runtime),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -117,7 +116,7 @@ fun CreatePlanScreen(
                 enabled = isValid,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("保存")
+                Text(stringResource(R.string.task_save))
             }
         }
     }
@@ -128,15 +127,15 @@ private fun TitleField(value: String, onChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
-        label = { Text("标题") },
-        placeholder = { Text("例如：健身 / 学习 / 副业") },
+        label = { Text(stringResource(R.string.plan_create_title_label)) },
+        placeholder = { Text(stringResource(R.string.plan_create_title_hint)) },
         singleLine = true,
         isError = value.isNotEmpty() && value.length > CreatePlanViewModel.MAX_TITLE_LENGTH,
         supportingText = {
             when {
-                value.isEmpty() -> Text("1-${CreatePlanViewModel.MAX_TITLE_LENGTH} 字符")
+                value.isEmpty() -> Text(stringResource(R.string.plan_create_title_length_runtime, CreatePlanViewModel.MAX_TITLE_LENGTH))
                 value.length > CreatePlanViewModel.MAX_TITLE_LENGTH ->
-                    Text("标题不能超过 ${CreatePlanViewModel.MAX_TITLE_LENGTH} 字")
+                    Text(stringResource(R.string.plan_create_title_too_long_runtime, CreatePlanViewModel.MAX_TITLE_LENGTH))
                 else -> Text("${value.length} / ${CreatePlanViewModel.MAX_TITLE_LENGTH}")
             }
         },
@@ -205,7 +204,7 @@ private fun ColorSwatch(
         if (selected) {
             Icon(
                 Icons.Outlined.Check,
-                contentDescription = "已选",
+                contentDescription = stringResource(R.string.plan_create_color_selected),
                 tint = Color.White,
             )
         }
@@ -225,11 +224,11 @@ private fun HexCustomField(
             input = it
             if (PlanColorPresets.isValidHex(it)) onValidHex(it)
         },
-        label = { Text("自定义 hex（可选）") },
-        placeholder = { Text("#RRGGBB，例如 #FF5733") },
+        label = { Text(stringResource(R.string.plan_create_custom_hex)) },
+        placeholder = { Text(stringResource(R.string.plan_create_custom_hex_hint)) },
         singleLine = true,
         supportingText = {
-            Text("当前：${selectedHex.uppercase()}")
+            Text(stringResource(R.string.plan_create_current_color_runtime, selectedHex.uppercase()))
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
         modifier = Modifier.fillMaxWidth(),

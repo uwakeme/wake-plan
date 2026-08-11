@@ -51,13 +51,10 @@ import com.wakeplan.app.domain.model.RepeatRule
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.wakeplan.app.R
 
-/**
- * 段编辑器屏
- * - 支持 create / edit 模式
- * - 段重叠检测内联提示（PRD AC-02.3）
- * - TimePicker dialog（Compose 1.6+ 没有 TimePickerDialog，手包）
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SegmentEditorScreen(
@@ -67,6 +64,7 @@ fun SegmentEditorScreen(
 ) {
     val title by viewModel.title.collectAsStateWithLifecycle()
     val startMinutes by viewModel.startMinutes.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val endMinutes by viewModel.endMinutes.collectAsStateWithLifecycle()
     val repeatRule by viewModel.repeatRule.collectAsStateWithLifecycle()
     val customDays by viewModel.customDays.collectAsStateWithLifecycle()
@@ -86,10 +84,10 @@ fun SegmentEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isEdit) "编辑段" else "新建段") },
+                title = { Text(if (isEdit) stringResource(R.string.plan_seg_title_edit) else stringResource(R.string.plan_seg_title_new)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -97,7 +95,7 @@ fun SegmentEditorScreen(
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
                                 Icons.Outlined.Delete,
-                                contentDescription = "删除段",
+                                contentDescription = stringResource(R.string.plan_seg_delete),
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         }
@@ -116,8 +114,8 @@ fun SegmentEditorScreen(
             OutlinedTextField(
                 value = title,
                 onValueChange = viewModel::setTitle,
-                label = { Text("段标题（可选）") },
-                placeholder = { Text("例如：晨练 / 学习 / 副业") },
+                label = { Text(stringResource(R.string.plan_seg_label_optional)) },
+                placeholder = { Text(stringResource(R.string.plan_seg_title_hint)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -131,13 +129,13 @@ fun SegmentEditorScreen(
                     onClick = { showStartPicker = true },
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("开始 ${formatTime(startMinutes)}")
+                    Text(stringResource(R.string.plan_seg_start_runtime, formatTime(startMinutes)))
                 }
                 OutlinedButton(
                     onClick = { showEndPicker = true },
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("结束 ${formatTime(endMinutes)}")
+                    Text(stringResource(R.string.plan_seg_end_runtime, formatTime(endMinutes)))
                 }
             }
 
@@ -148,7 +146,7 @@ fun SegmentEditorScreen(
 
             // RepeatRule 选择
             Text(
-                text = "重复",
+                text = stringResource(R.string.plan_seg_repeat),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -162,14 +160,14 @@ fun SegmentEditorScreen(
                             count = RepeatRule.entries.size,
                         ),
                     ) {
-                        Text(repeatRuleLabel(rule), style = MaterialTheme.typography.labelMedium)
+                        Text(repeatRuleLabel(context, rule), style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
 
             if (repeatRule == RepeatRule.CUSTOM) {
                 Text(
-                    text = "选择星期",
+                    text = stringResource(R.string.plan_seg_select_weekday),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -187,7 +185,7 @@ fun SegmentEditorScreen(
                 }
                 if (customDays.isEmpty()) {
                     Text(
-                        text = "CUSTOM 规则必须至少选 1 天",
+                        text = stringResource(R.string.plan_seg_custom_help_v2),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -200,7 +198,7 @@ fun SegmentEditorScreen(
                 enabled = isValid,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("保存")
+                Text(stringResource(R.string.task_save))
             }
         }
     }
@@ -230,18 +228,18 @@ fun SegmentEditorScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("删除段？") },
-            text = { Text("段内任务也会一起删除。") },
+            title = { Text(stringResource(R.string.plan_seg_delete_title)) },
+            text = { Text(stringResource(R.string.plan_seg_delete_msg_v2)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
                         viewModel.delete()
                     }
-                ) { Text("删除", color = MaterialTheme.colorScheme.error) }
+                ) { Text(stringResource(R.string.plan_seg_delete_confirm), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
+                TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.plan_seg_delete_cancel)) }
             },
         )
     }
@@ -265,9 +263,9 @@ private fun TimePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { onConfirm(state.hour, state.minute) }) { Text("确定") }
+            TextButton(onClick = { onConfirm(state.hour, state.minute) }) { Text(stringResource(R.string.backup_confirm)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.plan_seg_delete_cancel)) } },
         text = { TimePicker(state = state) },
     )
 }
@@ -291,7 +289,7 @@ private fun OverlapWarning(overlapping: List<com.wakeplan.app.domain.model.TimeS
             Spacer(Modifier.width(8.dp))
             Column {
                 Text(
-                    text = "与 ${overlapping.size} 个段重叠",
+                    text = stringResource(R.string.plan_seg_overlap_count_runtime, overlapping.size),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
@@ -305,11 +303,11 @@ private fun OverlapWarning(overlapping: List<com.wakeplan.app.domain.model.TimeS
     }
 }
 
-private fun repeatRuleLabel(rule: RepeatRule): String = when (rule) {
-    RepeatRule.ONCE -> "仅一次"
-    RepeatRule.WEEKDAYS -> "工作日"
-    RepeatRule.DAILY -> "每天"
-    RepeatRule.CUSTOM -> "自定义"
+private fun repeatRuleLabel(context: android.content.Context, rule: RepeatRule): String = when (rule) {
+    RepeatRule.ONCE -> context.getString(R.string.plan_seg_repeat_once)
+    RepeatRule.WEEKDAYS -> context.getString(R.string.plan_seg_repeat_weekdays)
+    RepeatRule.DAILY -> context.getString(R.string.plan_seg_repeat_daily)
+    RepeatRule.CUSTOM -> context.getString(R.string.plan_seg_repeat_custom)
 }
 
 private fun dayLabel(day: DayOfWeek): String = day.getDisplayName(TextStyle.SHORT, Locale.SIMPLIFIED_CHINESE)

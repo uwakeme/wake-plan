@@ -49,13 +49,10 @@ import com.wakeplan.app.ui.common.parseHexColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
+import androidx.compose.ui.res.stringResource
+import com.wakeplan.app.R
 
-/**
- * 统计屏 — Phase 5.2.1
- *
- * 5.2.1: 数字面板 + range 切换 + per-plan 分布
- * 5.2.2: 加 Canvas 折线 + 柱状图（per-day / per-plan 视觉化）
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen() {
@@ -64,7 +61,7 @@ fun StatsScreen() {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("统计") })
+            TopAppBar(title = { Text(stringResource(R.string.stats_title)) })
         },
     ) { padding ->
         Column(
@@ -103,13 +100,13 @@ private fun RangeToggle(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         RangeButton(
-            label = "近 7 天",
+            label = stringResource(R.string.stats_range_7d),
             selected = current == StatsUseCase.Range.LAST_7_DAYS,
             onClick = { onChange(StatsUseCase.Range.LAST_7_DAYS) },
             modifier = Modifier.weight(1f),
         )
         RangeButton(
-            label = "近 30 天",
+            label = stringResource(R.string.stats_range_30d),
             selected = current == StatsUseCase.Range.LAST_30_DAYS,
             onClick = { onChange(StatsUseCase.Range.LAST_30_DAYS) },
             modifier = Modifier.weight(1f),
@@ -136,24 +133,24 @@ private fun NumberCards(result: StatsUseCase.StatsResult) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NumberCard(
-                title = "已完成",
+                title = stringResource(R.string.stats_metric_completed),
                 value = "${result.totalCompleted}",
                 modifier = Modifier.weight(1f),
             )
             NumberCard(
-                title = "准时率",
+                title = stringResource(R.string.stats_metric_on_time_rate),
                 value = "${(result.onTimeRate * 100).toInt()}%",
                 modifier = Modifier.weight(1f),
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NumberCard(
-                title = "平均延期",
-                value = if (result.avgOverrunMinutes == 0) "—" else "${result.avgOverrunMinutes} 分钟",
+                title = stringResource(R.string.stats_metric_avg_overrun),
+                value = if (result.avgOverrunMinutes == 0) "—" else stringResource(R.string.stats_metric_avg_overrun_runtime, result.avgOverrunMinutes),
                 modifier = Modifier.weight(1f),
             )
             NumberCard(
-                title = "跳过/未完成",
+                title = stringResource(R.string.stats_metric_skipped_missed),
                 value = "${result.totalSkipped + result.totalPending}",
                 modifier = Modifier.weight(1f),
             )
@@ -199,14 +196,14 @@ private fun PerPlanList(result: StatsUseCase.StatsResult) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "按计划完成数",
+                text = stringResource(R.string.stats_per_plan_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.height(8.dp))
             if (result.perPlan.isEmpty()) {
                 Text(
-                    text = "这段时间还没完成任务",
+                    text = stringResource(R.string.stats_per_plan_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -258,12 +255,12 @@ private fun EmptyStatsState() {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "暂无数据",
+                text = stringResource(R.string.stats_empty_title),
                 style = MaterialTheme.typography.titleMedium,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "完成任务后，这里会显示统计概览",
+                text = stringResource(R.string.stats_empty_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -297,14 +294,14 @@ private fun PerDayLineChart(result: StatsUseCase.StatsResult) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "每日完成数",
+                text = stringResource(R.string.stats_per_day_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.height(8.dp))
             if (perDay.all { it.completedCount == 0 }) {
                 Text(
-                    text = "这段时间还没完成过任务",
+                    text = stringResource(R.string.stats_per_day_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -416,14 +413,14 @@ private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "按计划完成柱状",
+                text = stringResource(R.string.stats_per_plan_bar_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.height(8.dp))
             if (perPlan.isEmpty()) {
                 Text(
-                    text = "这段时间还没完成过任务",
+                    text = stringResource(R.string.stats_per_day_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
