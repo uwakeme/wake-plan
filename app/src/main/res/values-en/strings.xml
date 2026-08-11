@@ -263,4 +263,19 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <!-- Quick Settings Tile — Phase 5.7 -->
     <!-- ============================================================ -->
     <string name="tile_subtitle_open_today">Open today</string>
+
+    <!-- ============================================================ -->
+    <!-- About section — Phase 6.1 (v0.3 P1 US) -->
+    <!-- ============================================================ -->
+    <string name="about_section">About</string>
+    <string name="about_privacy_policy_title">Privacy policy</string>
+    <string name="about_privacy_policy_summary">No upload, local encryption</string>
+    <string name="about_privacy_policy_content">Wake Plan is a local-first time management app:\n\n• No network requests, no data collection\n• All data stored on the device, SQLCipher AES-256 encryption\n• Backups controlled by the user (SAF picker)\n• No third-party analytics, ads, or tracking SDKs\n\nFound a problem? Open an issue or PR on GitHub.</string>
+    <string name="about_privacy_policy_close">Got it</string>
+    <string name="about_version_title">Version</string>
+    <string name="about_version_format">v%1$s (build %2$d)</string>
+    <string name="about_source_code_title">Source code</string>
+    <string name="about_source_code_url">https://github.com/uwakeme/wake-plan</string>
+    <string name="about_source_code_summary">github.com/uwakeme/wake-plan</string>
+
 </resources>

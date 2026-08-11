@@ -266,4 +266,20 @@
     <!-- Quick Settings Tile — Phase 5.7 -->
     <!-- ============================================================ -->
     <string name="tile_subtitle_open_today">跳到今日</string>
+
+    <!-- ============================================================ -->
+    <!-- About section — Phase 6.1 (v0.3 P1 US) -->
+    <!-- 设置页底部「关于」section：隐私政策 + 版本 + 源代码 -->
+    <!-- ============================================================ -->
+    <string name="about_section">关于</string>
+    <string name="about_privacy_policy_title">隐私政策</string>
+    <string name="about_privacy_policy_summary">不上传数据，本地加密</string>
+    <string name="about_privacy_policy_content">Wake Plan 是一款本地优先的时间管理 App：\n\n• 不发任何网络请求，不收集任何使用数据\n• 所有数据存于本机，SQLCipher AES-256 加密\n• 备份由用户主动控制位置（SAF 选取）\n• 无任何第三方统计/广告/追踪 SDK\n\n如果发现问题，欢迎到 GitHub repo 提 issue 或 PR。</string>
+    <string name="about_privacy_policy_close">知道了</string>
+    <string name="about_version_title">版本</string>
+    <string name="about_version_format">v%1$s (build %2$d)</string>
+    <string name="about_source_code_title">源代码</string>
+    <string name="about_source_code_url">https://github.com/uwakeme/wake-plan</string>
+    <string name="about_source_code_summary">github.com/uwakeme/wake-plan</string>
+
 </resources>

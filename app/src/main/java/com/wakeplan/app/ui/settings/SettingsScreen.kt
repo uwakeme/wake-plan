@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,6 +63,7 @@ import java.time.format.DateTimeFormatter
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wakeplan.app.R
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -96,6 +98,9 @@ fun SettingsScreen(
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var pendingImportEncrypted by remember { mutableStateOf(false) }
     var pendingExportPassphrase by remember { mutableStateOf<CharArray?>(null) }
+
+    // ===== Phase 6.1 关于 state =====
+    var showPrivacyPolicy by remember { mutableStateOf(false) }
 
     // SAF 导出 launcher
     val exportLauncher = rememberLauncherForActivityResult(
@@ -310,6 +315,38 @@ fun SettingsScreen(
                     Text("导入中…", style = MaterialTheme.typography.bodySmall)
                 }
             }
+
+            // ===== Phase 6.1 关于 section（v0.3 P1 US：隐私政策 + 版本 + 源代码）=====
+            Spacer(Modifier.height(16.dp))
+            SectionHeader(stringResource(R.string.about_section))
+
+            SettingsItem(
+                title = stringResource(R.string.about_privacy_policy_title),
+                subtitle = stringResource(R.string.about_privacy_policy_summary),
+                onClick = { showPrivacyPolicy = true },
+            )
+            SettingsItem(
+                title = stringResource(R.string.about_version_title),
+                subtitle = stringResource(
+                    R.string.about_version_format,
+                    viewModel.versionName,
+                    viewModel.versionCode,
+                ),
+                onClick = {},
+            )
+            SettingsItem(
+                title = stringResource(R.string.about_source_code_title),
+                subtitle = stringResource(R.string.about_source_code_summary),
+                onClick = {
+                    val intent = android.content.Intent(
+                        android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse(
+                            context.getString(R.string.about_source_code_url),
+                        ),
+                    )
+                    runCatching { context.startActivity(intent) }
+                },
+            )
         }
 
         // ===== 对话框（Phase 4.4）=====
@@ -391,6 +428,26 @@ fun SettingsScreen(
                 },
             )
         }
+
+        // 5. 隐私政策（Phase 6.1 v0.3 P1 US）
+        if (showPrivacyPolicy) {
+            AlertDialog(
+                onDismissRequest = { showPrivacyPolicy = false },
+                title = { Text(stringResource(R.string.about_privacy_policy_title)) },
+                text = {
+                    Text(
+                        stringResource(R.string.about_privacy_policy_content),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { showPrivacyPolicy = false }) {
+                        Text(stringResource(R.string.about_privacy_policy_close))
+                    }
+                },
+            )
+        }
+
     }
 }
 
@@ -538,6 +595,7 @@ private fun SettingsItem(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val preferences: UserPreferences,
+    private val appVersionProvider: com.wakeplan.app.data.backup.AppVersionProvider,
 ) : ViewModel() {
 
     val leadMinutes = preferences.taskStartingLeadMinutes
@@ -551,6 +609,10 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
     val planRecapEnabled = preferences.planRecapEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /** v0.3 P1 US：暴露给 About section 显示 */
+    val versionName: String get() = appVersionProvider.versionName
+    val versionCode: Int get() = appVersionProvider.versionCode
 
     fun setLeadMinutes(minutes: Int) {
         viewModelScope.launch { preferences.setTaskStartingLeadMinutes(minutes) }
