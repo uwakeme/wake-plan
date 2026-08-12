@@ -13,24 +13,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TaskDao {
 
-    @Query("SELECT * FROM tasks WHERE segment_id = :segmentId ORDER BY order_in_segment ASC")
-    fun observeBySegment(segmentId: String): Flow<List<TaskEntity>>
-
-    /**
-     * 某计划下所有任务（join time_segments）
-     * 用于冲突检测 / 时间线
-     */
-    @Query(
-        """
-        SELECT t.* FROM tasks t
-        INNER JOIN time_segments s ON t.segment_id = s.id
-        WHERE s.plan_id = :planId
-        ORDER BY t.order_in_segment ASC
-        """
-    )
+    @Query("SELECT * FROM tasks WHERE plan_id = :planId ORDER BY start_minutes ASC, order_in_plan ASC")
     fun observeByPlan(planId: String): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks ORDER BY order_in_segment ASC")
+    @Query("SELECT * FROM tasks ORDER BY start_minutes ASC, order_in_plan ASC")
     fun observeAll(): Flow<List<TaskEntity>>
 
     @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
@@ -39,8 +25,8 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
     suspend fun findById(id: String): TaskEntity?
 
-    @Query("SELECT MAX(order_in_segment) FROM tasks WHERE segment_id = :segmentId")
-    suspend fun maxOrderInSegment(segmentId: String): Int?
+    @Query("SELECT MAX(order_in_plan) FROM tasks WHERE plan_id = :planId")
+    suspend fun maxOrderInPlan(planId: String): Int?
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(task: TaskEntity)
@@ -59,17 +45,17 @@ interface TaskDao {
     suspend fun deleteAll()
 
     /**
-     * 段内重排 — 事务内按新顺序更新 order_in_segment
+     * 计划内重排 — 事务内按新顺序更新 order_in_plan
      * orderedTaskIds 第一个 → order=0，第二个 → order=1，...
-     * 段 id 不一致的 task id 会被跳过
+     * plan_id 不一致的 task id 会被跳过
      */
     @Transaction
-    suspend fun reorder(segmentId: String, orderedTaskIds: List<String>) {
+    suspend fun reorder(planId: String, orderedTaskIds: List<String>) {
         orderedTaskIds.forEachIndexed { index, taskId ->
-            updateOrder(taskId, index, segmentId)
+            updateOrder(taskId, index, planId)
         }
     }
 
-    @Query("UPDATE tasks SET order_in_segment = :order WHERE id = :taskId AND segment_id = :segmentId")
-    suspend fun updateOrder(taskId: String, order: Int, segmentId: String)
+    @Query("UPDATE tasks SET order_in_plan = :order WHERE id = :taskId AND plan_id = :planId")
+    suspend fun updateOrder(taskId: String, order: Int, planId: String)
 }

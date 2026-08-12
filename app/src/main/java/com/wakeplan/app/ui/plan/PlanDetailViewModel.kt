@@ -5,9 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.Task
-import com.wakeplan.app.domain.model.TimeSegment
 import com.wakeplan.app.domain.repository.PlanRepository
-import com.wakeplan.app.domain.repository.SegmentRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,17 +16,19 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 计划详情 ViewModel
- * - plan: 单个计划
- * - segments: 计划下所有段（按 startMinutes 升序）
- * - tasks: 计划下所有任务（join segments）
- * - tasksBySegment: 段 id -> 任务列表
+ * 计划详情 ViewModel — v0.3 扁平化
+ *
+ * v0.3 砍段后：
+ * - 删 SegmentRepository 引用
+ * - segments 状态字段删掉（commit 4 UI 重写时会整体调整）
+ * - tasks 列表直接来自 TaskRepository（不再 groupBy segmentId）
+ *
+ * 业务方法暂时保留但只暴露 plan + tasks 状态。deletePlan / deleteTask 仍可用。
  */
 @HiltViewModel
 class PlanDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val planRepository: PlanRepository,
-    private val segmentRepository: SegmentRepository,
     private val taskRepository: TaskRepository,
 ) : ViewModel() {
 
@@ -39,23 +39,14 @@ class PlanDetailViewModel @Inject constructor(
     val plan: StateFlow<Plan?> = planRepository.observeById(planId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val segments: StateFlow<List<TimeSegment>> = segmentRepository.observeByPlan(planId)
+    val tasks: StateFlow<List<Task>> = taskRepository.observeByPlan(planId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val tasksBySegment: StateFlow<Map<String, List<Task>>> = taskRepository
-        .observeByPlan(planId)
-        .map { list -> list.groupBy { it.segmentId } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     fun deletePlan(onDone: () -> Unit) {
         viewModelScope.launch {
             planRepository.delete(planId)
             onDone()
         }
-    }
-
-    fun deleteSegment(segmentId: String) {
-        viewModelScope.launch { segmentRepository.delete(segmentId) }
     }
 
     fun deleteTask(taskId: String) {

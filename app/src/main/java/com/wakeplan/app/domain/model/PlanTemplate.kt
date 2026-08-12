@@ -1,21 +1,20 @@
 package com.wakeplan.app.domain.model
 
 /**
- * 计划模板 Domain Model — 5.3 决策：3 个内置 + 用户自存
+ * 计划模板 Domain Model — v0.3 简化
  *
- * Phase 5.4.1：扩展为"模板即迷你计划" — 含 segments + tasks（用于预览 + 5.4.2 一键新建）
- * - 内置模板的 segments/tasks 在 [BuiltInTemplates] hardcode（pure data，不进 DB）
- * - 用户自存模板的 segments/tasks v0.2 仍为空（v0.3 再加"另存为模板"）
- * - id 字段：entity 里就是 DB rowid；merge 时用同一个 id 作为前缀
+ * v0.3 砍段后，模板结构要重新设计：任务自带 startMinutes / endMinutes / repeatRule，
+ * 不再有"段 + 段内任务"的嵌套。完整模板系统（含"另存为模板"）留 commit 6 整体重写。
  *
- * segments 内的 TimeSegment.id / tasks 内的 Task.segmentId 都是 placeholder（"tpl_xxx_seg_0"），
- * 应用模板生成真 plan 时由 [TemplateRepository.createPlanFromTemplate] 重新生成
+ * v0.3 临时简化：
+ * - 删 segments 字段
+ * - tasks 字段保留（task 域模型已重定义）
+ * - enrichWithSpec / createPlanFromTemplate 只创建空 plan
  */
 data class PlanTemplate(
     val id: String,
     val title: String,
     val colorHex: String,
     val isBuiltIn: Boolean = false,
-    val segments: List<TimeSegment> = emptyList(),
     val tasks: List<Task> = emptyList(),
 )

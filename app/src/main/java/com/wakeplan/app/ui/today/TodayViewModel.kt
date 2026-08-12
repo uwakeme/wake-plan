@@ -6,9 +6,7 @@ import com.wakeplan.app.data.prefs.UserPreferences
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TaskCompletion
-import com.wakeplan.app.domain.model.TimeSegment
 import com.wakeplan.app.domain.repository.PlanRepository
-import com.wakeplan.app.domain.repository.SegmentRepository
 import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.domain.usecase.AutoExtendCalculator
@@ -40,20 +38,16 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 
 /**
- * TodayViewModel — Phase 2.4a
+ * TodayViewModel — v0.3 扁平化
  *
- * 数据流：
- * 1. observeAll 拉所有 plan / segment / task
- * 2. observeByDate(today) 拉当天所有 completion
- * 3. tickFlow 每 60s 刷新 now → AutoExtend 重算
- *
- * 副作用：
- * - ensureTodayCompletions() 按 RepeatRule 给缺 PENDING 的 task 补建 completion
- *   （懒生成 vs WorkManager 预生成 — Phase 2 选懒生成，Phase 4 备份导出时再评估）
+ * v0.3 砍段后：
+ * - 删 SegmentRepository 引用
+ * - TodayPlanItem.segments 字段删掉
+ * - ensureTodayCompletions 改成"按 plan 拿 tasks 展开，不再按段铺"
+ * - 链式碰撞延期实装见 commit 3 (CascadeDelayCalculator)
  */
 data class TodayPlanItem(
     val plan: Plan,
-    val segments: List<TimeSegment>,
     val tasks: List<Task>,
     val completions: List<TaskCompletion>,
 )
@@ -81,7 +75,6 @@ data class TodayUiState(
 @HiltViewModel
 class TodayViewModel @Inject constructor(
     private val planRepository: PlanRepository,
-    private val segmentRepository: SegmentRepository,
     private val taskRepository: TaskRepository,
     private val taskCompletionRepository: TaskCompletionRepository,
     private val taskCompletionInstantiator: TaskCompletionInstantiator,
@@ -95,18 +88,9 @@ class TodayViewModel @Inject constructor(
 
     private val today: LocalDate = LocalDate.now(clock)
 
-    /**
-     * 当前查看的日期 — Phase 5.3
-     * 默认 = today；用户点 ← / → 切换
-     * 切换到非 today 时 ensureTodayCompletions 不再触发（避免给历史日期瞎建 completion）
-     */
     private val _selectedDate = MutableStateFlow(today)
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
-    /**
-     * 当前 selectedDate 是否就是日历上的今天
-     * UI 用这个决定"今天"按钮 / 标题前缀是否显示
-     */
     val isViewingToday: StateFlow<Boolean> = _selectedDate
         .map { it == today }
         .stateIn(
@@ -115,13 +99,6 @@ class TodayViewModel @Inject constructor(
             initialValue = true,
         )
 
-    /**
-     * 可撤销动作 — Phase 5.1
-     *
-     * 用户做状态机操作后，ViewModel 把"操作前的快照"emit 出来，UI 弹 Snackbar
-     * 用户点"撤销"时调 [undo] 把快照写回；不点则 5s 后 UI 自动 consume 掉
-     * 只存最近一个动作（不做撤销栈，简化 v0.2）
-     */
     sealed interface UndoableAction {
         val completionId: String
         val timestamp: Long
@@ -141,7 +118,6 @@ class TodayViewModel @Inject constructor(
     private val _undoableAction = MutableStateFlow<UndoableAction?>(null)
     val undoableAction: StateFlow<UndoableAction?> = _undoableAction.asStateFlow()
 
-    /** 每 60s tick 一次，刷新 now；首次进入立即 emit */
     private val tickFlow: Flow<LocalDateTime> = flow {
         while (true) {
             emit(LocalDateTime.now(clock))
@@ -154,12 +130,11 @@ class TodayViewModel @Inject constructor(
             val completionsFlow = taskCompletionRepository.observeByDate(date)
             combine(
                 planRepository.observeAll(),
-                segmentRepository.observeAll(),
                 taskRepository.observeAll(),
                 completionsFlow,
                 tickFlow,
-            ) { plans, segments, tasks, completions, now ->
-                buildState(plans, segments, tasks, completions, now, date)
+            ) { plans, tasks, completions, now ->
+                buildState(plans, tasks, completions, now, date)
             }
         }
         .stateIn(
@@ -170,7 +145,6 @@ class TodayViewModel @Inject constructor(
 
     private fun buildState(
         plans: List<Plan>,
-        allSegments: List<TimeSegment>,
         allTasks: List<Task>,
         completions: List<TaskCompletion>,
         now: LocalDateTime,
@@ -178,14 +152,9 @@ class TodayViewModel @Inject constructor(
     ): TodayUiState {
         val activePlans = plans.filter { it.isActive }
         val planItems = activePlans.map { plan ->
-            val planSegments = allSegments.filter { it.planId == plan.id }
-            val planTaskIds = allTasks
-                .filter { t -> planSegments.any { it.id == t.segmentId } }
-                .map { it.id }
-                .toSet()
+            val planTaskIds = allTasks.filter { it.planId == plan.id }.map { it.id }.toSet()
             TodayPlanItem(
                 plan = plan,
-                segments = planSegments,
                 tasks = allTasks.filter { it.id in planTaskIds },
                 completions = completions.filter { it.planId == plan.id },
             )
@@ -203,31 +172,26 @@ class TodayViewModel @Inject constructor(
 
     /**
      * 给当天缺 PENDING 的 task 补建 completion
-     * upsert 后 Room Flow 重新 emit，下一轮 buildState 看到新数据
-     * 只在 selectedDate == today 时跑（切换到历史日期不能给历史建 completion）
+     * v0.3 扁平化：按 plan 拿 tasks 直接展开，不再按段铺
      */
     fun ensureTodayCompletions() {
         val targetDate = _selectedDate.value
-        if (targetDate != today) return  // 预览历史/未来，不动 DB
+        if (targetDate != today) return
         viewModelScope.launch {
             val plans = planRepository.observeAll().first()
-            val segments = segmentRepository.observeAll().first()
             val tasks = taskRepository.observeAll().first()
             val existing = taskCompletionRepository.observeByDate(targetDate).first()
             val existingTaskIds = existing.map { it.taskId }.toSet()
 
             plans.filter { it.isActive }.forEach { plan ->
-                val planSegments = segments.filter { it.planId == plan.id }
-                val planTasks = tasks.filter { t -> planSegments.any { it.id == t.segmentId } }
+                val planTasks = tasks.filter { it.planId == plan.id }
                 val pending = taskCompletionInstantiator(
                     plan = plan,
-                    segments = planSegments,
                     tasks = planTasks,
                     date = targetDate,
                 ).filter { it.taskId !in existingTaskIds }
                 pending.forEach { taskCompletionRepository.upsert(it) }
             }
-            // 同步：重新拿一次当天的 completions（含新建的 PENDING） + 调度 starting alarms
             val todaysCompletions = taskCompletionRepository.observeByDate(targetDate).first()
             val now = LocalDateTime.now(clock)
             val leadMinutes = userPreferences.taskStartingLeadMinutes.first()
@@ -243,9 +207,6 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    // ---- 任务状态机交互（Phase 2.4b）----
-
-    /** PENDING → IN_PROGRESS，写 actualStart = now；取消 starting alarm */
     fun onStartTask(completionId: String) {
         viewModelScope.launch {
             val c = taskCompletionRepository.getById(completionId) ?: return@launch
@@ -260,7 +221,6 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    /** IN_PROGRESS → COMPLETED，写 actualEnd = now + overrun */
     fun onCompleteTask(completionId: String) {
         viewModelScope.launch {
             val c = taskCompletionRepository.getById(completionId) ?: return@launch
@@ -276,7 +236,6 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    /** PENDING / IN_PROGRESS → SKIPPED（不写 actual 时间）；取消 starting alarm */
     fun onSkipTask(completionId: String) {
         viewModelScope.launch {
             val c = taskCompletionRepository.getById(completionId) ?: return@launch
@@ -287,48 +246,23 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    // ===== Phase 5.1 撤销 =====
-
-    /**
-     * 撤销最近一个动作（如果有）
-     * 把 [UndoableAction.previous] 快照写回 repository
-     * 副作用：可能跟 next tick 的 AutoExtend 重算冲突（用户撤销"complete"后 next tick 又会重算）
-     * 但这种情况用户预期是"撤销 = 回到之前的状态"，符合直觉
-     */
     fun undo() {
         val action = _undoableAction.value ?: return
         _undoableAction.value = null
         viewModelScope.launch {
-            // 直接 upsert 回去；如果当前 state 已经被人手动改了，previous 是旧值，写回就是用户要的
             taskCompletionRepository.upsert(action.previous)
-            // 撤销 PENDING 的话不需要 re-schedule（用户撤回到 PENDING，auto-extend 下次 tick 会重算）
-            // 撤销 IN_PROGRESS 也是同理
-            // 撤销 COMPLETED → SKIPPED 同理
-            // 简单起见不重设 alarm；用户下次进 app 触发 ensureTodayCompletions 会重排
         }
     }
 
-    /**
-     * 清除 UndoableAction（UI 在 5s 过期或用户点其他地方时调）
-     */
     fun consumeUndo() {
         _undoableAction.value = null
     }
 
-    // ===== Phase 5.3 日期切换 =====
-
-    /**
-     * 切换到指定日期
-     * @param date 要预览的日期；不在范围内会被忽略
-     */
     fun switchDate(date: LocalDate) {
         if (date == _selectedDate.value) return
         _selectedDate.value = date
     }
 
-    /**
-     * 切换到今天（"今天"按钮）
-     */
     fun goToToday() {
         switchDate(today)
     }

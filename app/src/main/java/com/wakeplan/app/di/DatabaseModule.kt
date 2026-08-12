@@ -7,7 +7,6 @@ import com.wakeplan.app.data.db.dao.PlanDao
 import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
 import com.wakeplan.app.data.db.dao.TaskDao
-import com.wakeplan.app.data.db.dao.TimeSegmentDao
 import com.wakeplan.app.data.security.DatabaseKeyStore
 import dagger.Module
 import dagger.Provides
@@ -18,7 +17,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import javax.inject.Singleton
 
 /**
- * Database Module — 注入 Room Database + 5 个 DAO
+ * Database Module — 注入 Room Database + 4 个 DAO
  *
  * **SQLCipher 集成（Phase 5.8）**：
  * - DB passphrase 由 [DatabaseKeyStore] 管理
@@ -28,8 +27,9 @@ import javax.inject.Singleton
  * - App.onCreate 同步 bootstrap（runBlocking < 100ms，OK on cold start）
  *
  * **数据迁移**：
- * - v0.1 → v0.2：从明文 SQLite 切到加密 → `fallbackToDestructiveMigration` 直接清表重建
- *   （v0.2 仍没真实用户数据；首次发布前如果需要保留旧数据，要写 v0.1→v0.2 export + import 流程）
+ * - v0.3 schema v3：time_segments 表删除，tasks 字段重定义。
+ *   v0.2 → v0.3 alpha 用户数据清零，fallbackToDestructiveMigration 兜底。
+ *   真实 release 前再写 proper Migration。
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -50,14 +50,12 @@ object DatabaseModule {
             WakePlanDatabase.DB_NAME,
         )
             .openHelperFactory(factory)
-            // v0.3: 去掉 fallbackToDestructiveMigration，启用 v1→v2 migration
-            // 失败时抛 IllegalStateException（不要悄悄清表）—— 用户能感知
-            .addMigrations(WakePlanDatabase.MIGRATION_1_2)
+            // v0.3 alpha：缺 Migration 时 dropAndRecreate 清表重建
+            .fallbackToDestructiveMigration()
             .build()
     }
 
     @Provides fun providePlanDao(db: WakePlanDatabase): PlanDao = db.planDao()
-    @Provides fun provideTimeSegmentDao(db: WakePlanDatabase): TimeSegmentDao = db.timeSegmentDao()
     @Provides fun provideTaskDao(db: WakePlanDatabase): TaskDao = db.taskDao()
     @Provides fun providePlanTemplateDao(db: WakePlanDatabase): PlanTemplateDao = db.planTemplateDao()
     @Provides fun provideTaskCompletionDao(db: WakePlanDatabase): TaskCompletionDao = db.taskCompletionDao()

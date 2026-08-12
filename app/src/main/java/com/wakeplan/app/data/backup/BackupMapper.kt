@@ -4,15 +4,14 @@ import com.wakeplan.app.data.db.entity.PlanEntity
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
 import com.wakeplan.app.data.db.entity.TaskCompletionEntity
 import com.wakeplan.app.data.db.entity.TaskEntity
-import com.wakeplan.app.data.db.entity.TimeSegmentEntity
 
 /**
  * 备份 DTO ↔ Room entity 双向映射 — Phase 4.1
  *
  * 字段一一对应，DTO 不带 Room 注解便于序列化
- * 留作单文件便于 Phase 4.3 导入时直接反着调
+ *
+ * v0.3 砍段：TimeSegmentEntity 删了，对应 toDto()/toEntity() 一起删
  */
-
 fun PlanEntity.toDto() = BackupPlan(
     id = id,
     title = title,
@@ -33,45 +32,29 @@ fun BackupPlan.toEntity() = PlanEntity(
     updatedAt = updatedAt,
 )
 
-fun TimeSegmentEntity.toDto() = BackupSegment(
-    id = id,
-    planId = planId,
-    title = title,
-    startMinutes = startMinutes,
-    endMinutes = endMinutes,
-    repeatRule = repeatRule,
-    customDays = customDays,
-)
-
-fun BackupSegment.toEntity() = TimeSegmentEntity(
-    id = id,
-    planId = planId,
-    title = title,
-    startMinutes = startMinutes,
-    endMinutes = endMinutes,
-    repeatRule = repeatRule,
-    customDays = customDays,
-)
-
 fun TaskEntity.toDto() = BackupTask(
     id = id,
-    segmentId = segmentId,
+    planId = planId,
     title = title,
-    plannedDurationMinutes = plannedDurationMinutes,
-    autoExtend = autoExtend,
+    startMinutes = startMinutes,
+    endMinutes = endMinutes,
+    repeatRule = repeatRule,
+    customDays = customDays,
     isLocked = isLocked,
-    orderInSegment = orderInSegment,
+    orderInPlan = orderInPlan,
     note = note,
 )
 
 fun BackupTask.toEntity() = TaskEntity(
     id = id,
-    segmentId = segmentId,
+    planId = planId,
     title = title,
-    plannedDurationMinutes = plannedDurationMinutes,
-    autoExtend = autoExtend,
+    startMinutes = startMinutes,
+    endMinutes = endMinutes,
+    repeatRule = repeatRule,
+    customDays = customDays,
     isLocked = isLocked,
-    orderInSegment = orderInSegment,
+    orderInPlan = orderInPlan,
     note = note,
 )
 

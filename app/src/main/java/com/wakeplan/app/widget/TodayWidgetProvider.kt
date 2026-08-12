@@ -21,7 +21,6 @@ import kotlinx.coroutines.launch
 import com.wakeplan.app.data.db.WakePlanDatabase
 import com.wakeplan.app.domain.repository.PlanRepository
 import com.wakeplan.app.domain.repository.TaskCompletionRepository
-import com.wakeplan.app.domain.repository.SegmentRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.domain.model.TaskStatus
 import java.time.LocalDate
@@ -46,7 +45,6 @@ class TodayWidgetProvider : AppWidgetProvider() {
     @InstallIn(SingletonComponent::class)
     interface WidgetEntryPoint {
         fun planRepository(): PlanRepository
-        fun segmentRepository(): SegmentRepository
         fun taskRepository(): TaskRepository
         fun taskCompletionRepository(): TaskCompletionRepository
         fun database(): WakePlanDatabase

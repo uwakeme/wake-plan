@@ -4,7 +4,6 @@ import com.wakeplan.app.data.db.dao.PlanDao
 import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
 import com.wakeplan.app.data.db.dao.TaskDao
-import com.wakeplan.app.data.db.dao.TimeSegmentDao
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -17,18 +16,14 @@ import javax.inject.Singleton
  * 备份导出编排 — Phase 4.1
  *
  * 数据流：
- *   5 DAO (Flow)  →  take(1)  →  entity list  →  DTO  →  BackupEnvelope  →  JSON 字符串
+ *   4 DAO (Flow)  →  take(1)  →  entity list  →  DTO  →  BackupEnvelope  →  JSON 字符串
  *
- * 取 Flow.first() 是 Room observe 的标准用法：拿当前 snapshot 不订阅变更
- * 备份是一次性快照，不需要持续更新
- *
- * 故意不返回 Flow —— 备份导出是个有副作用的动作（写文件、可能要算 SHA-256），
- * 用 suspend 暴露更明确"会阻塞等 IO"的语义
+ * v0.3 砍段后不再读 time_segments。BackupData.segments 字段保留但恒为空 list，
+ * 以兼容老版本（v0.2 schema 1）备份文件。commit 6 会整体重写 envelope schema。
  */
 @Singleton
 class BackupExporter @Inject constructor(
     private val planDao: PlanDao,
-    private val timeSegmentDao: TimeSegmentDao,
     private val taskDao: TaskDao,
     private val taskCompletionDao: TaskCompletionDao,
     private val planTemplateDao: PlanTemplateDao,
@@ -54,7 +49,6 @@ class BackupExporter @Inject constructor(
         appVersionCode: Int = appVersionProvider.versionCode,
     ): String {
         val plans = planDao.observeAll().first()
-        val segments = timeSegmentDao.observeAll().first()
         val tasks = taskDao.observeAll().first()
         val completions = readAllCompletions()
         val templates = planTemplateDao.observeAll().first()
@@ -65,7 +59,7 @@ class BackupExporter @Inject constructor(
             appVersionCode = appVersionCode,
             data = BackupData(
                 plans = plans.map { it.toDto() },
-                segments = segments.map { it.toDto() },
+                segments = emptyList(),  // v0.3 砍段；占位保持 envelope schema 兼容
                 tasks = tasks.map { it.toDto() },
                 taskCompletions = completions.map { it.toDto() },
                 planTemplates = templates.map { it.toDto() },

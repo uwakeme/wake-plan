@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 2,
-    "identityHash": "d246c212355832da760030ef18c15743",
+    "version": 3,
+    "identityHash": "6db944e4250af280cf41b11dcde50b1b",
     "entities": [
       {
         "tableName": "plans",
@@ -68,8 +68,8 @@
         "foreignKeys": []
       },
       {
-        "tableName": "time_segments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `plan_id` TEXT NOT NULL, `title` TEXT, `start_minutes` INTEGER NOT NULL, `end_minutes` INTEGER NOT NULL, `repeat_rule` TEXT NOT NULL, `custom_days` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`plan_id`) REFERENCES `plans`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "tableName": "tasks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `plan_id` TEXT NOT NULL, `title` TEXT NOT NULL, `start_minutes` INTEGER NOT NULL, `end_minutes` INTEGER NOT NULL, `repeat_rule` TEXT NOT NULL, `custom_days` TEXT NOT NULL, `is_locked` INTEGER NOT NULL, `order_in_plan` INTEGER NOT NULL, `note` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`plan_id`) REFERENCES `plans`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -87,7 +87,7 @@
             "fieldPath": "title",
             "columnName": "title",
             "affinity": "TEXT",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "startMinutes",
@@ -112,72 +112,6 @@
             "columnName": "custom_days",
             "affinity": "TEXT",
             "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_time_segments_plan_id",
-            "unique": false,
-            "columnNames": [
-              "plan_id"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_time_segments_plan_id` ON `${TABLE_NAME}` (`plan_id`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "plans",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "plan_id"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
-      },
-      {
-        "tableName": "tasks",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `segment_id` TEXT NOT NULL, `title` TEXT NOT NULL, `planned_duration_minutes` INTEGER NOT NULL, `auto_extend` INTEGER NOT NULL, `is_locked` INTEGER NOT NULL, `order_in_segment` INTEGER NOT NULL, `note` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`segment_id`) REFERENCES `time_segments`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "segmentId",
-            "columnName": "segment_id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "title",
-            "columnName": "title",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "plannedDurationMinutes",
-            "columnName": "planned_duration_minutes",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "autoExtend",
-            "columnName": "auto_extend",
-            "affinity": "INTEGER",
-            "notNull": true
           },
           {
             "fieldPath": "isLocked",
@@ -186,8 +120,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "orderInSegment",
-            "columnName": "order_in_segment",
+            "fieldPath": "orderInPlan",
+            "columnName": "order_in_plan",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -206,22 +140,22 @@
         },
         "indices": [
           {
-            "name": "index_tasks_segment_id",
+            "name": "index_tasks_plan_id",
             "unique": false,
             "columnNames": [
-              "segment_id"
+              "plan_id"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_tasks_segment_id` ON `${TABLE_NAME}` (`segment_id`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_tasks_plan_id` ON `${TABLE_NAME}` (`plan_id`)"
           }
         ],
         "foreignKeys": [
           {
-            "table": "time_segments",
+            "table": "plans",
             "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
-              "segment_id"
+              "plan_id"
             ],
             "referencedColumns": [
               "id"
@@ -418,7 +352,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd246c212355832da760030ef18c15743')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6db944e4250af280cf41b11dcde50b1b')"
     ]
   }
 }

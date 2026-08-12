@@ -4,12 +4,11 @@ import com.wakeplan.app.data.db.entity.PlanEntity
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
 import com.wakeplan.app.data.db.entity.TaskCompletionEntity
 import com.wakeplan.app.data.db.entity.TaskEntity
-import com.wakeplan.app.data.db.entity.TimeSegmentEntity
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.PlanTemplate
+import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TaskCompletion
-import com.wakeplan.app.domain.model.TimeSegment
 
 /**
  * Entity ↔ Domain Model 单向转换
@@ -36,46 +35,42 @@ fun Plan.toEntity(): PlanEntity = PlanEntity(
     updatedAt = updatedAt,
 )
 
-fun TimeSegmentEntity.toDomain(): TimeSegment = TimeSegment(
-    id = id,
-    planId = planId,
-    title = title,
-    startMinutes = startMinutes,
-    endMinutes = endMinutes,
-    repeatRule = repeatRule,
-    customDays = customDays,
-)
-
-fun TimeSegment.toEntity(): TimeSegmentEntity = TimeSegmentEntity(
-    id = id,
-    planId = planId,
-    title = title,
-    startMinutes = startMinutes,
-    endMinutes = endMinutes,
-    repeatRule = repeatRule,
-    customDays = customDays,
-)
-
 fun TaskEntity.toDomain(): Task = Task(
     id = id,
-    segmentId = segmentId,
+    planId = planId,
     title = title,
-    plannedDurationMinutes = plannedDurationMinutes,
-    autoExtend = autoExtend,
+    startMinutes = startMinutes,
+    endMinutes = endMinutes,
+    repeatRule = repeatRule,
+    customDays = customDays,
     isLocked = isLocked,
-    orderInSegment = orderInSegment,
+    orderInPlan = orderInPlan,
     note = note,
 )
 
 fun Task.toEntity(): TaskEntity = TaskEntity(
     id = id,
-    segmentId = segmentId,
+    planId = planId,
     title = title,
-    plannedDurationMinutes = plannedDurationMinutes,
-    autoExtend = autoExtend,
+    startMinutes = startMinutes,
+    endMinutes = endMinutes,
+    repeatRule = repeatRule,
+    customDays = customDays,
     isLocked = isLocked,
-    orderInSegment = orderInSegment,
+    orderInPlan = orderInPlan,
     note = note,
+)
+
+/**
+ * v0.3 砍段后，Task 字段不再带 repeatRule 推断逻辑
+ * 这里显式按 RepeatRule.CUSTOM 决定 customDays 是否保留
+ */
+private fun Task.normalizedCustomDays(): Set<java.time.DayOfWeek> =
+    if (repeatRule == RepeatRule.CUSTOM) customDays else emptySet()
+
+@Suppress("unused")
+private fun Task.entityWithNormalizedCustomDays(): TaskEntity = toEntity().copy(
+    customDays = normalizedCustomDays(),
 )
 
 fun PlanTemplateEntity.toDomain(): PlanTemplate = PlanTemplate(

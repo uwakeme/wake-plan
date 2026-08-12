@@ -3,11 +3,13 @@ package com.wakeplan.app.data.repository
 import com.wakeplan.app.data.db.dao.TaskDao
 import com.wakeplan.app.data.repository.mapper.toDomain
 import com.wakeplan.app.data.repository.mapper.toEntity
+import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.domain.repository.newId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,9 +17,6 @@ import javax.inject.Singleton
 class TaskRepositoryImpl @Inject constructor(
     private val taskDao: TaskDao,
 ) : TaskRepository {
-
-    override fun observeBySegment(segmentId: String): Flow<List<Task>> =
-        taskDao.observeBySegment(segmentId).map { list -> list.map { it.toDomain() } }
 
     override fun observeByPlan(planId: String): Flow<List<Task>> =
         taskDao.observeByPlan(planId).map { list -> list.map { it.toDomain() } }
@@ -29,22 +28,26 @@ class TaskRepositoryImpl @Inject constructor(
         taskDao.findById(id)?.toDomain()
 
     override suspend fun create(
-        segmentId: String,
+        planId: String,
         title: String,
-        plannedDurationMinutes: Int,
-        autoExtend: Boolean,
+        startMinutes: Int,
+        endMinutes: Int,
+        repeatRule: RepeatRule,
+        customDays: Set<DayOfWeek>,
         isLocked: Boolean,
         note: String?,
     ): Task {
-        val nextOrder = (taskDao.maxOrderInSegment(segmentId) ?: -1) + 1
+        val nextOrder = (taskDao.maxOrderInPlan(planId) ?: -1) + 1
         val task = Task(
             id = newId(),
-            segmentId = segmentId,
+            planId = planId,
             title = title,
-            plannedDurationMinutes = plannedDurationMinutes,
-            autoExtend = autoExtend,
+            startMinutes = startMinutes,
+            endMinutes = endMinutes,
+            repeatRule = repeatRule,
+            customDays = if (repeatRule == RepeatRule.CUSTOM) customDays else emptySet(),
             isLocked = isLocked,
-            orderInSegment = nextOrder,
+            orderInPlan = nextOrder,
             note = note,
         )
         taskDao.insert(task.toEntity())
@@ -59,7 +62,7 @@ class TaskRepositoryImpl @Inject constructor(
         taskDao.deleteById(id)
     }
 
-    override suspend fun reorder(segmentId: String, orderedTaskIds: List<String>) {
-        taskDao.reorder(segmentId, orderedTaskIds)
+    override suspend fun reorder(planId: String, orderedTaskIds: List<String>) {
+        taskDao.reorder(planId, orderedTaskIds)
     }
 }

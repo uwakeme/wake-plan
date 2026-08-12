@@ -3,63 +3,43 @@ package com.wakeplan.app.data.db
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.wakeplan.app.data.db.converter.Converters
 import com.wakeplan.app.data.db.dao.PlanDao
 import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
 import com.wakeplan.app.data.db.dao.TaskDao
-import com.wakeplan.app.data.db.dao.TimeSegmentDao
 import com.wakeplan.app.data.db.entity.PlanEntity
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
 import com.wakeplan.app.data.db.entity.TaskCompletionEntity
 import com.wakeplan.app.data.db.entity.TaskEntity
-import com.wakeplan.app.data.db.entity.TimeSegmentEntity
 
 /**
  * Wake Plan Room Database
- * 5 entity 一次声明；DAO 暂空接口，Phase 1+ 实装 CRUD
  *
- * 加密：SQLCipher SupportFactory 注入到 DatabaseModule
- * Schema 导出：`app/schemas/com.wakeplan.app.data.db.WakePlanDatabase/<version>.json`
- *
- * v0.3 schema v2：plans 加 archived 字段
+ * v0.3 schema v3 — 扁平化任务模型（砍 time_segments 表 + 改 tasks 字段）
+ *   - 删 time_segments 表
+ *   - tasks 表：plan_id / start_minutes / end_minutes / repeat_rule / custom_days
+ *     / is_locked / order_in_plan / note；去掉 segment_id / planned_duration_minutes / auto_extend
+ *   - alpha 数据清零（fallbackToDestructiveMigration）
  */
 @Database(
     entities = [
         PlanEntity::class,
-        TimeSegmentEntity::class,
         TaskEntity::class,
         PlanTemplateEntity::class,
         TaskCompletionEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
 abstract class WakePlanDatabase : RoomDatabase() {
     abstract fun planDao(): PlanDao
-    abstract fun timeSegmentDao(): TimeSegmentDao
     abstract fun taskDao(): TaskDao
     abstract fun planTemplateDao(): PlanTemplateDao
     abstract fun taskCompletionDao(): TaskCompletionDao
 
     companion object {
         const val DB_NAME = "wakeplan.db"
-
-        /**
-         * v0.3 Migration 测试基础：v1 → v2
-         * plans 表加 archived INTEGER NOT NULL DEFAULT 0
-         *
-         * 真实数据保留测试见 androidTest/.../WakePlanDatabaseMigrationTest.kt
-         */
-        val MIGRATION_1_2: Migration = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "ALTER TABLE plans ADD COLUMN archived INTEGER NOT NULL DEFAULT 0",
-                )
-            }
-        }
     }
 }

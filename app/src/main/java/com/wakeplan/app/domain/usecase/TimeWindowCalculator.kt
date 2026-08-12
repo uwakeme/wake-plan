@@ -1,22 +1,20 @@
 package com.wakeplan.app.domain.usecase
 
 import com.wakeplan.app.domain.model.RepeatRule
-import com.wakeplan.app.domain.model.TimeSegment
+import com.wakeplan.app.domain.model.Task
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
 /**
- * 段在该天的实际时间窗口 — Phase 2 UseCase
+ * 任务在该天的实际时间窗口 — v0.3 扁平化
  *
- * 跨午夜：endMinutes > 1440 表示延续到次日
- * 例：startMinutes=23*60=1380, endMinutes=25*60=1500
- *   → plannedStart=当天 23:00, plannedEnd=次日 01:00
- *   (LocalDateTime.plusMinutes 自动跨日)
+ * v0.3 砍段后，task 自带 startMinutes / endMinutes / repeatRule / customDays。
+ * 跨午夜：endMinutes > 1440 表示延续到次日（例 startMinutes=23*60, endMinutes=25*60
+ *   → plannedStart=当天 23:00, plannedEnd=次日 01:00；LocalDateTime.plusMinutes 自动跨日）
  *
- * v0.1 ONCE 段按 DAILY 行为处理：每天都生成 PENDING；
- * v0.2 引入 scheduledDate 字段时升级（详见 docs/plan/00-roadmap.md）
+ * v0.1 ONCE 段按 DAILY 行为处理：每天都生成 PENDING。
  */
 data class PlannedWindow(
     val plannedStart: LocalDateTime,
@@ -26,24 +24,22 @@ data class PlannedWindow(
 class TimeWindowCalculator @Inject constructor() {
 
     /**
-     * @return 该段在 date 的窗口；如果段在 date 不生效（如 WEEKDAYS 段在周末），返回 null
+     * @return 该 task 在 date 的窗口；如果 task 在 date 不生效（如 WEEKDAYS task 在周末），返回 null
      */
-    operator fun invoke(segment: TimeSegment, date: LocalDate): PlannedWindow? {
-        if (!isActiveOn(segment, date)) return null
+    operator fun invoke(task: Task, date: LocalDate): PlannedWindow? {
+        if (!isActiveOn(task, date)) return null
         return PlannedWindow(
-            plannedStart = date.atStartOfDay().plusMinutes(segment.startMinutes.toLong()),
-            plannedEnd = date.atStartOfDay().plusMinutes(segment.endMinutes.toLong()),
+            plannedStart = date.atStartOfDay().plusMinutes(task.startMinutes.toLong()),
+            plannedEnd = date.atStartOfDay().plusMinutes(task.endMinutes.toLong()),
         )
     }
 
-    private fun isActiveOn(segment: TimeSegment, date: LocalDate): Boolean =
-        when (segment.repeatRule) {
-            // v0.1 临时：ONCE 段按 DAILY 处理（用户用 SKIPPED 标记非目标日）
-            // v0.2 引入 scheduledDate 字段后改写
+    private fun isActiveOn(task: Task, date: LocalDate): Boolean =
+        when (task.repeatRule) {
             RepeatRule.ONCE -> true
             RepeatRule.WEEKDAYS -> date.dayOfWeek in WEEKDAYS
             RepeatRule.DAILY -> true
-            RepeatRule.CUSTOM -> segment.customDays.isNotEmpty() && date.dayOfWeek in segment.customDays
+            RepeatRule.CUSTOM -> task.customDays.isNotEmpty() && date.dayOfWeek in task.customDays
         }
 
     companion object {

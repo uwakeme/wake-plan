@@ -21,7 +21,10 @@ import java.time.LocalDateTime
  * }
  * ```
  *
- * - `schemaVersion` 整型；导入时按版本路由到对应的 MigrationHandler（Phase 4.3 落地）
+ * v0.3 砍段：`data.segments` 字段保留（兼容老 v0.2 备份），但恒为空 list。
+ * 真正的 segments 字段移除要等 commit 6 整体重写 envelope schema。
+ *
+ * - `schemaVersion` 整型；导入时按版本路由到对应的 MigrationHandler
  * - `data` 包一层是预留扩展位：未来加 `preferences` / `deviceInfo` 不破坏顶层
  * - DTO 字段名跟 entity 一致，但不带 Room 注解，序列化规则独立可控
  */
@@ -43,7 +46,8 @@ data class BackupEnvelope(
 @Serializable
 data class BackupData(
     val plans: List<BackupPlan>,
-    val segments: List<BackupSegment>,
+    /** v0.3 砍段后恒为空 list；保留字段以兼容老版本备份文件 */
+    val segments: List<BackupSegment> = emptyList(),
     val tasks: List<BackupTask>,
     val taskCompletions: List<BackupCompletion>,
     val planTemplates: List<BackupTemplate>,
@@ -63,6 +67,9 @@ data class BackupPlan(
     val updatedAt: Instant,
 )
 
+/**
+ * v0.3 砍段后 segments 恒为空 list；此 DTO 保留只为兼容老备份文件解析（不会真写入）
+ */
 @Serializable
 data class BackupSegment(
     val id: String,
@@ -75,16 +82,23 @@ data class BackupSegment(
     val customDays: Set<DayOfWeek>,
 )
 
+/**
+ * v0.3 扁平化：任务自带 startMinutes / endMinutes / repeatRule / customDays
+ * 字段名对应 TaskEntity（去掉 segmentId / plannedDurationMinutes / autoExtend / orderInSegment）
+ */
 @Serializable
 data class BackupTask(
     val id: String,
-    val segmentId: String,
+    val planId: String,
     val title: String,
-    val plannedDurationMinutes: Int,
-    val autoExtend: Boolean,
-    val isLocked: Boolean,
-    val orderInSegment: Int,
-    val note: String?,
+    val startMinutes: Int,
+    val endMinutes: Int,
+    val repeatRule: RepeatRule,
+    @Serializable(with = DayOfWeekSetSerializer::class)
+    val customDays: Set<DayOfWeek> = emptySet(),
+    val isLocked: Boolean = false,
+    val orderInPlan: Int,
+    val note: String? = null,
 )
 
 @Serializable
@@ -152,7 +166,7 @@ data class EncryptionMetadata(
  *   "envelope": null, "data": "base64(ciphertext)" }
  * ```
  *
- * Phase 4.3 导入时按 `format` 路由：
+ * 导入时按 `format` 路由：
  * - "plain-v1"：直接读 envelope
  * - "encrypted-v1"：用 metadata 解密 data，再 parse 内部 JSON 为 BackupEnvelope
  *
