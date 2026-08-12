@@ -453,6 +453,17 @@
     <string name="task_delete_msg">此操作不可撤销。</string>
     <string name="task_validation_required">请填写任务标题</string>
     <string name="task_validation_duration">时长必须是正整数</string>
+    <string name="task_start_time_label">开始时间</string>
+    <string name="task_end_time_label">结束时间</string>
+    <string name="task_time_to">至</string>
+    <string name="task_repeat_label">重复</string>
+    <string name="task_repeat_help">选择任务重复规则</string>
+    <string name="task_custom_days_label">选择星期</string>
+    <string name="task_cross_midnight_hint">结束跨过次日 00:00（持续 %1$d 分钟）</string>
+    <string name="task_end_before_start_error">结束时间需晚于开始时间</string>
+    <string name="task_invalid_error">任务设置有误</string>
+    <string name="task_picker_start_title">选择开始时间</string>
+    <string name="task_picker_end_title">选择结束时间</string>
     <string name="settings_export_success_runtime_template">导出成功：%1$d KB</string>
     <string name="settings_export_failed_runtime_template">导出失败：%1$s</string>
     <string name="settings_import_success_runtime_template">导入成功：%1$d 计划 / %2$d 任务 / %3$d 完成</string>

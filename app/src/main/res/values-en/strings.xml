@@ -452,6 +452,17 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="task_delete_msg">This cannot be undone.</string>
     <string name="task_validation_required">Please enter a task title</string>
     <string name="task_validation_duration">Duration must be a positive integer</string>
+    <string name="task_start_time_label">Start time</string>
+    <string name="task_end_time_label">End time</string>
+    <string name="task_time_to">to</string>
+    <string name="task_repeat_label">Repeat</string>
+    <string name="task_repeat_help">Choose when this task repeats</string>
+    <string name="task_custom_days_label">Pick days</string>
+    <string name="task_cross_midnight_hint">Ends past next-day 00:00 (lasts %1$d min)</string>
+    <string name="task_end_before_start_error">End time must be after start time</string>
+    <string name="task_invalid_error">Task settings are invalid</string>
+    <string name="task_picker_start_title">Pick start time</string>
+    <string name="task_picker_end_title">Pick end time</string>
     <string name="settings_export_success_runtime_template">Export successful: %1$d KB</string>
     <string name="settings_export_failed_runtime_template">Export failed: %1$s</string>
     <string name="settings_import_success_runtime_template">Import successful: %1$d plans / %2$d tasks / %3$d completions</string>
