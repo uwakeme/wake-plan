@@ -98,19 +98,18 @@
 
     <string name="plan_detail_title_fallback">计划详情</string>
     <string name="plan_detail_cd_delete">删除计划</string>
-    <string name="plan_detail_cd_add_segment">添加段</string>
+    <string name="plan_detail_cd_add_task">添加任务</string>
     <string name="plan_detail_delete_dialog_title">删除计划？</string>
-    <string name="plan_detail_delete_dialog_text">将删除 "%1$s" 及其所有段、任务。此操作不可撤销。</string>
+    <string name="plan_detail_delete_dialog_text">将删除 "%1$s" 及其所有任务。此操作不可撤销。</string>
     <string name="plan_detail_header_subtitle">起始 %1$s · %2$s</string>
     <string name="plan_detail_status_active">活跃</string>
     <string name="plan_detail_status_archived">归档</string>
-    <string name="plan_detail_no_segments">还没有段，点 + 添加时间段（如 \"晨练 06:30-07:30\"）</string>
-    <string name="plan_detail_segment_cd_edit">编辑段</string>
-    <string name="plan_detail_segment_cd_delete">删除段</string>
-    <string name="plan_detail_no_tasks_in_segment">段内还没有任务</string>
-    <string name="plan_detail_add_task">添加任务</string>
+    <string name="plan_detail_no_tasks">还没有任务，点 + 添加（如 "晨练 06:00-08:00"）</string>
     <string name="plan_detail_task_cd_edit">编辑任务</string>
     <string name="plan_detail_task_cd_delete">删除任务</string>
+    <string name="plan_detail_repeat_capsule">%1$s · 锁定</string>
+    <string name="plan_detail_no_tasks_in_segment">段内还没有任务</string>
+    <string name="plan_detail_add_task">添加任务</string>
 
     <string name="plan_create_title">新建计划</string>
     <string name="plan_create_section_color">颜色</string>
@@ -370,6 +369,8 @@
     <string name="tpl_detail_apply">应用此模板</string>
     <string name="tpl_detail_no_segment">该段还没有任务</string>
     <string name="tpl_detail_no_segment_runtime">段内还没有任务</string>
+    <string name="tpl_detail_no_tasks">模板还没有任务</string>
+    <string name="tpl_detail_tasks_section">任务列表（%1$d）</string>
     <string name="tpl_detail_duration_min">%1$d 分钟</string>
     <string name="tpl_detail_duration_min_runtime">%1$d 分钟</string>
     <string name="tpl_detail_segment_char">段</string>

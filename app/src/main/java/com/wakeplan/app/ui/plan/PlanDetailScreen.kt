@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -47,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.R
 import com.wakeplan.app.domain.model.Plan
+import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.Task
 
 /**
@@ -87,7 +89,7 @@ fun PlanDetailScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddTask) {
-                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.plan_detail_cd_add_segment))
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.plan_detail_cd_add_task))
             }
         },
     ) { padding ->
@@ -156,7 +158,7 @@ private fun PlanDetailBody(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Text(
-                        text = stringResource(R.string.plan_detail_no_segments),
+                        text = stringResource(R.string.plan_detail_no_tasks),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(20.dp),
@@ -249,6 +251,20 @@ private fun TaskRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                val repeatLabel = repeatRuleLabel(task)
+                if (repeatLabel != null || task.isLocked) {
+                    Text(
+                        text = when {
+                            task.isLocked -> stringResource(
+                                R.string.plan_detail_repeat_capsule,
+                                repeatLabel ?: "",
+                            )
+                            else -> repeatLabel.orEmpty()
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             if (task.isLocked) {
                 Surface(
@@ -264,7 +280,7 @@ private fun TaskRow(
                 }
             }
             IconButton(onClick = onClick) {
-                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.plan_detail_task_cd_edit))
+                Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.plan_detail_task_cd_edit))
             }
             IconButton(onClick = onDelete) {
                 Icon(
@@ -283,4 +299,14 @@ private fun formatTime(minutes: Int): String {
     val m = total % 60
     val dayShift = if (minutes >= 1440) " (+1)" else ""
     return "%02d:%02d%s".format(h, m, dayShift)
+}
+
+@Composable
+private fun repeatRuleLabel(task: Task): String? = when (task.repeatRule) {
+    RepeatRule.ONCE -> stringResource(R.string.repeat_once)
+    RepeatRule.WEEKDAYS -> stringResource(R.string.repeat_weekdays)
+    RepeatRule.DAILY -> stringResource(R.string.repeat_daily)
+    RepeatRule.CUSTOM -> if (task.customDays.isNotEmpty()) {
+        stringResource(R.string.repeat_custom)
+    } else null
 }

@@ -26,8 +26,6 @@ import com.wakeplan.app.ui.plan.CreatePlanScreen
 import com.wakeplan.app.ui.plan.PlanDetailScreen
 import com.wakeplan.app.ui.plan.PlanDetailViewModel
 import com.wakeplan.app.ui.plan.PlanListScreen
-import com.wakeplan.app.ui.plan.SegmentEditorScreen
-import com.wakeplan.app.ui.plan.SegmentEditorViewModel
 import com.wakeplan.app.ui.settings.SettingsScreen
 import com.wakeplan.app.ui.task.TaskEditorScreen
 import com.wakeplan.app.ui.task.TaskEditorViewModel
@@ -40,19 +38,17 @@ import com.wakeplan.app.ui.today.TodayScreen
 /**
  * 根导航 — Scaffold 内嵌 BottomBar + NavHost
  *
- * 路由表（v0.1 完成 + Phase 5.2.1 加 stats）：
- *   today                                                            → TodayScreen
- *   plans                                                            → PlanListScreen
- *   stats                                                            → StatsScreen
- *   plans/create                                                     → CreatePlanScreen
- *   plans/{planId}                                                   → PlanDetailScreen
- *   plans/{planId}/segments/new                                      → SegmentEditorScreen (create)
- *   plans/{planId}/segments/{segmentId}                              → SegmentEditorScreen (edit)
- *   plans/{planId}/segments/{segmentId}/tasks/new                    → TaskEditorScreen (create)
- *   plans/{planId}/segments/{segmentId}/tasks/{taskId}               → TaskEditorScreen (edit)
- *   settings                                                         → SettingsScreen
- *   settings/templates                                               → TemplateListScreen
- *   settings/templates/{templateId}                                  → TemplateDetailScreen
+ * 路由表（v0.3 扁平化 — 砍段）：
+ *   today                                          → TodayScreen
+ *   plans                                          → PlanListScreen
+ *   stats                                          → StatsScreen
+ *   plans/create                                   → CreatePlanScreen
+ *   plans/{planId}                                 → PlanDetailScreen
+ *   plans/{planId}/tasks/new                       → TaskEditorScreen (create)
+ *   plans/{planId}/tasks/{taskId}                  → TaskEditorScreen (edit)
+ *   settings                                       → SettingsScreen
+ *   settings/templates                             → TemplateListScreen
+ *   settings/templates/{templateId}                → TemplateDetailScreen
  */
 @Composable
 fun AppNavHost() {
@@ -162,27 +158,6 @@ private fun AppNavGraph(
             )
         }
         composable(
-            route = Route.SegmentEditorCreatePattern,
-            arguments = listOf(
-                navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
-            ),
-        ) {
-            SegmentEditorScreen(
-                onBack = { navController.popBackStack() },
-            )
-        }
-        composable(
-            route = Route.SegmentEditorEditPattern,
-            arguments = listOf(
-                navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
-                navArgument(SegmentEditorViewModel.ARG_SEGMENT_ID) { type = NavType.StringType },
-            ),
-        ) {
-            SegmentEditorScreen(
-                onBack = { navController.popBackStack() },
-            )
-        }
-        composable(
             route = Route.TaskEditorCreatePattern,
             arguments = listOf(
                 navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
@@ -235,16 +210,12 @@ private fun AppNavGraph(
 object Route {
     const val PlanCreate = "plans/create"
     const val PlanDetailPattern = "plans/{planId}"
-    const val SegmentEditorCreatePattern = "plans/{planId}/segments/new"
-    const val SegmentEditorEditPattern = "plans/{planId}/segments/{segmentId}"
     const val TaskEditorCreatePattern = "plans/{planId}/tasks/new"
     const val TaskEditorEditPattern = "plans/{planId}/tasks/{taskId}"
     const val Templates = "settings/templates"
     const val TemplateDetailPattern = "settings/templates/{templateId}"
 
     fun planDetail(planId: String) = "plans/$planId"
-    fun segmentEditorCreate(planId: String) = "plans/$planId/segments/new"
-    fun segmentEditorEdit(planId: String, segmentId: String) = "plans/$planId/segments/$segmentId"
     fun taskEditorCreate(planId: String) = "plans/$planId/tasks/new"
     fun taskEditorEdit(planId: String, taskId: String) = "plans/$planId/tasks/$taskId"
     fun templateDetail(templateId: String) = "settings/templates/$templateId"

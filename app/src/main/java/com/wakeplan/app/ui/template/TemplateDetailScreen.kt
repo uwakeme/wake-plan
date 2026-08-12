@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,6 +41,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.R
 import com.wakeplan.app.domain.model.PlanTemplate
+import com.wakeplan.app.domain.model.RepeatRule
+import com.wakeplan.app.domain.model.Task
 
 /**
  * 模板详情屏 — v0.3 commit 2 stub
@@ -96,18 +99,31 @@ fun TemplateDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { TemplateHeader(currentTemplate) }
-            item {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+            if (currentTemplate.tasks.isEmpty()) {
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.tpl_detail_no_tasks),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(20.dp),
+                        )
+                    }
+                }
+            } else {
+                item {
                     Text(
-                        text = "v0.3 简化：模板系统整体重写留 commit 6（段→任务扁平化后 spec 重新设计）",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = stringResource(R.string.tpl_detail_tasks_section, currentTemplate.tasks.size),
+                        style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(20.dp),
                     )
+                }
+                items(currentTemplate.tasks, key = { it.id }) { task ->
+                    TaskPreviewRow(task)
                 }
             }
         }
@@ -171,4 +187,60 @@ private fun TemplateHeader(template: PlanTemplate) {
             }
         }
     }
+}
+
+@Composable
+private fun TaskPreviewRow(task: Task) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = task.title, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = "${formatHHmm(task.startMinutes)} – ${formatHHmm(task.endMinutes)} · ${
+                        repeatRuleLabel(task.repeatRule)
+                    }",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (task.isLocked) {
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    shape = RoundedCornerShape(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.common_pinned),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun repeatRuleLabel(rule: RepeatRule): String = stringResource(
+    when (rule) {
+        RepeatRule.ONCE -> R.string.repeat_once
+        RepeatRule.WEEKDAYS -> R.string.repeat_weekdays
+        RepeatRule.DAILY -> R.string.repeat_daily
+        RepeatRule.CUSTOM -> R.string.repeat_custom
+    },
+)
+
+private fun formatHHmm(minutes: Int): String {
+    val total = ((minutes % 1440) + 1440) % 1440
+    val h = total / 60
+    val m = total % 60
+    return "%02d:%02d".format(h, m)
 }

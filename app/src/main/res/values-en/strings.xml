@@ -102,15 +102,14 @@ Tap the button below to continue.</string>
 and manage fitness / study / side hustle separately</string>
     <string name="plan_detail_title_fallback">Plan details</string>
     <string name="plan_detail_cd_delete">Delete plan</string>
-    <string name="plan_detail_cd_add_segment">Add segment</string>
+    <string name="plan_detail_cd_add_task">Add task</string>
     <string name="plan_detail_delete_dialog_title">Delete plan?</string>
-    <string name="plan_detail_delete_dialog_text">This will delete "%1$s" and all its segments and tasks. This cannot be undone.</string>
+    <string name="plan_detail_delete_dialog_text">This will delete "%1$s" and all its tasks. This cannot be undone.</string>
     <string name="plan_detail_header_subtitle">Started %1$s · %2$s</string>
     <string name="plan_detail_status_active">Active</string>
     <string name="plan_detail_status_archived">Archived</string>
-    <string name="plan_detail_no_segments">No segments yet. Tap + to add a time window (e.g. "Morning workout 06:30-07:30").</string>
-    <string name="plan_detail_segment_cd_edit">Edit segment</string>
-    <string name="plan_detail_segment_cd_delete">Delete segment</string>
+    <string name="plan_detail_no_tasks">No tasks yet. Tap + to add one (e.g. "Morning workout 06:00-08:00").</string>
+    <string name="plan_detail_repeat_capsule">%1$s · locked</string>
     <string name="plan_detail_no_tasks_in_segment">No tasks in this segment yet</string>
     <string name="plan_detail_add_task">Add task</string>
     <string name="plan_detail_task_cd_edit">Edit task</string>
@@ -369,6 +368,8 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="tpl_detail_apply">Apply this template</string>
     <string name="tpl_detail_no_segment">No tasks in this segment</string>
     <string name="tpl_detail_no_segment_runtime">No tasks in this segment</string>
+    <string name="tpl_detail_no_tasks">Template has no tasks yet</string>
+    <string name="tpl_detail_tasks_section">Tasks (%1$d)</string>
     <string name="tpl_detail_duration_min">%1$d min</string>
     <string name="tpl_detail_duration_min_runtime">%1$d min</string>
     <string name="tpl_detail_segment_char">Segment</string>
