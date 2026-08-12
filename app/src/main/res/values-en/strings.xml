@@ -444,6 +444,8 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="task_pinned_label">Pin to original time</string>
     <string name="task_pinned_sub">Does not participate in auto-extend when locked</string>
     <string name="task_pinned_sub_v2">Does not auto-extend after completion</string>
+    <string name="task_auto_extend_label">Auto-extend</string>
+    <string name="task_auto_extend_sub">ON: overrun auto-pushes following tasks. OFF: pin to scheduled time, no chain delay.</string>
     <string name="task_notes_label">Notes (optional)</string>
     <string name="task_overload_warning">Segment overload +%1$d min</string>
     <string name="task_overload_warning_runtime">Segment overload +%1$d min</string>

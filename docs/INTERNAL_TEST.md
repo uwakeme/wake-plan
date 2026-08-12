@@ -1,13 +1,15 @@
-# Wake Plan v0.3.0 内测说明
+# Wake Plan v0.3 内测说明
 
-> 2026-08-11 起的保守型内测。v0.3.0 是基于 v0.2 的稳定性 + 隐私 + 国际化补丁。
+> 2026-08-11 起的保守型内测。v0.3.0 是基于 v0.2 的稳定性 + 隐私 + 国际化补丁；
+> v0.3.1 在 v0.3.0 基础上砍掉 time_segments 表，任务自带起止时间 + 重复规则。
 > 现阶段只对熟人小范围，不上应用市场。
 
 ## 安装
 
-从 GitHub Release 页面下载 v0.3.0 release APK：
+从 GitHub Release 页面下载最新版 release APK：
 
-<https://github.com/uwakeme/wake-plan/releases/tag/v0.3.0>
+- v0.3.1（当前）：<https://github.com/uwakeme/wake-plan/releases/tag/v0.3.1>
+- v0.3.0：<https://github.com/uwakeme/wake-plan/releases/tag/v0.3.0>
 
 下载链接：`app-release.apk`（约 40 MB，SQLCipher 4.6.1 native 库占大头）
 
@@ -34,16 +36,16 @@ Android 8.0+ 即可装。第一次装会被系统提示"未知来源"，到设�
 按"日常用得最多 → 关键功能 → 边角"这个顺序：
 
 ### 必须测（主流程）
-1. **新建计划 + 段 + 任务**：Plans tab → 右下 + → 填标题选色 → 进 plan 详情 → 加段（起止时间 + 重复规则） → 加任务（标题 + 时长）→ 保存
-2. **今日时间线**：Today tab 翻日期（← / 今天 / →），确认段 + 任务在正确时间显示
-3. **开始 + 完成 + 自动延期**：在 Today 屏上点任务「开始」，等段时间点「完成」或拖出时间轴，确认后续任务自动顺延
+1. **新建计划 + 任务（v0.3 扁平化）**：Plans tab → 右下 + → 填标题选色 → 进 plan 详情 → 加任务（标题 + 起止时间 TimePicker + 重复规则 chips + 可选锁定 / 备注）→ 保存
+2. **今日时间线**：Today tab 翻日期（← / 今天 / →），确认 task 在正确时间显示
+3. **开始 + 完成 + 链式碰撞延期**：在 Today 屏上点任务「开始」，等段时间点「完成」或拖出时间轴，确认后续任务按 `CascadeDelayCalculator` 链式顺延；isLocked 任务不会被推走也不让别人撞过来
 4. **撤销自动延期**：点完完成后 5 秒内 Snackbar 出现「撤销」按钮，点一下确认撤回
-5. **冲突检测**：建两个时间段重叠的段，确认 plan 详情有红色冲突提示
+5. **冲突检测**：建两个时间重叠的任务（v0.3 跨 plan 也会冲突），确认 plan 详情有红色冲突提示
 6. **通知**：到 Settings 屏把 lead time 改成 5 分钟，建个 5 分钟内的任务，看通知能不能弹
 
 ### 应该测（v0.2 / v0.3 新功能）
 7. **完成统计**：今日 tab 完成几个任务后切到 Stats tab，看 7 天 / 30 天数字 + 折线图 + 按计划柱状图是否对得上
-8. **模板库**：Settings 屏点「模板库」→ 3 个内置模板 → 进详情看段 + 任务树 → 点「应用此模板」回 Plans
+8. **模板库**：Settings 屏点「模板库」→ 3 个内置模板 → 进详情看任务列表（v0.3 不含段）→ 点「应用此模板」回 Plans（v0.3 只建空 plan，task 复制留后续版本）
 9. **桌面 AppWidget**：长按桌面 → 小部件 → 找 Wake Plan → 拖到桌面，看 mini timeline 是不是更新
 10. **快捷设置 Tile**：下拉系统快捷栏 → 编辑 → 拖 Wake Plan tile 进去 → 点它是不是跳到 Today tab
 11. **SQLCipher 加密**：装上后看 `/data/data/com.wakeplan.app/databases/wakeplan.db` 前 16 字节应该是随机的密文（不是 `SQLite format 3\0`）。备份导出后用文本编辑器看是 JSON，删 App 重装再用「导入备份」恢复
@@ -52,10 +54,12 @@ Android 8.0+ 即可装。第一次装会被系统提示"未知来源"，到设�
 
 ### 可选测（边角 + 容错）
 14. **备份 - 导出明文 / 加密**：明文导出后用文本编辑器打开看是 JSON；加密导出要至少 8 位密码，导完再导入
-15. **i18n 完整**：切成 English 后看所有屏（Today / Plans / Plan 详情 / 段编辑 / 任务编辑 / Template 详情 / Template 列表 / Settings / 备份 dialog）有没有漏翻
+15. **i18n 完整**：切成 English 后看所有屏（Today / Plans / Plan 详情 / 任务编辑 / Template 详情 / Template 列表 / Settings / 备份 dialog）有没有漏翻
 16. **横竖屏旋转**：竖屏建好计划 → 转横屏看 UI 有没有崩
 17. **后台杀进程**：计划建好 → 长按后台杀掉 App → 重新打开看任务还在 + 通知有没有漏
 18. **切日期（Yesterday / Tomorrow）**：Today tab 切到明天建个任务 → 切回来确认任务不在今日时间线
+19. **跨午夜任务**：建一个 23:00 - 01:00 的任务（endMinutes = 25*60），确认 TaskEditor 提示"结束跨过次日 00:00（持续 120 分钟）"，时间线正确显示
+20. **自定义星期重复**：建一个 CUSTOM 重复规则的任务，勾选周一三五；今天周日时不展开 PENDING（confirm today tab 无任务），切到下周一确认出现
 
 ## 已知问题 / 不在 v0.3 范围
 
@@ -87,6 +91,26 @@ adb logcat -d -t 500 AndroidRuntime:E *:S
 - **崩溃 / 阻塞主流程** — 当天看，当天回
 - **一般 bug** — 一周内 review
 - **UX 建议** — v0.3 内测结束统一 review
+
+## v0.3.1 changelog
+
+**v0.3.0 → v0.3.1 改了什么（v0.3 扁平化重构）**：
+
+- **砍 time_segments 表，task 自带起止时间 + 重复规则**（schema v2 → v3，alpha 用户数据 reset，详见 `docs/plan/15-v0.3-flat-task-model.md`）
+- **数据模型扁平化**：Plan → TimeSegment → Task → TaskCompletion 三层砍成 Plan → Task → TaskCompletion 两层，segment 实体彻底删
+- **TaskEditor 完整重写**：起止时间 TimePicker（跨午夜 endMinutes > 1440 自动识别 + 提示）+ 重复规则（ONCE / WEEKDAYS / DAILY / CUSTOM 四选一 chips）+ 自定义星期复选 + 锁定 Switch + 备注
+- **PlanDetail 砍段嵌套**：直接列任务（无段分组），任务行内显示时间 + 重复规则 + 锁定徽章
+- **TodayScreen 时间线跨 plan 混排**：24h Canvas 画所有 plan 的行（同 plan 同色），now 标红线，冲突标红块
+- **CascadeDelayCalculator 链式碰撞延期** 替换原 AutoExtendCalculator：isLocked 真正"钉死断链"（不再传 offset），COMPLETED/SKIPPED 不影响下游，跨 plan 当天链式
+- **Template 简化**：v0.3 不实装"应用模板复制 tasks"，应用按钮只创建空 plan；TemplateDetail 加任务列表只读预览
+- **i18n 修 22 个 `${...}` 字符串占位符**：v0.3.0 偷懒的 Kotlin 模板语法全换 `%1$s/%1$d`
+- **删 SegmentEditorScreen / SegmentEditorViewModel 两个文件**（v0.3 不再需要）
+- **AppNavHost 路由表简化**：去掉 `plans/{planId}/segments/...` 子路由
+
+**v0.3.1 验收**：219 个 JVM 单测全过，assembleDebug 干净，APK 39.7 MB
+
+**v0.3.0 base**（v0.3.1 没改的）：
+- 隐私政策 + About section / Per-app locale / i18n 收尾 / Stats 空数据修复
 
 ## v0.3.0 changelog
 

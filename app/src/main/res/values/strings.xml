@@ -445,6 +445,8 @@
     <string name="task_pinned_label">钉在原定时点</string>
     <string name="task_pinned_sub">锁定后不参与自动延期</string>
     <string name="task_pinned_sub_v2">完成后不参与自动延期</string>
+    <string name="task_auto_extend_label">自动延期</string>
+    <string name="task_auto_extend_sub">开启：超时自动顺延后续任务；关闭：钉死在原时点不参与链式延期</string>
     <string name="task_notes_label">备注（可选）</string>
     <string name="task_overload_warning">段超载 +%1$d 分钟</string>
     <string name="task_overload_warning_runtime">段超载 +%1$d 分钟</string>

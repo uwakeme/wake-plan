@@ -79,7 +79,7 @@ fun TaskEditorScreen(
     val endMinutes by viewModel.endMinutes.collectAsStateWithLifecycle()
     val repeatRule by viewModel.repeatRule.collectAsStateWithLifecycle()
     val customDays by viewModel.customDays.collectAsStateWithLifecycle()
-    val isLocked by viewModel.isLocked.collectAsStateWithLifecycle()
+    val autoExtend by viewModel.autoExtend.collectAsStateWithLifecycle()
     val note by viewModel.note.collectAsStateWithLifecycle()
     val isValid by viewModel.isValid.collectAsStateWithLifecycle()
 
@@ -221,13 +221,13 @@ fun TaskEditorScreen(
                 }
             }
 
-            // 4. 锁定
+            // 4. 自动延期（UI 正面表达；底层对应 isLocked = !autoExtend）
             ToggleRow(
-                label = stringResource(R.string.task_pinned_label),
-                description = stringResource(R.string.task_pinned_sub_v2),
-                leadingIcon = if (isLocked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
-                checked = isLocked,
-                onCheckedChange = viewModel::setIsLocked,
+                label = stringResource(R.string.task_auto_extend_label),
+                description = stringResource(R.string.task_auto_extend_sub),
+                leadingIcon = if (autoExtend) Icons.Outlined.LockOpen else Icons.Outlined.Lock,
+                checked = autoExtend,
+                onCheckedChange = viewModel::setAutoExtend,
             )
 
             // 5. 备注

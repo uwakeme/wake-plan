@@ -31,8 +31,11 @@ import javax.inject.Inject
  * - endMinutes     0..2880（可 > 1440 表示跨午夜）
  * - repeatRule     ONCE / WEEKDAYS / DAILY / CUSTOM
  * - customDays     CUSTOM 时必填非空
- * - isLocked       钉死，链式延期到此停止
+ * - autoExtend     UI 正面表达，默认 true（= v0.3 域模型 isLocked = false，参与链式碰撞）
  * - note           可选
+ *
+ * 域模型里仍存 isLocked（"钉死"是底层语义）；UI 翻转成"自动延期"便于用户理解。
+ * 转换：isLocked = !autoExtend
  */
 @HiltViewModel
 class TaskEditorViewModel @Inject constructor(
@@ -60,8 +63,12 @@ class TaskEditorViewModel @Inject constructor(
     private val _customDays = MutableStateFlow<Set<DayOfWeek>>(emptySet())
     val customDays: StateFlow<Set<DayOfWeek>> = _customDays.asStateFlow()
 
-    private val _isLocked = MutableStateFlow(false)
-    val isLocked: StateFlow<Boolean> = _isLocked.asStateFlow()
+    /**
+     * UI 正面语义：自动延期。默认 ON（v0.3 推荐行为：任务超时顺延后续）。
+     * 内部映射：isLocked = !autoExtend
+     */
+    private val _autoExtend = MutableStateFlow(true)
+    val autoExtend: StateFlow<Boolean> = _autoExtend.asStateFlow()
 
     private val _note = MutableStateFlow("")
     val note: StateFlow<String> = _note.asStateFlow()
@@ -98,7 +105,7 @@ class TaskEditorViewModel @Inject constructor(
                 _endMinutes.value = t.endMinutes
                 _repeatRule.value = t.repeatRule
                 _customDays.value = t.customDays
-                _isLocked.value = t.isLocked
+                _autoExtend.value = !t.isLocked
                 _note.value = t.note.orEmpty()
             }
         }
@@ -116,7 +123,7 @@ class TaskEditorViewModel @Inject constructor(
             if (!add(day)) remove(day)
         }
     }
-    fun setIsLocked(value: Boolean) { _isLocked.value = value }
+    fun setAutoExtend(value: Boolean) { _autoExtend.value = value }
     fun setNote(value: String) { _note.value = value }
 
     fun save() {
@@ -127,6 +134,7 @@ class TaskEditorViewModel @Inject constructor(
         if (_repeatRule.value == RepeatRule.CUSTOM && _customDays.value.isEmpty()) return
 
         val noteTrim = _note.value.trim().ifEmpty { null }
+        val isLocked = !_autoExtend.value  // UI 翻转
 
         viewModelScope.launch {
             if (taskId == null) {
@@ -137,7 +145,7 @@ class TaskEditorViewModel @Inject constructor(
                     endMinutes = _endMinutes.value,
                     repeatRule = _repeatRule.value,
                     customDays = _customDays.value,
-                    isLocked = _isLocked.value,
+                    isLocked = isLocked,
                     note = noteTrim,
                 )
             } else {
@@ -149,7 +157,7 @@ class TaskEditorViewModel @Inject constructor(
                         endMinutes = _endMinutes.value,
                         repeatRule = _repeatRule.value,
                         customDays = if (_repeatRule.value == RepeatRule.CUSTOM) _customDays.value else emptySet(),
-                        isLocked = _isLocked.value,
+                        isLocked = isLocked,
                         note = noteTrim,
                     )
                 )
