@@ -155,15 +155,9 @@ private fun AppNavGraph(
             val planId = entry.arguments?.getString(PlanDetailViewModel.ARG_PLAN_ID).orEmpty()
             PlanDetailScreen(
                 onBack = { navController.popBackStack() },
-                onAddSegment = { navController.navigate(Route.segmentEditorCreate(planId)) },
-                onSegmentClick = { segmentId ->
-                    navController.navigate(Route.segmentEditorEdit(planId, segmentId))
-                },
-                onAddTask = { segmentId ->
-                    navController.navigate(Route.taskEditorCreate(planId, segmentId))
-                },
-                onTaskClick = { segmentId, taskId ->
-                    navController.navigate(Route.taskEditorEdit(planId, segmentId, taskId))
+                onAddTask = { navController.navigate(Route.taskEditorCreate(planId)) },
+                onTaskClick = { taskId ->
+                    navController.navigate(Route.taskEditorEdit(planId, taskId))
                 },
             )
         }
@@ -175,7 +169,6 @@ private fun AppNavGraph(
         ) {
             SegmentEditorScreen(
                 onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
             )
         }
         composable(
@@ -187,14 +180,12 @@ private fun AppNavGraph(
         ) {
             SegmentEditorScreen(
                 onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
             )
         }
         composable(
             route = Route.TaskEditorCreatePattern,
             arguments = listOf(
                 navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
-                navArgument(SegmentEditorViewModel.ARG_SEGMENT_ID) { type = NavType.StringType },
             ),
         ) {
             TaskEditorScreen(
@@ -206,7 +197,6 @@ private fun AppNavGraph(
             route = Route.TaskEditorEditPattern,
             arguments = listOf(
                 navArgument(PlanDetailViewModel.ARG_PLAN_ID) { type = NavType.StringType },
-                navArgument(SegmentEditorViewModel.ARG_SEGMENT_ID) { type = NavType.StringType },
                 navArgument(TaskEditorViewModel.ARG_TASK_ID) { type = NavType.StringType },
             ),
         ) {
@@ -231,7 +221,7 @@ private fun AppNavGraph(
         ) {
             TemplateDetailScreen(
                 onBack = { navController.popBackStack() },
-                onApply = { newPlanId ->
+                onApplied = { newPlanId ->
                     // 应用模板成功 → 跳到新 plan 详情；先 popBackStack TemplateList，再 navigate
                     navController.popBackStack(route = Route.Templates, inclusive = false)
                     navController.navigate(Route.planDetail(newPlanId))
@@ -247,17 +237,15 @@ object Route {
     const val PlanDetailPattern = "plans/{planId}"
     const val SegmentEditorCreatePattern = "plans/{planId}/segments/new"
     const val SegmentEditorEditPattern = "plans/{planId}/segments/{segmentId}"
-    const val TaskEditorCreatePattern = "plans/{planId}/segments/{segmentId}/tasks/new"
-    const val TaskEditorEditPattern = "plans/{planId}/segments/{segmentId}/tasks/{taskId}"
+    const val TaskEditorCreatePattern = "plans/{planId}/tasks/new"
+    const val TaskEditorEditPattern = "plans/{planId}/tasks/{taskId}"
     const val Templates = "settings/templates"
     const val TemplateDetailPattern = "settings/templates/{templateId}"
 
     fun planDetail(planId: String) = "plans/$planId"
     fun segmentEditorCreate(planId: String) = "plans/$planId/segments/new"
     fun segmentEditorEdit(planId: String, segmentId: String) = "plans/$planId/segments/$segmentId"
-    fun taskEditorCreate(planId: String, segmentId: String) =
-        "plans/$planId/segments/$segmentId/tasks/new"
-    fun taskEditorEdit(planId: String, segmentId: String, taskId: String) =
-        "plans/$planId/segments/$segmentId/tasks/$taskId"
+    fun taskEditorCreate(planId: String) = "plans/$planId/tasks/new"
+    fun taskEditorEdit(planId: String, taskId: String) = "plans/$planId/tasks/$taskId"
     fun templateDetail(templateId: String) = "settings/templates/$templateId"
 }

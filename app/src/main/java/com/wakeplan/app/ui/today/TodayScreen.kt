@@ -73,7 +73,6 @@ import com.wakeplan.app.R
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
-import com.wakeplan.app.domain.model.TimeSegment
 import com.wakeplan.app.domain.usecase.TaskConflict
 import com.wakeplan.app.ui.common.HighlightBus
 import com.wakeplan.app.ui.common.parseHexColor
@@ -323,19 +322,7 @@ private fun TodayTimeLine(
                     val planColor = parseHexColor(item.plan.colorHex)
                     val rowTop = idx * (rowPx + rowGapPx)
 
-                    // 段背景（半透明）
-                    item.segments.forEach { seg ->
-                        val startMin = seg.startMinutes.coerceIn(0, maxMinutes)
-                        val endMinRaw = if (seg.endMinutes > maxMinutes) maxMinutes else seg.endMinutes
-                        val endMin = endMinRaw.coerceAtLeast(startMin + 1)
-                        drawRect(
-                            color = planColor.copy(alpha = 0.2f),
-                            topLeft = Offset(startMin * minuteWidth, rowTop),
-                            size = Size((endMin - startMin) * minuteWidth, rowPx),
-                        )
-                    }
-
-                    // 任务色块（不透明）
+                    // v0.3 扁平化：不再画段背景，直接画任务色块
                     item.completions.forEach { c ->
                         val startMin = minuteOfDay(c.plannedStart, date).coerceIn(0, maxMinutes)
                         val endMin = minuteOfDay(c.plannedEnd, date).coerceAtLeast(startMin + 1).coerceAtMost(maxMinutes)
@@ -433,17 +420,12 @@ private fun TodayPlanCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // 段内任务列表
-            val bySegment = item.segments
-                .sortedBy { it.startMinutes }
-                .map { seg ->
-                    seg to adjustedCompletions
-                        .filter { it.taskId in item.tasks.filter { t -> t.segmentId == seg.id }.map { it.id } }
-                        .sortedBy { it.plannedStart }
-                }
-                .filter { (_, completions) -> completions.isNotEmpty() }
+            // 任务列表（v0.3 扁平化：直接按时间排，不再按段嵌套）
+            val todayCompletions = adjustedCompletions
+                .filter { it.planId == item.plan.id }
+                .sortedBy { it.plannedStart }
 
-            if (bySegment.isEmpty()) {
+            if (todayCompletions.isEmpty()) {
                 Text(
                     text = stringResource(R.string.today_no_tasks_today),
                     style = MaterialTheme.typography.bodyMedium,
@@ -451,61 +433,18 @@ private fun TodayPlanCard(
                 )
             } else {
                 val tasksById = item.tasks.associateBy { it.id }
-                bySegment.forEachIndexed { i, (seg, completions) ->
-                    if (i > 0) Spacer(Modifier.height(12.dp))
-                    SegmentSection(
-                        segment = seg,
-                        completions = completions,
-                        tasksById = tasksById,
-                        highlightedTaskId = highlightedTaskId,
-                        onStartTask = onStartTask,
-                        onCompleteTask = onCompleteTask,
-                        onSkipTask = onSkipTask,
+                todayCompletions.forEach { c ->
+                    val title = tasksById[c.taskId]?.title ?: c.taskId.take(8) + "…"
+                    TaskRow(
+                        completion = c,
+                        taskTitle = title,
+                        highlighted = c.taskId == highlightedTaskId,
+                        onStart = { onStartTask(c.id) },
+                        onComplete = { onCompleteTask(c.id) },
+                        onSkip = { onSkipTask(c.id) },
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun SegmentSection(
-    segment: TimeSegment,
-    completions: List<TaskCompletion>,
-    tasksById: Map<String, com.wakeplan.app.domain.model.Task>,
-    highlightedTaskId: String?,
-    onStartTask: (String) -> Unit,
-    onCompleteTask: (String) -> Unit,
-    onSkipTask: (String) -> Unit,
-) {
-    Column {
-        Text(
-            text = buildString {
-                append(segment.title ?: stringResource(R.string.tpl_detail_segment_char))
-                append(" · ")
-                append(formatMinutes(segment.startMinutes))
-                if (segment.endMinutes > 24 * 60) {
-                    append(stringResource(R.string.today_next_day))
-                    append(formatMinutes(segment.endMinutes - 24 * 60))
-                } else {
-                    append(" — ")
-                    append(formatMinutes(segment.endMinutes))
-                }
-            },
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        completions.forEach { c ->
-            val title = tasksById[c.taskId]?.title ?: c.taskId.take(8) + "…"
-            TaskRow(
-                completion = c,
-                taskTitle = title,
-                highlighted = c.taskId == highlightedTaskId,
-                onStart = { onStartTask(c.id) },
-                onComplete = { onCompleteTask(c.id) },
-                onSkip = { onSkipTask(c.id) },
-            )
         }
     }
 }

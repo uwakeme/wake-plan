@@ -12,16 +12,22 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * AutoExtendCalculator 单测 — Phase 2.2
+ * AutoExtendCalculator 单测 — v0.3 扁平化
+ *
+ * v0.3 砍段 + 砍 autoExtend 字段后：
+ * - 所有任务都参与延期（"不参与"靠 isLocked=true 表达）
+ * - 算法行为暂时保持 v0.1 的 currentOffset 累加；
+ *   commit 3 会替换为"链式碰撞延期"（CascadeDelayCalculator）
  *
  * 覆盖：
  * - 基础延期：IN_PROGRESS overrun 推下游 PENDING
  * - 不超时 / COMPLETED / SKIPPED 不延期
- * - isLocked / autoExtend=false 跳过顺延
+ * - isLocked 守卫：PENDING 对应 task isLocked=true 不动
  * - Cascade：多个 IN_PROGRESS 累加
  * - affectedTasks 正确累加
- * - 跨午夜段
+ * - 跨午夜
  * - 锁死后 currentOffset 仍传递给后续 PENDING
+ * - 边界
  */
 @DisplayName("AutoExtendCalculator")
 class AutoExtendCalculatorTest {
@@ -50,16 +56,16 @@ class AutoExtendCalculatorTest {
 
     private fun task(
         id: String,
-        autoExtend: Boolean = true,
         isLocked: Boolean = false,
     ): Task = Task(
         id = id,
-        segmentId = "seg-1",
+        planId = "plan-1",
         title = id,
-        plannedDurationMinutes = 30,
-        autoExtend = autoExtend,
+        startMinutes = 0,    // 域字段必填，测试主要看延期行为不看时间
+        endMinutes = 30,
+        repeatRule = com.wakeplan.app.domain.model.RepeatRule.DAILY,
         isLocked = isLocked,
-        orderInSegment = 0,
+        orderInPlan = 0,
     )
 
     @Nested
@@ -149,10 +155,10 @@ class AutoExtendCalculatorTest {
     }
 
     @Nested
-    @DisplayName("isLocked / autoExtend 守卫")
+    @DisplayName("isLocked 守卫")
     inner class Guards {
         @Test
-        fun `PENDING 对应 task isLocked=true 不动`() {
+        fun `PENDING 对应 task isLocked=true 不动 — currentOffset 仍传递给后续 PENDING`() {
             val a = completion("c-A", "t-A", date.atTime(9, 0), date.atTime(9, 30), status = TaskStatus.IN_PROGRESS)
             val bLocked = completion("c-B", "t-B-locked", date.atTime(9, 30), date.atTime(10, 0))
             val c = completion("c-C", "t-C", date.atTime(10, 0), date.atTime(10, 30))
@@ -171,20 +177,6 @@ class AutoExtendCalculatorTest {
             assertEquals(date.atTime(9, 30), result.single { it.id == "c-B" }.plannedStart)
             assertEquals(date.atTime(10, 5), result.single { it.id == "c-C" }.plannedStart)
             assertEquals(listOf("t-A"), result.single { it.id == "c-C" }.affectedTasks)
-        }
-
-        @Test
-        fun `PENDING 对应 task autoExtend=false 不动`() {
-            val a = completion("c-A", "t-A", date.atTime(9, 0), date.atTime(9, 30), status = TaskStatus.IN_PROGRESS)
-            val bNoExtend = completion("c-B", "t-B-nex", date.atTime(9, 30), date.atTime(10, 0))
-            val now = date.atTime(9, 35)
-
-            val result = calculator(
-                listOf(a, bNoExtend),
-                listOf(task("t-A"), task("t-B-nex", autoExtend = false)),
-                now,
-            )
-            assertEquals(date.atTime(9, 30), result.single { it.id == "c-B" }.plannedStart)
         }
 
         @Test
@@ -235,7 +227,7 @@ class AutoExtendCalculatorTest {
     inner class CrossMidnight {
         @Test
         fun `延期分钟数跨过午夜 — plannedStart 自动跨日`() {
-            // 23:00 开始的段，任务 A 23:00-23:30 overrun 90min → 现在次日 00:30
+            // 23:00 开始的任务，A 23:00-23:30 overrun 90min → 现在次日 00:30
             val a = completion(
                 "c-A", "t-A",
                 date.atTime(23, 0), date.atTime(23, 30),

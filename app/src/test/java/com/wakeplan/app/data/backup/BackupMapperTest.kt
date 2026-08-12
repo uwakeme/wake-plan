@@ -4,21 +4,20 @@ import com.wakeplan.app.data.db.entity.PlanEntity
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
 import com.wakeplan.app.data.db.entity.TaskCompletionEntity
 import com.wakeplan.app.data.db.entity.TaskEntity
-import com.wakeplan.app.data.db.entity.TimeSegmentEntity
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.TaskStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * BackupMapper 双向 round-trip — Phase 4.1
+ * BackupMapper 双向 round-trip — v0.3 扁平化
  *
- * 验证 entity → DTO → entity / DTO → entity → DTO 两轮都不丢字段
+ * v0.3 砍 time_segments 表，TimeSegmentEntity round-trip 删掉。
+ * TaskEntity 字段重定义：planId / startMinutes / endMinutes / repeatRule / customDays / isLocked / orderInPlan / note。
  */
 @DisplayName("BackupMapper")
 class BackupMapperTest {
@@ -39,45 +38,17 @@ class BackupMapperTest {
     }
 
     @Test
-    fun `TimeSegmentEntity round-trip 含 WEEKDAYS + customDays`() {
-        val original = TimeSegmentEntity(
-            id = "seg-1",
-            planId = "plan-1",
-            title = "晨练段",
-            startMinutes = 360,
-            endMinutes = 420,
-            repeatRule = RepeatRule.WEEKDAYS,
-            customDays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
-        )
-        val roundTrip = original.toDto().toEntity()
-        assertEquals(original, roundTrip)
-    }
-
-    @Test
-    fun `TimeSegmentEntity round-trip DAILY + 空 customDays`() {
-        val original = TimeSegmentEntity(
-            id = "seg-2",
-            planId = "plan-1",
-            title = null,
-            startMinutes = 0,
-            endMinutes = 1440,
-            repeatRule = RepeatRule.DAILY,
-            customDays = emptySet(),
-        )
-        val roundTrip = original.toDto().toEntity()
-        assertEquals(original, roundTrip)
-    }
-
-    @Test
-    fun `TaskEntity round-trip 含 note 和 isLocked`() {
+    fun `TaskEntity round-trip 含 WEEKDAYS + customDays + note + isLocked`() {
         val original = TaskEntity(
             id = "task-1",
-            segmentId = "seg-1",
+            planId = "plan-1",
             title = "跑步",
-            plannedDurationMinutes = 30,
-            autoExtend = true,
+            startMinutes = 6 * 60,
+            endMinutes = 6 * 60 + 30,
+            repeatRule = RepeatRule.WEEKDAYS,
+            customDays = setOf(java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.WEDNESDAY, java.time.DayOfWeek.FRIDAY),
             isLocked = true,
-            orderInSegment = 0,
+            orderInPlan = 0,
             note = "5km 慢跑, 心率 < 150",
         )
         val roundTrip = original.toDto().toEntity()
@@ -85,15 +56,17 @@ class BackupMapperTest {
     }
 
     @Test
-    fun `TaskEntity round-trip note null`() {
+    fun `TaskEntity round-trip DAILY + 空 customDays + note null`() {
         val original = TaskEntity(
             id = "task-2",
-            segmentId = "seg-1",
+            planId = "plan-1",
             title = "拉伸",
-            plannedDurationMinutes = 10,
-            autoExtend = false,
+            startMinutes = 6 * 60 + 30,
+            endMinutes = 6 * 60 + 40,
+            repeatRule = RepeatRule.DAILY,
+            customDays = emptySet(),
             isLocked = false,
-            orderInSegment = 1,
+            orderInPlan = 1,
             note = null,
         )
         val roundTrip = original.toDto().toEntity()

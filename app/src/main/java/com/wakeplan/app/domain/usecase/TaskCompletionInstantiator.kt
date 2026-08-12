@@ -21,7 +21,7 @@ import javax.inject.Inject
  * UI 层通过 TaskCompletionRepository.upsert 去重（OnConflictStrategy.REPLACE）
  */
 class TaskCompletionInstantiator @Inject constructor(
-    private val timeWindowCalculator: TimeWindowCalculator,
+    private val taskWindowCalculator: TaskWindowCalculator,
 ) {
 
     /**
@@ -37,7 +37,7 @@ class TaskCompletionInstantiator @Inject constructor(
         idGenerator: () -> String = { UUID.randomUUID().toString() },
     ): List<TaskCompletion> {
         return tasks
-            .mapNotNull { task -> task to timeWindowCalculator(task, date) }
+            .mapNotNull { task -> task to taskWindowCalculator(task, date) }
             .filter { (_, window) -> window != null }
             .map { (task, window) ->
                 val windowNonNull = window!!

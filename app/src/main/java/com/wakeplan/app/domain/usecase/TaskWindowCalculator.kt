@@ -21,7 +21,7 @@ data class PlannedWindow(
     val plannedEnd: LocalDateTime,
 )
 
-class TimeWindowCalculator @Inject constructor() {
+class TaskWindowCalculator @Inject constructor() {
 
     /**
      * @return 该 task 在 date 的窗口；如果 task 在 date 不生效（如 WEEKDAYS task 在周末），返回 null

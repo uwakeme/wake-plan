@@ -54,9 +54,9 @@ class AutoExtendCalculator @Inject constructor() {
                 }
                 TaskStatus.PENDING -> {
                     val task = taskMap[c.taskId]
+                    // v0.3 砍 autoExtend 字段：所有任务都参与延期（"不参与"靠 isLocked=true 表达）
                     val shouldExtend = currentOffsetMinutes > 0
                         && task != null
-                        && task.autoExtend
                         && !task.isLocked
                     if (shouldExtend) {
                         result.add(

@@ -36,8 +36,10 @@ class ScheduleManagerTest {
     )
 
     private fun task(id: String) = Task(
-        id = id, segmentId = "s-1", title = "t-$id",
-        plannedDurationMinutes = 30, autoExtend = true, isLocked = false, orderInSegment = 0,
+        id = id, planId = "p-1", title = "t-$id",
+        startMinutes = 0, endMinutes = 30,
+        repeatRule = com.wakeplan.app.domain.model.RepeatRule.DAILY,
+        isLocked = false, orderInPlan = 0,
     )
 
     @Test

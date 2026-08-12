@@ -4,7 +4,6 @@ import com.wakeplan.app.data.prefs.UserPreferences
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.repository.PlanRepository
-import com.wakeplan.app.domain.repository.SegmentRepository
 import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.domain.usecase.AutoExtendCalculator
@@ -56,7 +55,6 @@ class TodayViewModelUndoTest {
     private val fixedClock = Clock.fixed(Instant.parse("2026-08-08T12:00:00Z"), ZoneOffset.UTC)
 
     private val planRepo: PlanRepository = mockk(relaxed = true)
-    private val segmentRepo: SegmentRepository = mockk(relaxed = true)
     private val taskRepo: TaskRepository = mockk(relaxed = true)
     private val taskCompletionRepo: TaskCompletionRepository = mockk(relaxed = true)
     private val taskCompletionInstantiator: TaskCompletionInstantiator = mockk(relaxed = true)
@@ -70,7 +68,6 @@ class TodayViewModelUndoTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         coEvery { planRepo.observeAll() } returns flowOf(emptyList())
-        coEvery { segmentRepo.observeAll() } returns flowOf(emptyList())
         coEvery { taskRepo.observeAll() } returns flowOf(emptyList())
         coEvery { userPreferences.taskStartingLeadMinutes } returns flowOf(5)
         coEvery { userPreferences.taskStartingEnabled } returns flowOf(true)
@@ -83,7 +80,6 @@ class TodayViewModelUndoTest {
 
     private fun viewModel() = TodayViewModel(
         planRepository = planRepo,
-        segmentRepository = segmentRepo,
         taskRepository = taskRepo,
         taskCompletionRepository = taskCompletionRepo,
         taskCompletionInstantiator = taskCompletionInstantiator,
