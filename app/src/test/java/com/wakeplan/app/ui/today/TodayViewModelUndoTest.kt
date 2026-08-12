@@ -6,7 +6,7 @@ import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.repository.PlanRepository
 import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
-import com.wakeplan.app.domain.usecase.AutoExtendCalculator
+import com.wakeplan.app.domain.usecase.CascadeDelayCalculator
 import com.wakeplan.app.domain.usecase.ConflictDetector
 import com.wakeplan.app.domain.usecase.ScheduleManager
 import com.wakeplan.app.domain.usecase.TaskCompletionInstantiator
@@ -58,7 +58,7 @@ class TodayViewModelUndoTest {
     private val taskRepo: TaskRepository = mockk(relaxed = true)
     private val taskCompletionRepo: TaskCompletionRepository = mockk(relaxed = true)
     private val taskCompletionInstantiator: TaskCompletionInstantiator = mockk(relaxed = true)
-    private val autoExtendCalculator: AutoExtendCalculator = mockk(relaxed = true)
+    private val cascadeDelayCalculator: CascadeDelayCalculator = mockk(relaxed = true)
     private val conflictDetector: ConflictDetector = mockk(relaxed = true)
     private val scheduleManager: ScheduleManager = mockk(relaxed = true)
     private val startingAlarmScheduler: StartingAlarmScheduler = mockk(relaxed = true)
@@ -83,7 +83,7 @@ class TodayViewModelUndoTest {
         taskRepository = taskRepo,
         taskCompletionRepository = taskCompletionRepo,
         taskCompletionInstantiator = taskCompletionInstantiator,
-        autoExtendCalculator = autoExtendCalculator,
+        cascadeDelayCalculator = cascadeDelayCalculator,
         conflictDetector = conflictDetector,
         scheduleManager = scheduleManager,
         startingAlarmScheduler = startingAlarmScheduler,

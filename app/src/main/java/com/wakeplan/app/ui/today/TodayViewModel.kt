@@ -9,7 +9,7 @@ import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.repository.PlanRepository
 import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
-import com.wakeplan.app.domain.usecase.AutoExtendCalculator
+import com.wakeplan.app.domain.usecase.CascadeDelayCalculator
 import com.wakeplan.app.domain.usecase.ConflictDetector
 import com.wakeplan.app.domain.usecase.ScheduleManager
 import com.wakeplan.app.domain.usecase.TaskCompletionInstantiator
@@ -78,7 +78,7 @@ class TodayViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
     private val taskCompletionRepository: TaskCompletionRepository,
     private val taskCompletionInstantiator: TaskCompletionInstantiator,
-    private val autoExtendCalculator: AutoExtendCalculator,
+    private val cascadeDelayCalculator: CascadeDelayCalculator,
     private val conflictDetector: ConflictDetector,
     private val scheduleManager: ScheduleManager,
     private val startingAlarmScheduler: StartingAlarmScheduler,
@@ -159,7 +159,7 @@ class TodayViewModel @Inject constructor(
                 completions = completions.filter { it.planId == plan.id },
             )
         }
-        val adjusted = autoExtendCalculator(completions, allTasks, now)
+        val adjusted = cascadeDelayCalculator(completions, allTasks, date, now)
         val conflicts = conflictDetector(adjusted, date)
         return TodayUiState(
             date = date,
