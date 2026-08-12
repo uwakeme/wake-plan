@@ -401,10 +401,9 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="plan_create_title_too_long_runtime">Title cannot exceed %1$d characters</string>
     <string name="plan_create_color_optional">Optional</string>
     <string name="plan_create_color_selected">Selected</string>
-    <string name="plan_create_custom_hex">Custom hex (optional)</string>
-    <string name="plan_create_custom_hex_hint">#RRGGBB, e.g. #FF5733</string>
-    <string name="plan_create_current_color">Current: %1$s</string>
-    <string name="plan_create_current_color_runtime">Current: %1$s</string>
+    <string name="plan_create_custom_color_entry">Open color picker</string>
+    <string name="plan_create_color_picker_title">Custom color</string>
+    <string name="plan_create_color_picker_preview">Current</string>
     <string name="plan_seg_title_edit">Edit segment</string>
     <string name="plan_seg_title_new">New segment</string>
     <string name="plan_seg_save">Save</string>
