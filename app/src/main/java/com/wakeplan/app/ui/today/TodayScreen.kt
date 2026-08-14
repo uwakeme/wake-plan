@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
@@ -26,7 +26,6 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,17 +54,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.R
@@ -74,7 +68,10 @@ import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.usecase.TaskConflict
 import com.wakeplan.app.ui.common.HighlightBus
+import com.wakeplan.app.ui.common.WpAnimateInContainer
+import com.wakeplan.app.ui.common.WpRadius
 import com.wakeplan.app.ui.common.parseHexColor
+import com.wakeplan.app.ui.plan.PlanIconKey
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -233,20 +230,22 @@ private fun TodayContent(
             )
         }
         // 跨计划卡片
-        items(state.planItems, key = { "plan-${it.plan.id}" }) { item ->
+        itemsIndexed(state.planItems, key = { _, item -> "plan-${item.plan.id}" }) { index, item ->
             val planConflicts = state.conflicts.filter { c ->
                 c.taskA.planId == item.plan.id || c.taskB.planId == item.plan.id
             }
-            TodayPlanCard(
-                item = item,
-                adjustedCompletions = state.adjustedCompletions.filter { it.planId == item.plan.id },
-                conflicts = planConflicts,
-                plansById = state.planItems.associate { it.plan.id to it.plan },
-                highlightedTaskId = highlightedTaskId,
-                onStartTask = onStartTask,
-                onCompleteTask = onCompleteTask,
-                onSkipTask = onSkipTask,
-            )
+            WpAnimateInContainer(index = index + 1) {
+                TodayPlanCard(
+                    item = item,
+                    adjustedCompletions = state.adjustedCompletions.filter { it.planId == item.plan.id },
+                    conflicts = planConflicts,
+                    plansById = state.planItems.associate { it.plan.id to it.plan },
+                    highlightedTaskId = highlightedTaskId,
+                    onStartTask = onStartTask,
+                    onCompleteTask = onCompleteTask,
+                    onSkipTask = onSkipTask,
+                )
+            }
         }
     }
 }
@@ -390,24 +389,36 @@ private fun TodayPlanCard(
     val planColor = parseHexColor(item.plan.colorHex)
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(WpRadius.xxl),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // 计划标题行
+        Column(modifier = Modifier.padding(20.dp)) {
+            // 计划标题行 — 40dp 彩色 icon 方块 + 标题（和 PlanCard 一致）
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(planColor)
-                )
-                Spacer(Modifier.width(8.dp))
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(WpRadius.lg))
+                        .background(planColor.copy(alpha = 0.10f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = PlanIconKey.derive(item.plan.title).icon,
+                        contentDescription = null,
+                        tint = planColor,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
                 Text(
                     text = item.plan.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
 

@@ -1,6 +1,7 @@
 package com.wakeplan.app.ui.plan
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,12 +10,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -50,12 +52,23 @@ import com.wakeplan.app.R
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.Task
+import com.wakeplan.app.ui.common.TopHeaderContent
+import com.wakeplan.app.ui.common.WpAnimateInContainer
+import com.wakeplan.app.ui.common.WpRadius
+import com.wakeplan.app.ui.common.WpShadowElevation
+import com.wakeplan.app.ui.common.WpSpacing
+import com.wakeplan.app.ui.common.parseHexColor
+import com.wakeplan.app.ui.common.wpCard
 
 /**
- * 计划详情屏 — v0.3 扁平化 stub
+ * 计划详情屏 — v0.4 视觉刷新
  *
- * commit 2 阶段：删段嵌套，改为直接列 task。完整 UI 重写（startMinutes / repeatRule 展示、冲突高亮、拖拽）
- * 留 commit 4 实装。
+ * 视觉规范（来自 design/colors_and_type.css + superdesign 验证）：
+ * - 顶部 TopAppBar：标题（plan.title）+ 副标（起始日期 + 状态）
+ * - 计划头部卡：24dp 圆角，40dp 彩色 icon + 标题 + stats（任务数 / 时长）
+ * - 任务行：12dp 圆角，左侧小色点 + 标题 + 时段 + repeat label
+ * - FAB：跳新建任务
+ * - 删除 dialog 保留
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +85,18 @@ fun PlanDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(plan?.title ?: stringResource(R.string.plan_detail_title_fallback)) },
+                title = {
+                    TopHeaderContent(
+                        title = plan?.title ?: stringResource(R.string.plan_detail_title_fallback),
+                        subtitle = plan?.let {
+                            stringResource(
+                                R.string.plan_detail_header_subtitle,
+                                it.startDate.toString(),
+                                stringResource(if (it.isActive) R.string.plan_detail_status_active else R.string.plan_detail_status_archived),
+                            )
+                        },
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
@@ -138,77 +162,95 @@ private fun PlanDetailBody(
     onTaskClick: (String) -> Unit,
     onDeleteTask: (String) -> Unit,
 ) {
+    val planColor = remember(plan.colorHex) {
+        runCatching { parseHexColor(plan.colorHex) }.getOrElse { Color(0xFFC48520) }
+    }
+    val iconKey = remember(plan.title) { PlanIconKey.derive(plan.title) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            top = contentPadding.calculateTopPadding() + 8.dp,
+            top = contentPadding.calculateTopPadding() + WpSpacing.sm,
             bottom = contentPadding.calculateBottomPadding() + 88.dp,
-            start = 16.dp,
-            end = 16.dp,
+            start = WpSpacing.lg,
+            end = WpSpacing.lg,
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(WpSpacing.md),
     ) {
-        item { PlanHeader(plan) }
+        item("header") {
+            WpAnimateInContainer(index = 0) {
+                PlanHeaderCard(plan = plan, color = planColor, iconKey = iconKey, taskCount = tasks.size)
+            }
+        }
 
         if (tasks.isEmpty()) {
-            item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Text(
-                        text = stringResource(R.string.plan_detail_no_tasks),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(20.dp),
-                    )
+            item("empty") {
+                WpAnimateInContainer(index = 1) {
+                    EmptyTaskState()
                 }
             }
         } else {
-            items(tasks, key = { it.id }) { task ->
-                TaskRow(
-                    task = task,
-                    onClick = { onTaskClick(task.id) },
-                    onDelete = { onDeleteTask(task.id) },
-                )
+            itemsIndexed(tasks, key = { _, t -> t.id }) { index, task ->
+                WpAnimateInContainer(index = index + 1) {
+                    TaskRow(
+                        task = task,
+                        accent = planColor,
+                        onClick = { onTaskClick(task.id) },
+                        onDelete = { onDeleteTask(task.id) },
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PlanHeader(plan: Plan) {
+private fun PlanHeaderCard(
+    plan: Plan,
+    color: Color,
+    iconKey: PlanIconKey,
+    taskCount: Int,
+) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(WpRadius.xxl),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(WpSpacing.xl),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // 40dp 彩色 icon 方块
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
-                    .background(Color(android.graphics.Color.parseColor(plan.colorHex))),
-            )
-            Spacer(Modifier.width(12.dp))
+                    .clip(RoundedCornerShape(WpRadius.lg))
+                    .background(color.copy(alpha = 0.10f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = iconKey.icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Spacer(Modifier.width(WpSpacing.md))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = plan.title,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    text = stringResource(
-                        R.string.plan_detail_header_subtitle,
-                        plan.startDate.toString(),
-                        stringResource(if (plan.isActive) R.string.plan_detail_status_active else R.string.plan_detail_status_archived),
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = stringResource(R.string.plan_detail_task_count, taskCount),
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -219,33 +261,41 @@ private fun PlanHeader(plan: Plan) {
 @Composable
 private fun TaskRow(
     task: Task,
+    accent: Color,
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(WpRadius.md),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 0.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(WpSpacing.md),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // 左侧 8dp 色点
             Box(
                 modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .size(8.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(accent),
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(WpSpacing.md))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = task.title,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = "${formatTime(task.startMinutes)} – ${formatTime(task.endMinutes)}",
                     style = MaterialTheme.typography.bodySmall,
@@ -253,6 +303,7 @@ private fun TaskRow(
                 )
                 val repeatLabel = repeatRuleLabel(task)
                 if (repeatLabel != null || task.isLocked) {
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         text = when {
                             task.isLocked -> stringResource(
@@ -267,17 +318,18 @@ private fun TaskRow(
                 }
             }
             if (task.isLocked) {
-                Surface(
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    shape = RoundedCornerShape(4.dp),
+                Box(
+                    modifier = Modifier
+                        .background(accent.copy(alpha = 0.10f), RoundedCornerShape(WpRadius.sm))
+                        .padding(horizontal = WpSpacing.sm, vertical = 2.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.common_pinned),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = accent,
                     )
                 }
+                Spacer(Modifier.width(WpSpacing.xs))
             }
             IconButton(onClick = onClick) {
                 Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.plan_detail_task_cd_edit))
@@ -290,6 +342,22 @@ private fun TaskRow(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyTaskState() {
+    Surface(
+        shape = RoundedCornerShape(WpRadius.xxl),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        modifier = Modifier.fillMaxWidth().clickable { /* FAB 负责添加 */ },
+    ) {
+        Text(
+            text = stringResource(R.string.plan_detail_no_tasks),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(WpSpacing.xxl),
+        )
     }
 }
 
