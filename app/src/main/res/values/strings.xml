@@ -67,7 +67,6 @@
     <string name="today_cd_next_day">后一天</string>
     <string name="today_timeline_title_today">今日时间线</string>
     <string name="today_timeline_title_other">%1$s时间线</string>
-    <string name="today_timeline_plan_task_count">%1$d 个任务</string>
     <string name="today_no_tasks_today">今日无任务</string>
     <string name="today_no_tasks_other">该日无任务</string>
     <string name="today_empty_title_today">今天还没有计划</string>

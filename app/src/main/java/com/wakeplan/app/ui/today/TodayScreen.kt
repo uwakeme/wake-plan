@@ -2,8 +2,10 @@ package com.wakeplan.app.ui.today
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
@@ -44,8 +47,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
@@ -251,16 +256,16 @@ private fun TodayContent(
 }
 
 // ====================================================================
-// 24h 水平时间线 — v0.4 "Bold Edition" 彻底重做
+// 24h 水平时间线 — v0.4 "Bold Edition" 第二次重做
 // ====================================================================
-// 关键变化（vs 上一版只在外包 Surface card 的"假优化"）：
-//   - 取消外框 — 跟 page 背景融合
-//   - hour axis 移到顶部 — 阅读方向顺
-//   - per-plan lane 从 22→40dp，左侧 3dp plan color 色条 + lane 整行 6% 淡底
-//   - task 块从 20→32dp，圆角 8dp，宽到 56dp+ 时显示「起时间」+「任务名」白字
-//   - 网格加密：1h 细线 / 3h 中线 / 6h 主线 / 24h 边界
-//   - now 线 2px 主线 + 双侧 4px 18% 光晕 + 顶部 4dp 红点
-//   - 整点刻度只在顶部画一次，干净
+// 关键变化（vs 上一版 per-plan lane）：
+//   - 单条 track — 计划多了也不会拉高，所有 plan 的 task 都在一条线上
+//   - 画布 24h 宽（2112dp），用户可水平拖动
+//   - 默认视图把 now 滚到视口中央（用户看到 ±3h）
+//   - 时间轴 + track 一起滚（同一 Column）
+//   - 任务块 40dp 高，8dp 圆角；宽到 56dp+ 时画「起时间 + 任务名」白字
+//   - 时间轴上加 4dp 红点标记 now（用户拖走后还能看到"现在"在轴上的位置）
+//   - now 线 2px 主线 + 双侧 4dp 8px 18% 光晕
 
 @Composable
 private fun TodayTimeLine(
@@ -282,23 +287,21 @@ private fun TodayTimeLine(
     val onTrackColor = MaterialTheme.colorScheme.surface  // task 块内的白/底色
 
     // ---- 布局尺寸 ----
-    val planColumnWidth = 80.dp        // 左侧 plan 名列宽度（容纳 dot + 名称 + 任务数）
     val hourAxisHeight = 20.dp         // 顶部整点刻度行
     val axisToTrackGap = 6.dp
-    val laneHeight = 40.dp             // 每条 plan lane 高度
-    val rowGap = 4.dp                  // lane 之间间距
-    val blockHeight = 32.dp            // task 色块高度
+    val trackHeight = 56.dp            // 单条 track 高度
+    val blockHeight = 40.dp            // task 色块高度
     val blockCornerRadius = 8.dp
-    val laneBarWidth = 3.dp            // 左侧 plan color 色条
+    val pixelsPerHour = 88.dp          // 每小时占多少 dp（24h = 2112dp 总宽）
+    val totalCanvasWidth = pixelsPerHour * 24
     val maxMinutes = 24 * 60
     val nowTimeText = String.format("%02d:%02d", now.hour, now.minute)
 
-    val lanesTotal = planItems.size.coerceAtLeast(1)
-    val trackHeight = (laneHeight * lanesTotal) + (rowGap * (lanesTotal - 1).coerceAtLeast(0))
-
-    // lookup：completion.taskId -> Task.title（块内要画文字）
     val tasksById = remember(planItems) {
         planItems.flatMap { it.tasks }.associateBy { it.id }
+    }
+    val plansById = remember(planItems) {
+        planItems.associate { it.plan.id to it.plan }
     }
 
     val titleText = if (isViewingToday) {
@@ -307,7 +310,9 @@ private fun TodayTimeLine(
         stringResource(R.string.today_timeline_title_other, date.format(dateFmt(context)))
     }
 
-    // 不再用 Surface card — 整段跟 page 背景融合，靠 lane 自己的淡底色分层
+    val scrollState = rememberScrollState()
+
+    // 不再用 Surface card — 跟 page 背景融合
     Column(modifier = Modifier.fillMaxWidth()) {
         // ---- 头部行：标题 + 当前时间 pill ----
         Row(
@@ -326,135 +331,146 @@ private fun TodayTimeLine(
                 NowTimePill(time = nowTimeText, color = nowLineColor)
             }
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // ---- 主体：左 plan 列 + 右时间轨 ----
-        Row(modifier = Modifier.fillMaxWidth()) {
-            // 左侧 plan 名称列（顶部留空对齐 axis 区域）
-            PlanLabelColumn(
-                planItems = planItems,
-                planColumnWidth = planColumnWidth,
-                laneHeight = laneHeight,
-                rowGap = rowGap,
-                headerHeight = hourAxisHeight + axisToTrackGap,
-            )
-            Spacer(Modifier.width(8.dp))
+        // ---- 主体：水平滚动时间线 ----
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val viewportWidthPx = with(density) { maxWidth.toPx() }.toInt()
+            val totalWidthPx = with(density) { totalCanvasWidth.toPx() }.toInt()
 
-            // 右侧：顶部 hour axis + 底部 track
-            Column(modifier = Modifier.weight(1f)) {
-                // ---- 顶部 hour axis ----
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(hourAxisHeight),
+            // 首次进入：把 now 滚到视口中央（让用户看到 ±3h）
+            val initialTargetPx = if (isViewingToday) {
+                val nowMin = now.hour * 60 + now.minute
+                val nowX = (nowMin.toFloat() / maxMinutes) * totalWidthPx
+                (nowX - viewportWidthPx / 2f).toInt().coerceAtLeast(0)
+            } else 0
+            var didInitialScroll by remember { mutableStateOf(false) }
+            LaunchedEffect(viewportWidthPx) {
+                if (isViewingToday && !didInitialScroll && initialTargetPx > 0) {
+                    scrollState.scrollTo(initialTargetPx)
+                    didInitialScroll = true
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(scrollState),
+            ) {
+                Column(
+                    modifier = Modifier.width(totalCanvasWidth),
                 ) {
-                    val w = size.width
-                    val minuteWidth = w / maxMinutes.toFloat()
-                    val tickBottomY = size.height
-                    val ticks = listOf(0, 3, 6, 9, 12, 15, 18, 21, 24)
-                    ticks.forEach { h ->
-                        val x = h * 60 * minuteWidth
-                        val isMajor = h % 6 == 0
-                        val isMid = h % 3 == 0
-                        // tick 短竖线
-                        val tickLen = when {
-                            isMajor -> with(density) { 5.dp.toPx() }
-                            isMid -> with(density) { 3.dp.toPx() }
-                            else -> with(density) { 1.5.dp.toPx() }
-                        }
-                        drawLine(
-                            color = outlineColor.copy(alpha = if (isMajor) 0.7f else 0.3f),
-                            start = Offset(x, tickBottomY - tickLen),
-                            end = Offset(x, tickBottomY),
-                            strokeWidth = if (isMajor) 1.2f else 0.8f,
-                        )
-                        // major 刻度文字（每 6 小时）
-                        if (isMajor) {
-                            val text = if (h == 24) "24" else String.format("%02d", h)
-                            val measured = textMeasurer.measure(text, style = tickLabelStyle)
-                            val textX = when (h) {
-                                0 -> 0f
-                                24 -> w - measured.size.width
-                                else -> x - measured.size.width / 2f
+                    // ---- 顶部 hour axis ----
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(hourAxisHeight),
+                    ) {
+                        val w = size.width
+                        val minuteWidth = w / maxMinutes.toFloat()
+                        val tickBottomY = size.height
+                        val ticks = listOf(0, 3, 6, 9, 12, 15, 18, 21, 24)
+                        ticks.forEach { h ->
+                            val x = h * 60 * minuteWidth
+                            val isMajor = h % 6 == 0
+                            val isMid = h % 3 == 0
+                            val tickLen = when {
+                                isMajor -> with(density) { 5.dp.toPx() }
+                                isMid -> with(density) { 3.dp.toPx() }
+                                else -> with(density) { 1.5.dp.toPx() }
                             }
-                            // 文字画在 tick 上方
-                            val textY = tickBottomY - tickLen - measured.size.height - 2f
-                            drawText(
-                                textMeasurer = textMeasurer,
-                                text = text,
-                                topLeft = Offset(textX, textY),
-                                style = tickLabelStyle,
+                            drawLine(
+                                color = outlineColor.copy(alpha = if (isMajor) 0.7f else 0.3f),
+                                start = Offset(x, tickBottomY - tickLen),
+                                end = Offset(x, tickBottomY),
+                                strokeWidth = if (isMajor) 1.2f else 0.8f,
+                            )
+                            if (isMajor) {
+                                val text = if (h == 24) "24" else String.format("%02d", h)
+                                val measured = textMeasurer.measure(text, style = tickLabelStyle)
+                                val textX = when (h) {
+                                    0 -> 0f
+                                    24 -> w - measured.size.width
+                                    else -> x - measured.size.width / 2f
+                                }
+                                val textY = tickBottomY - tickLen - measured.size.height - 2f
+                                drawText(
+                                    textMeasurer = textMeasurer,
+                                    text = text,
+                                    topLeft = Offset(textX, textY),
+                                    style = tickLabelStyle,
+                                )
+                            }
+                        }
+
+                        // now dot on axis — 拖走后还能看到"现在"在轴上的位置
+                        if (isViewingToday) {
+                            val nowMin = now.hour * 60 + now.minute
+                            val nowX = (nowMin.toFloat() / maxMinutes) * w
+                            val dotRadius = with(density) { 4.dp.toPx() }
+                            // halo
+                            drawCircle(
+                                color = nowLineColor.copy(alpha = 0.18f),
+                                radius = dotRadius + with(density) { 3.dp.toPx() },
+                                center = Offset(nowX, tickBottomY - with(density) { 7.dp.toPx() }),
+                            )
+                            // dot
+                            drawCircle(
+                                color = nowLineColor,
+                                radius = dotRadius,
+                                center = Offset(nowX, tickBottomY - with(density) { 7.dp.toPx() }),
                             )
                         }
                     }
-                }
-                Spacer(Modifier.height(axisToTrackGap))
+                    Spacer(Modifier.height(axisToTrackGap))
 
-                // ---- track canvas ----
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(trackHeight),
-                ) {
-                    val w = size.width
-                    val tlHeight = trackHeight.toPx()
-                    val minuteWidth = w / maxMinutes.toFloat()
-                    val rowPx = laneHeight.toPx()
-                    val rowGapPx = rowGap.toPx()
-                    val blockPx = blockHeight.toPx()
-                    val barPx = with(density) { laneBarWidth.toPx() }
-                    val cornerPx = with(density) { blockCornerRadius.toPx() }
+                    // ---- 单条 track canvas ----
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(trackHeight),
+                    ) {
+                        val w = size.width
+                        val tlHeight = trackHeight.toPx()
+                        val minuteWidth = w / maxMinutes.toFloat()
+                        val blockPx = blockHeight.toPx()
+                        val cornerPx = with(density) { blockCornerRadius.toPx() }
 
-                    // 1) 每个 plan lane：左侧色条 + 整行 6% 淡底
-                    planItems.forEachIndexed { idx, item ->
-                        val planColor = parseHexColor(item.plan.colorHex)
-                        val laneTop = idx * (rowPx + rowGapPx)
-                        // 整 lane 淡底
-                        drawRect(
-                            color = planColor.copy(alpha = 0.06f),
-                            topLeft = Offset(0f, laneTop),
-                            size = Size(w, rowPx),
-                        )
-                        // 左侧 plan color 实心条
-                        drawRect(
-                            color = planColor,
-                            topLeft = Offset(0f, laneTop),
-                            size = Size(barPx, rowPx),
-                        )
-                    }
-
-                    // 2) 时间网格（1h 细 / 3h 中 / 6h 主 / 24h 边界）
-                    for (h in 0..24) {
-                        val x = h * 60 * minuteWidth
-                        val isProminent = h == 0 || h == 24
-                        val isMajor = h % 6 == 0
-                        val isMid = h % 3 == 0
-                        val (alpha, width) = when {
-                            isProminent -> 0.55f to 1.2f
-                            isMajor -> 0.4f to 1f
-                            isMid -> 0.22f to 0.7f
-                            else -> 0.10f to 0.4f
+                        // 1) 时间网格
+                        for (h in 0..24) {
+                            val x = h * 60 * minuteWidth
+                            val isProminent = h == 0 || h == 24
+                            val isMajor = h % 6 == 0
+                            val isMid = h % 3 == 0
+                            val (alpha, width) = when {
+                                isProminent -> 0.55f to 1.2f
+                                isMajor -> 0.4f to 1f
+                                isMid -> 0.22f to 0.7f
+                                else -> 0.10f to 0.4f
+                            }
+                            drawLine(
+                                color = outlineColor.copy(alpha = alpha),
+                                start = Offset(x, 0f),
+                                end = Offset(x, tlHeight),
+                                strokeWidth = width,
+                            )
                         }
-                        drawLine(
-                            color = outlineColor.copy(alpha = alpha),
-                            start = Offset(x, 0f),
-                            end = Offset(x, tlHeight),
-                            strokeWidth = width,
+
+                        // 2) task 块（所有 plan 共享一条 track，按时间排）
+                        val blockTextStyle = tickLabelStyle.copy(
+                            color = onTrackColor,
+                            fontWeight = FontWeight.SemiBold,
                         )
-                    }
+                        val minTextWidth = with(density) { 56.dp.toPx() }
+                        val blockPadding = with(density) { 7.dp.toPx() }
+                        val blockGap = with(density) { 5.dp.toPx() }
 
-                    // 3) task 块（宽到 56dp+ 显示「起时间」+「标题」白字）
-                    val blockTextStyle = tickLabelStyle.copy(
-                        color = onTrackColor,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    val minTextWidth = with(density) { 56.dp.toPx() }
-                    val blockPadding = with(density) { 7.dp.toPx() }
-                    val blockGap = with(density) { 5.dp.toPx() }
+                        val allCompletions = planItems.flatMap { it.completions }
+                            .sortedBy { it.plannedStart }
+                        allCompletions.forEach { c ->
+                            val plan = plansById[c.planId] ?: return@forEach
+                            val planColor = parseHexColor(plan.colorHex)
 
-                    planItems.forEachIndexed { idx, item ->
-                        val planColor = parseHexColor(item.plan.colorHex)
-                        item.completions.forEach { c ->
                             val startMin = minuteOfDay(c.plannedStart, date).coerceIn(0, maxMinutes)
                             val endMin = minuteOfDay(c.plannedEnd, date)
                                 .coerceAtLeast(startMin + 1)
@@ -462,9 +478,9 @@ private fun TodayTimeLine(
                             if (endMin <= startMin) return@forEach
                             val left = startMin * minuteWidth
                             val blockWidth = (endMin - startMin) * minuteWidth
-                            val blockTop = idx * (rowPx + rowGapPx) + (rowPx - blockPx) / 2f
+                            val blockTop = (tlHeight - blockPx) / 2f
 
-                            // 主体
+                            // 主体（plan color 填充）
                             drawRoundRect(
                                 color = planColor,
                                 topLeft = Offset(left, blockTop),
@@ -474,7 +490,7 @@ private fun TodayTimeLine(
 
                             // in-progress：2px 红边
                             if (isViewingToday &&
-                                c.status == com.wakeplan.app.domain.model.TaskStatus.IN_PROGRESS &&
+                                c.status == TaskStatus.IN_PROGRESS &&
                                 now.isAfter(c.plannedStart) && now.isBefore(c.plannedEnd)) {
                                 drawRoundRect(
                                     color = nowLineColor,
@@ -507,7 +523,6 @@ private fun TodayTimeLine(
                                         startMeasured.size.width - blockGap
                                 if (titleSpace > with(density) { 24.dp.toPx() }) {
                                     val taskTitle = tasksById[c.taskId]?.title ?: ""
-                                    // 渐进截断（贪心）
                                     var shown = ""
                                     for (i in taskTitle.indices) {
                                         val candidate = taskTitle.substring(0, i + 1)
@@ -537,107 +552,31 @@ private fun TodayTimeLine(
                                 }
                             }
                         }
-                    }
 
-                    // 4) "现在"指示：顶部红点 + 2px 主线 + 双侧 8px 18% 光晕
-                    if (isViewingToday) {
-                        val nowMin = minuteOfDay(now, date).coerceIn(0, maxMinutes)
-                        val nowX = nowMin * minuteWidth
-                        val haloOffset = with(density) { 4.dp.toPx() }
-                        val haloWidth = with(density) { 8.dp.toPx() }
-                        val dotRadius = with(density) { 4.dp.toPx() }
-                        val dotY = -with(density) { 4.dp.toPx() }
+                        // 3) now 线（2px 主线 + 双侧 4dp 8px 18% 光晕）
+                        if (isViewingToday) {
+                            val nowMin = minuteOfDay(now, date).coerceIn(0, maxMinutes)
+                            val nowX = (nowMin.toFloat() / maxMinutes) * w
+                            val haloOffset = with(density) { 4.dp.toPx() }
+                            val haloWidth = with(density) { 8.dp.toPx() }
 
-                        // 左侧光晕
-                        drawLine(
-                            color = nowLineColor.copy(alpha = 0.18f),
-                            start = Offset(nowX - haloOffset, 0f),
-                            end = Offset(nowX - haloOffset, tlHeight),
-                            strokeWidth = haloWidth,
-                        )
-                        // 右侧光晕
-                        drawLine(
-                            color = nowLineColor.copy(alpha = 0.18f),
-                            start = Offset(nowX + haloOffset, 0f),
-                            end = Offset(nowX + haloOffset, tlHeight),
-                            strokeWidth = haloWidth,
-                        )
-                        // 主线
-                        drawLine(
-                            color = nowLineColor,
-                            start = Offset(nowX, 0f),
-                            end = Offset(nowX, tlHeight),
-                            strokeWidth = 2f,
-                        )
-                        // 顶部红点
-                        drawCircle(
-                            color = nowLineColor,
-                            radius = dotRadius,
-                            center = Offset(nowX, dotY),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * 左侧 plan 名称列 — 与 Canvas track 等高，每条 plan 一行
- *
- * 顶部留 headerHeight（hour axis + gap）让 plan 行跟 track 对齐；
- * 每行：8dp plan color 色点 + 计划名 + 任务数（"3 个"）
- */
-@Composable
-private fun PlanLabelColumn(
-    planItems: List<TodayPlanItem>,
-    planColumnWidth: androidx.compose.ui.unit.Dp,
-    laneHeight: androidx.compose.ui.unit.Dp,
-    rowGap: androidx.compose.ui.unit.Dp,
-    headerHeight: androidx.compose.ui.unit.Dp,
-) {
-    androidx.compose.foundation.layout.Column(
-        modifier = Modifier.width(planColumnWidth),
-    ) {
-        // 顶部留白对齐 hour axis
-        Spacer(Modifier.height(headerHeight))
-        androidx.compose.foundation.layout.Column(
-            verticalArrangement = Arrangement.spacedBy(rowGap),
-        ) {
-            if (planItems.isEmpty()) {
-                Box(modifier = Modifier.height(laneHeight))
-            } else {
-                planItems.forEach { item ->
-                    val planColor = parseHexColor(item.plan.colorHex)
-                    Row(
-                        modifier = Modifier.height(laneHeight),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(androidx.compose.foundation.shape.CircleShape)
-                                .background(planColor),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = item.plan.title.take(8),
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            drawLine(
+                                color = nowLineColor.copy(alpha = 0.18f),
+                                start = Offset(nowX - haloOffset, 0f),
+                                end = Offset(nowX - haloOffset, tlHeight),
+                                strokeWidth = haloWidth,
                             )
-                            Text(
-                                text = stringResource(
-                                    R.string.today_timeline_plan_task_count,
-                                    item.completions.size,
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
+                            drawLine(
+                                color = nowLineColor.copy(alpha = 0.18f),
+                                start = Offset(nowX + haloOffset, 0f),
+                                end = Offset(nowX + haloOffset, tlHeight),
+                                strokeWidth = haloWidth,
+                            )
+                            drawLine(
+                                color = nowLineColor,
+                                start = Offset(nowX, 0f),
+                                end = Offset(nowX, tlHeight),
+                                strokeWidth = 2f,
                             )
                         }
                     }
