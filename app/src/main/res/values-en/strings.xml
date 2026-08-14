@@ -97,6 +97,7 @@ Tap the button below to continue.</string>
     <!-- ============================================================ -->
     <string name="plan_list_cd_new">New plan</string>
     <string name="plan_list_start_date">Started %1$s</string>
+    <string name="plan_list_active_count">%1$d active plans</string>
     <string name="plan_list_empty_title">No plans yet</string>
     <string name="plan_list_empty_subtitle">Tap + to create one,
 and manage fitness / study / side hustle separately</string>
@@ -106,6 +107,7 @@ and manage fitness / study / side hustle separately</string>
     <string name="plan_detail_delete_dialog_title">Delete plan?</string>
     <string name="plan_detail_delete_dialog_text">This will delete "%1$s" and all its tasks. This cannot be undone.</string>
     <string name="plan_detail_header_subtitle">Started %1$s · %2$s</string>
+    <string name="plan_detail_task_count">%1$d tasks</string>
     <string name="plan_detail_status_active">Active</string>
     <string name="plan_detail_status_archived">Archived</string>
     <string name="plan_detail_no_tasks">No tasks yet. Tap + to add one (e.g. "Morning workout 06:00-08:00").</string>
@@ -114,6 +116,13 @@ and manage fitness / study / side hustle separately</string>
     <string name="plan_detail_add_task">Add task</string>
     <string name="plan_detail_task_cd_edit">Edit task</string>
     <string name="plan_detail_task_cd_delete">Delete task</string>
+    <string name="plan_card_status_active">Active</string>
+    <string name="plan_card_status_scheduled">Scheduled</string>
+    <string name="plan_card_status_idle">Idle</string>
+    <string name="plan_card_progress_label">Progress</string>
+    <string name="plan_card_progress_percent">%1$d%%</string>
+    <string name="plan_card_stats_tasks_minutes">%1$d tasks · %2$d min</string>
+
     <string name="plan_create_title">New plan</string>
     <string name="plan_create_section_color">Color</string>
     <string name="plan_create_section_start_date">Start date</string>

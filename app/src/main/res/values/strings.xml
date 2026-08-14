@@ -93,8 +93,17 @@
     <!-- ============================================================ -->
     <string name="plan_list_cd_new">新建计划</string>
     <string name="plan_list_start_date">起始 %1$s</string>
+    <string name="plan_list_active_count">%1$d 个活跃计划</string>
     <string name="plan_list_empty_title">还没有计划</string>
     <string name="plan_list_empty_subtitle">点 + 新建一个，\n把健身 / 学习 / 副业分开管理</string>
+
+    <!-- PlanCard v0.4 视觉刷新 -->
+    <string name="plan_card_status_active">活跃</string>
+    <string name="plan_card_status_scheduled">已排期</string>
+    <string name="plan_card_status_idle">空闲</string>
+    <string name="plan_card_progress_label">进度</string>
+    <string name="plan_card_progress_percent">%1$d%%</string>
+    <string name="plan_card_stats_tasks_minutes">%1$d 任务 · %2$d 分钟</string>
 
     <string name="plan_detail_title_fallback">计划详情</string>
     <string name="plan_detail_cd_delete">删除计划</string>
@@ -102,6 +111,7 @@
     <string name="plan_detail_delete_dialog_title">删除计划？</string>
     <string name="plan_detail_delete_dialog_text">将删除 "%1$s" 及其所有任务。此操作不可撤销。</string>
     <string name="plan_detail_header_subtitle">起始 %1$s · %2$s</string>
+    <string name="plan_detail_task_count">%1$d 个任务</string>
     <string name="plan_detail_status_active">活跃</string>
     <string name="plan_detail_status_archived">归档</string>
     <string name="plan_detail_no_tasks">还没有任务，点 + 添加（如 "晨练 06:00-08:00"）</string>
