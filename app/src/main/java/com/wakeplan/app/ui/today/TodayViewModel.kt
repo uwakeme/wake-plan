@@ -52,12 +52,26 @@ data class TodayPlanItem(
     val completions: List<TaskCompletion>,
 )
 
+/**
+ * 今日扁平任务项 — v0.4 视觉刷新后，Today 列表按时间排（不再按 plan 分组）
+ *
+ * 一个 (plan, task, completion) 三元组 = 列表里一行
+ * plan 还在 row 上以"颜色 dot + 名称"形式展示
+ */
+data class TodayTaskItem(
+    val plan: Plan,
+    val task: Task,
+    val completion: TaskCompletion,
+)
+
 data class TodayUiState(
     val date: LocalDate,
     val now: LocalDateTime,
     val planItems: List<TodayPlanItem>,
     /** 跨所有 plan 调整后的 completion（已应用 AutoExtend） */
     val adjustedCompletions: List<TaskCompletion>,
+    /** 扁平任务列表：按 completion.plannedStart 升序，跨 plan 混合排 */
+    val todayTaskItems: List<TodayTaskItem>,
     val conflicts: List<TaskConflict>,
 ) {
     companion object {
@@ -66,6 +80,7 @@ data class TodayUiState(
             now = LocalDateTime.now(),
             planItems = emptyList(),
             adjustedCompletions = emptyList(),
+            todayTaskItems = emptyList(),
             conflicts = emptyList(),
         )
     }
@@ -151,6 +166,7 @@ class TodayViewModel @Inject constructor(
         date: LocalDate,
     ): TodayUiState {
         val activePlans = plans.filter { it.isActive }
+        val plansById = activePlans.associateBy { it.id }
         val planItems = activePlans.map { plan ->
             val planTaskIds = allTasks.filter { it.planId == plan.id }.map { it.id }.toSet()
             TodayPlanItem(
@@ -161,11 +177,23 @@ class TodayViewModel @Inject constructor(
         }
         val adjusted = cascadeDelayCalculator(completions, allTasks, date, now)
         val conflicts = conflictDetector(adjusted, date)
+
+        // 扁平任务列表：按 plannedStart 升序，跨 plan 混合
+        val tasksById = allTasks.associateBy { it.id }
+        val todayTaskItems = adjusted
+            .mapNotNull { completion ->
+                val plan = plansById[completion.planId] ?: return@mapNotNull null
+                val task = tasksById[completion.taskId] ?: return@mapNotNull null
+                TodayTaskItem(plan = plan, task = task, completion = completion)
+            }
+            .sortedBy { it.completion.plannedStart }
+
         return TodayUiState(
             date = date,
             now = now,
             planItems = planItems,
             adjustedCompletions = adjusted,
+            todayTaskItems = todayTaskItems,
             conflicts = conflicts,
         )
     }

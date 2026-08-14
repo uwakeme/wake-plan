@@ -217,7 +217,7 @@ private fun TodayContent(
             start = 16.dp,
             end = 16.dp,
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         // 24h 时间线
         item(key = "timeline") {
@@ -229,21 +229,21 @@ private fun TodayContent(
                 conflicts = state.conflicts,
             )
         }
-        // 跨计划卡片
-        itemsIndexed(state.planItems, key = { _, item -> "plan-${item.plan.id}" }) { index, item ->
+
+        // v0.4：扁平任务列表（按时间排，跨 plan 混合）
+        // 每行带 plan 颜色 + 名称标签，让用户知道是哪个计划的任务
+        itemsIndexed(state.todayTaskItems, key = { _, item -> "task-${item.completion.id}" }) { index, item ->
             val planConflicts = state.conflicts.filter { c ->
                 c.taskA.planId == item.plan.id || c.taskB.planId == item.plan.id
             }
             WpAnimateInContainer(index = index + 1) {
-                TodayPlanCard(
+                TodayTaskCard(
                     item = item,
-                    adjustedCompletions = state.adjustedCompletions.filter { it.planId == item.plan.id },
                     conflicts = planConflicts,
-                    plansById = state.planItems.associate { it.plan.id to it.plan },
-                    highlightedTaskId = highlightedTaskId,
-                    onStartTask = onStartTask,
-                    onCompleteTask = onCompleteTask,
-                    onSkipTask = onSkipTask,
+                    highlighted = item.completion.taskId == highlightedTaskId,
+                    onStart = { onStartTask(item.completion.id) },
+                    onComplete = { onCompleteTask(item.completion.id) },
+                    onSkip = { onSkipTask(item.completion.id) },
                 )
             }
         }
@@ -465,157 +465,243 @@ private fun minuteOfDay(dt: LocalDateTime, date: LocalDate): Int {
 }
 
 // ====================================================================
-// 跨计划卡片
+// v0.4 扁平任务卡（按时间排，跨 plan 混合）
 // ====================================================================
 
+/**
+ * 单个任务卡 — 1 行布局：
+ *   [09:30-10:00] [●ces]  task title    [开始][×]
+ *
+ * 左侧 56dp 留给时间（mono 数字 + 透明边框感）
+ * 中间是 plan 颜色点 + plan 短名（最多 8 字）
+ * 右边任务标题（weight 1f，吃剩余空间）
+ * 最右是 action 按钮（按状态切换）
+ */
 @Composable
-private fun TodayPlanCard(
-    item: TodayPlanItem,
-    adjustedCompletions: List<TaskCompletion>,
+private fun TodayTaskCard(
+    item: TodayTaskItem,
     conflicts: List<TaskConflict>,
-    plansById: Map<String, Plan>,
-    highlightedTaskId: String?,
-    onStartTask: (String) -> Unit,
-    onCompleteTask: (String) -> Unit,
-    onSkipTask: (String) -> Unit,
-) {
-    val planColor = parseHexColor(item.plan.colorHex)
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(WpRadius.xxl),
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-        ),
-        shadowElevation = 1.dp,
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            // 计划标题行 — 40dp 彩色 icon 方块 + 标题（和 PlanCard 一致）
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(WpRadius.lg))
-                        .background(planColor.copy(alpha = 0.10f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = PlanIconKey.derive(item.plan.title).icon,
-                        contentDescription = null,
-                        tint = planColor,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = item.plan.title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-
-            // 内联冲突警告
-            if (conflicts.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                ConflictBanner(conflicts = conflicts, plansById = plansById)
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // 任务列表（v0.3 扁平化：直接按时间排，不再按段嵌套）
-            val todayCompletions = adjustedCompletions
-                .filter { it.planId == item.plan.id }
-                .sortedBy { it.plannedStart }
-
-            if (todayCompletions.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.today_no_tasks_today),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                val tasksById = item.tasks.associateBy { it.id }
-                todayCompletions.forEach { c ->
-                    val title = tasksById[c.taskId]?.title ?: c.taskId.take(8) + "…"
-                    TaskRow(
-                        completion = c,
-                        taskTitle = title,
-                        highlighted = c.taskId == highlightedTaskId,
-                        onStart = { onStartTask(c.id) },
-                        onComplete = { onCompleteTask(c.id) },
-                        onSkip = { onSkipTask(c.id) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TaskRow(
-    completion: TaskCompletion,
-    taskTitle: String,
-    highlighted: Boolean = false,
+    highlighted: Boolean,
     onStart: () -> Unit,
     onComplete: () -> Unit,
     onSkip: () -> Unit,
 ) {
-    val bg = if (highlighted) MaterialTheme.colorScheme.primaryContainer
-             else androidx.compose.ui.graphics.Color.Transparent
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val planColor = parseHexColor(item.plan.colorHex)
+    val start = formatHm(item.completion.plannedStart)
+    val end = formatHm(item.completion.plannedEnd)
+    val timeText = "$start – $end"
+
+    val bg = if (highlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+             else MaterialTheme.colorScheme.surface
+
+    val status = item.completion.status
+    val isInProgressOrDone = status == TaskStatus.IN_PROGRESS ||
+                             status == TaskStatus.COMPLETED ||
+                             status == TaskStatus.SKIPPED
+    val isCompleted = status == TaskStatus.COMPLETED
+    val isSkipped = status == TaskStatus.SKIPPED
+    val isPending = status == TaskStatus.PENDING
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(WpRadius.lg),
+        color = bg,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = if (highlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 0.dp,
     ) {
-        val isInProgressOrDone = completion.status == TaskStatus.IN_PROGRESS ||
-                                 completion.status == TaskStatus.COMPLETED ||
-                                 completion.status == TaskStatus.SKIPPED
-        val statusLabel = when (completion.status) {
-            TaskStatus.COMPLETED -> stringResource(R.string.today_cd_completed)
-            TaskStatus.SKIPPED -> stringResource(R.string.today_cd_skipped)
-            else -> taskTitle
-        }
-        Text(
-            text = statusLabel,
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (completion.status == TaskStatus.COMPLETED) MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.onSurface,
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .background(bg)
-                .padding(horizontal = 4.dp, vertical = 2.dp),
-        )
-        if (!isInProgressOrDone) {
-            OutlinedButton(onClick = onStart) {
-                Icon(Icons.Outlined.PlayArrow, contentDescription = stringResource(R.string.today_cd_start))
-                Spacer(Modifier.width(4.dp))
-                Text(stringResource(R.string.today_btn_start))
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // 时间 (mono 数字，固定 56dp 宽)
+            Text(
+                text = timeText,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                ),
+                color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant
+                        else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.width(80.dp),
+            )
+
+            Spacer(Modifier.width(8.dp))
+
+            // Plan 颜色点 + 短名
+            Row(
+                modifier = Modifier
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(WpRadius.full))
+                    .background(planColor.copy(alpha = 0.10f))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(planColor),
+                )
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    text = item.plan.title.take(8),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                    color = planColor,
+                    maxLines = 1,
+                )
             }
-            Spacer(Modifier.width(4.dp))
-            OutlinedButton(onClick = onSkip) {
-                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.today_cd_skip))
-            }
-        } else if (completion.status == TaskStatus.IN_PROGRESS) {
-            OutlinedButton(onClick = onComplete) {
-                Icon(Icons.Outlined.Check, contentDescription = stringResource(R.string.today_cd_complete))
-                Spacer(Modifier.width(4.dp))
-                Text(stringResource(R.string.today_btn_complete))
-            }
-            Spacer(Modifier.width(4.dp))
-            OutlinedButton(onClick = onSkip) {
-                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.today_cd_skip))
-            }
-        } else {
-            // COMPLETED / SKIPPED — 也提供"重新开始"按钮（撤销可走 Snackbar）
-            Spacer(Modifier.width(4.dp))
-            OutlinedButton(onClick = onStart) {
-                Icon(Icons.Outlined.PlayArrow, contentDescription = stringResource(R.string.today_cd_start))
+
+            Spacer(Modifier.width(10.dp))
+
+            // 任务标题（吃剩余空间）
+            Text(
+                text = item.task.title,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = if (isPending) FontWeight.Normal else FontWeight.Medium,
+                    textDecoration = if (isCompleted || isSkipped) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                ),
+                color = if (isCompleted || isSkipped) MaterialTheme.colorScheme.onSurfaceVariant
+                        else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+
+            // Action 按钮
+            Spacer(Modifier.width(8.dp))
+            when (status) {
+                TaskStatus.PENDING -> {
+                    ActionChip(
+                        icon = Icons.Outlined.PlayArrow,
+                        label = stringResource(R.string.today_btn_start),
+                        onClick = onStart,
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    IconActionButton(
+                        icon = Icons.Outlined.Close,
+                        contentDescription = stringResource(R.string.today_cd_skip),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = onSkip,
+                    )
+                }
+                TaskStatus.IN_PROGRESS -> {
+                    ActionChip(
+                        icon = Icons.Outlined.Check,
+                        label = stringResource(R.string.today_btn_complete),
+                        onClick = onComplete,
+                        primary = true,
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    IconActionButton(
+                        icon = Icons.Outlined.Close,
+                        contentDescription = stringResource(R.string.today_cd_skip),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = onSkip,
+                    )
+                }
+                TaskStatus.COMPLETED, TaskStatus.SKIPPED -> {
+                    IconActionButton(
+                        icon = Icons.Outlined.PlayArrow,
+                        contentDescription = stringResource(R.string.today_cd_start),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = onStart,
+                    )
+                }
             }
         }
     }
+
+    // 冲突警告内联（这行的 plan 有冲突时）
+    if (conflicts.isNotEmpty()) {
+        Spacer(Modifier.height(4.dp))
+        // 复用现有的 ConflictBanner
+        // （构造一个空 plan map —— 实际只有 taskA/taskB 的 planId，
+        //  这里我们用 item.plan 单值近似。如果真冲突多 plan，
+        //  ConflictBanner 会显示"其他计划"字样）
+        ConflictBanner(
+            conflicts = conflicts,
+            plansById = mapOf(item.plan.id to item.plan),
+        )
+    }
 }
+
+@Composable
+private fun ActionChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    primary: Boolean = false,
+) {
+    val containerColor = if (primary) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surface
+    val contentColor = if (primary) MaterialTheme.colorScheme.onPrimary
+                       else MaterialTheme.colorScheme.primary
+    androidx.compose.material3.Surface(
+        onClick = onClick,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(WpRadius.full),
+        color = if (primary) containerColor
+                else containerColor.copy(alpha = 0.0f),
+        border = if (!primary) androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+        ) else null,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(14.dp),
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = contentColor,
+            )
+        }
+    }
+}
+
+@Composable
+private fun IconActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    tint: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit,
+) {
+    androidx.compose.material3.IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(32.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
+private fun formatHm(dt: java.time.LocalDateTime): String =
+    String.format("%02d:%02d", dt.hour, dt.minute)
+
+// ====================================================================
+// 旧的 plan-grouped card（已废弃，留作 v0.3 回滚参考）
+// ====================================================================
+//
+// @Composable
+// private fun TodayPlanCard(...) { ... }  // v0.3 扁平前的实现
+// @Composable
+// private fun TaskRow(...) { ... }        // v0.3 扁平前的内联任务行
 
 @Composable
 private fun ConflictBanner(
