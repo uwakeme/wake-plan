@@ -71,6 +71,7 @@ Tap the button below to continue.</string>
     <string name="today_cd_next_day">Next day</string>
     <string name="today_timeline_title_today">Today\'s timeline</string>
     <string name="today_timeline_title_other">%1$s timeline</string>
+    <string name="today_timeline_plan_task_count">%1$d tasks</string>
     <string name="today_no_tasks_today">No tasks today</string>
     <string name="today_no_tasks_other">No tasks on this day</string>
     <string name="today_empty_title_today">No plans for today yet</string>
