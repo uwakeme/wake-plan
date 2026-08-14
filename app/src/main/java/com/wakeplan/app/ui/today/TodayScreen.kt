@@ -268,15 +268,27 @@ private fun TodayTimeLine(
     val tickLabelStyle = MaterialTheme.typography.labelSmall.copy(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    val outlineColor = MaterialTheme.colorScheme.outlineVariant
     val nowLineColor = MaterialTheme.colorScheme.error
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant  // 提到 Composable 作用域，Canvas 里复用
 
-    val timelineHeight = 96.dp
-    val rowHeight = 16.dp  // 每条 plan 行高
-    val rowGap = 4.dp
-    val blockCornerRadius = 4.dp
+    // ---- 布局尺寸 ----
+    val labelColumnWidth = 64.dp       // 左侧 plan 名列宽度
+    val rowGap = 6.dp                 // plan lane 之间的间距
+    val laneMinHeight = 22.dp          // 每条 plan lane 最小高度（task 块可能更矮）
+    val blockHeight = 20.dp            // task 色块高度
+    val blockCornerRadius = 5.dp
+    val hourAxisHeight = 18.dp         // 底部整点刻度行
     val maxMinutes = 24 * 60
     val nowTimeText = String.format("%02d:%02d", now.hour, now.minute)
+    // 没有 plan 时给个最小高度，避免空白
+    val lanesTotal = planItems.size.coerceAtLeast(1)
+    val trackHeight = (laneMinHeight * lanesTotal) + (rowGap * (lanesTotal - 1).coerceAtLeast(0))
+
+    val titleText = if (isViewingToday) {
+        stringResource(R.string.today_timeline_title_today)
+    } else {
+        stringResource(R.string.today_timeline_title_other, date.format(dateFmt(context)))
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -289,17 +301,13 @@ private fun TodayTimeLine(
         shadowElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            // 头部行：标题 + 当前时间 pill
+            // ---- 头部行：标题 + 当前时间 pill ----
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = if (isViewingToday) {
-                        stringResource(R.string.today_timeline_title_today)
-                    } else {
-                        stringResource(R.string.today_timeline_title_other, date.format(dateFmt(context)))
-                    },
+                    text = titleText,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
@@ -308,124 +316,193 @@ private fun TodayTimeLine(
                     NowTimePill(time = nowTimeText, color = nowLineColor)
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(timelineHeight + 22.dp)  // 留出时间刻度文字 + tick mark 高度
-            ) {
-                val w = size.width
-                val tlHeight = with(density) { timelineHeight.toPx() }
-                val minuteWidth = w / maxMinutes.toFloat()
-                val rowPx = with(density) { rowHeight.toPx() }
-                val rowGapPx = with(density) { rowGap.toPx() }
-                val cornerPx = with(density) { blockCornerRadius.toPx() }
+            Spacer(Modifier.height(14.dp))
 
-                // 底色（圆角）
-                drawRoundRect(
-                    color = outlineColor.copy(alpha = 0.25f),
-                    topLeft = Offset(0f, 0f),
-                    size = Size(w, tlHeight),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f),
+            // ---- 主体：左 plan 名 + 右时间轨 ----
+            Row(modifier = Modifier.fillMaxWidth()) {
+                // 左侧 plan 名称列
+                PlanLabelColumn(
+                    planItems = planItems,
+                    rowGap = rowGap,
+                    labelColumnWidth = labelColumnWidth,
+                    laneMinHeight = laneMinHeight,
+                    rowHeight = blockHeight,
                 )
+                Spacer(Modifier.width(8.dp))
+                // 右侧时间轨（Canvas）
+                Canvas(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(trackHeight + hourAxisHeight),
+                ) {
+                    val w = size.width
+                    val tlHeight = trackHeight.toPx()
+                    val minuteWidth = w / maxMinutes.toFloat()
+                    val rowPx = blockHeight.toPx()
+                    val rowGapPx = rowGap.toPx()
+                    val cornerPx = with(density) { blockCornerRadius.toPx() }
 
-                // 整点垂直分隔线（淡）
-                for (h in 0..24 step 6) {
-                    val x = h * 60 * minuteWidth
-                    drawLine(
-                        color = outlineColor.copy(alpha = 0.5f),
-                        start = Offset(x, 0f),
-                        end = Offset(x, tlHeight),
-                        strokeWidth = 1f,
-                    )
-                }
+                    // 每条 plan lane：先画淡底，再画 task 块
+                    planItems.forEachIndexed { idx, item ->
+                        val planColor = parseHexColor(item.plan.colorHex)
+                        val rowCenter = idx * (rowPx + rowGapPx) + rowPx / 2f
 
-                // 每行画一个 plan 的 task 色块
-                planItems.forEachIndexed { idx, item ->
-                    val planColor = parseHexColor(item.plan.colorHex)
-                    val rowTop = idx * (rowPx + rowGapPx)
+                        // lane 中心水平细线（plan color 30% 透明）— 当作"基线"
+                        drawLine(
+                            color = planColor.copy(alpha = 0.25f),
+                            start = Offset(0f, rowCenter),
+                            end = Offset(w, rowCenter),
+                            strokeWidth = 1f,
+                        )
 
-                    // v0.3 扁平化：直接画 task 色块（圆角）
-                    item.completions.forEach { c ->
-                        val startMin = minuteOfDay(c.plannedStart, date).coerceIn(0, maxMinutes)
-                        val endMin = minuteOfDay(c.plannedEnd, date)
-                            .coerceAtLeast(startMin + 1)
-                            .coerceAtMost(maxMinutes)
-                        if (endMin <= startMin) return@forEach
-                        val left = startMin * minuteWidth
-                        val blockWidth = (endMin - startMin) * minuteWidth
-                        drawRoundRect(
-                            color = planColor,
-                            topLeft = Offset(left, rowTop + 1),
-                            size = Size(blockWidth, rowPx - 2),
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerPx, cornerPx),
+                        // task 色块（带 plan color 淡边 + 稍深的填充）
+                        item.completions.forEach { c ->
+                            val startMin = minuteOfDay(c.plannedStart, date).coerceIn(0, maxMinutes)
+                            val endMin = minuteOfDay(c.plannedEnd, date)
+                                .coerceAtLeast(startMin + 1)
+                                .coerceAtMost(maxMinutes)
+                            if (endMin <= startMin) return@forEach
+                            val left = startMin * minuteWidth
+                            val blockWidth = (endMin - startMin) * minuteWidth
+                            val blockTop = idx * (rowPx + rowGapPx) + (rowPx - rowPx) / 2f
+                            drawRoundRect(
+                                color = planColor,
+                                topLeft = Offset(left, blockTop),
+                                size = Size(blockWidth, rowPx),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerPx, cornerPx),
+                            )
+                            // 高亮"现在"包住的任务：右边加 1px 红边
+                            if (isViewingToday &&
+                                c.status == com.wakeplan.app.domain.model.TaskStatus.IN_PROGRESS &&
+                                now.isAfter(c.plannedStart) && now.isBefore(c.plannedEnd)) {
+                                drawRoundRect(
+                                    color = nowLineColor,
+                                    topLeft = Offset(left, blockTop),
+                                    size = Size(blockWidth, rowPx),
+                                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerPx, cornerPx),
+                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f),
+                                )
+                            }
+                        }
+                    }
+
+                    // 整点垂直网格（每 3 小时一条线，颜色更深）
+                    for (h in 0..24 step 3) {
+                        val x = h * 60 * minuteWidth
+                        drawLine(
+                            color = outlineColor.copy(alpha = if (h % 6 == 0) 0.5f else 0.2f),
+                            start = Offset(x, 0f),
+                            end = Offset(x, tlHeight),
+                            strokeWidth = if (h % 6 == 0) 1.2f else 0.7f,
                         )
                     }
-                }
 
-                // 当前时刻红线（带 1px 浅光晕）
-                val nowMin = minuteOfDay(now, date).coerceIn(0, maxMinutes)
-                val nowX = nowMin * minuteWidth
-                // 浅光晕
-                drawLine(
-                    color = nowLineColor.copy(alpha = 0.25f),
-                    start = Offset(nowX - 2f, 0f),
-                    end = Offset(nowX - 2f, tlHeight),
-                    strokeWidth = 4f,
-                )
-                drawLine(
-                    color = nowLineColor.copy(alpha = 0.25f),
-                    start = Offset(nowX + 2f, 0f),
-                    end = Offset(nowX + 2f, tlHeight),
-                    strokeWidth = 4f,
-                )
-                // 主线
-                drawLine(
-                    color = nowLineColor,
-                    start = Offset(nowX, 0f),
-                    end = Offset(nowX, tlHeight),
-                    strokeWidth = 2f,
-                )
-                // 顶部圆点
-                drawCircle(
-                    color = nowLineColor,
-                    radius = with(density) { 4.dp.toPx() },
-                    center = Offset(nowX, 0f),
-                )
-
-                // 整点 tick mark + 文字（条下方）
-                val ticks = listOf(0, 6, 12, 18, 24)
-                val tickMarkHeight = with(density) { 4.dp.toPx() }
-                ticks.forEach { h ->
-                    val x = h * 60 * minuteWidth
-                    // 短 tick
-                    drawLine(
-                        color = outlineColor.copy(alpha = 0.7f),
-                        start = Offset(x, tlHeight),
-                        end = Offset(x, tlHeight + tickMarkHeight),
-                        strokeWidth = 1f,
-                    )
-                    // 文字（最后 1 个用 "24" 避免 "24:00" 溢出右边界）
-                    val text = if (h == 24) "24" else String.format("%02d:00", h)
-                    val measured = textMeasurer.measure(
-                        text = text,
-                        style = tickLabelStyle,
-                    )
-                    val textX = if (h == 24) {
-                        // 右对齐到右边界
-                        w - measured.size.width
-                    } else {
-                        // 居中
-                        x - measured.size.width / 2f
+                    // "现在"指示：顶部 + 底部 6dp 红圆点 + 1.5px 红线 + 4px 25% 光晕
+                    val nowMin = minuteOfDay(now, date).coerceIn(0, maxMinutes)
+                    val nowX = nowMin * minuteWidth
+                    if (isViewingToday) {
+                        // 顶部 6dp 圆点
+                        drawCircle(
+                            color = nowLineColor,
+                            radius = with(density) { 5.dp.toPx() },
+                            center = Offset(nowX, -with(density) { 6.dp.toPx() }),
+                        )
+                        // 光晕
+                        drawLine(
+                            color = nowLineColor.copy(alpha = 0.25f),
+                            start = Offset(nowX - 3f, 0f),
+                            end = Offset(nowX - 3f, tlHeight),
+                            strokeWidth = 6f,
+                        )
+                        drawLine(
+                            color = nowLineColor.copy(alpha = 0.25f),
+                            start = Offset(nowX + 3f, 0f),
+                            end = Offset(nowX + 3f, tlHeight),
+                            strokeWidth = 6f,
+                        )
+                        // 主线
+                        drawLine(
+                            color = nowLineColor,
+                            start = Offset(nowX, 0f),
+                            end = Offset(nowX, tlHeight),
+                            strokeWidth = 1.5f,
+                        )
                     }
-                    drawText(
-                        textMeasurer = textMeasurer,
-                        text = text,
-                        topLeft = Offset(
-                            textX,
-                            tlHeight + tickMarkHeight + 2f,
-                        ),
-                        style = tickLabelStyle,
+
+                    // 底部整点刻度 + 文字
+                    val ticks = listOf(0, 3, 6, 9, 12, 15, 18, 21, 24)
+                    val tickMarkHeight = with(density) { 4.dp.toPx() }
+                    ticks.forEach { h ->
+                        val x = h * 60 * minuteWidth
+                        val isMajor = h % 6 == 0
+                        // 短 tick（major 长一点）
+                        drawLine(
+                            color = outlineColor.copy(alpha = if (isMajor) 0.7f else 0.3f),
+                            start = Offset(x, tlHeight),
+                            end = Offset(x, tlHeight + if (isMajor) tickMarkHeight else tickMarkHeight / 2f),
+                            strokeWidth = 1f,
+                        )
+                        if (isMajor) {
+                            // major 刻度文字（每 6 小时：00/06/12/18/24）
+                            val text = if (h == 24) "24" else String.format("%02d:00", h)
+                            val measured = textMeasurer.measure(
+                                text = text,
+                                style = tickLabelStyle,
+                            )
+                            val textX = if (h == 24) w - measured.size.width else x - measured.size.width / 2f
+                            drawText(
+                                textMeasurer = textMeasurer,
+                                text = text,
+                                topLeft = Offset(textX, tlHeight + tickMarkHeight + 2f),
+                                style = tickLabelStyle,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 左侧 plan 名称列 — 与 Canvas track 等高，每条 plan 一行
+ * 用 4dp plan color 色点 + 计划名前 6 字（避免 label 跟右侧时间轨挤压）
+ */
+@Composable
+private fun PlanLabelColumn(
+    planItems: List<TodayPlanItem>,
+    rowGap: androidx.compose.ui.unit.Dp,
+    labelColumnWidth: androidx.compose.ui.unit.Dp,
+    laneMinHeight: androidx.compose.ui.unit.Dp,
+    rowHeight: androidx.compose.ui.unit.Dp,
+) {
+    androidx.compose.foundation.layout.Column(
+        verticalArrangement = Arrangement.spacedBy(rowGap),
+    ) {
+        if (planItems.isEmpty()) {
+            // 空态：24h 一行空白
+            Box(modifier = Modifier.height(laneMinHeight))
+        } else {
+            planItems.forEach { item ->
+                val planColor = parseHexColor(item.plan.colorHex)
+                Row(
+                    modifier = Modifier
+                        .height(rowHeight)
+                        .width(labelColumnWidth),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(planColor),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = item.plan.title.take(6),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
                     )
                 }
             }
