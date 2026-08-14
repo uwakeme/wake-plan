@@ -2,17 +2,11 @@ package com.wakeplan.app.ui.nav
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -21,7 +15,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.wakeplan.app.ui.common.BottomTabItem
 import com.wakeplan.app.ui.common.NavEventBus
+import com.wakeplan.app.ui.common.WakePlanBottomBar
 import com.wakeplan.app.ui.plan.CreatePlanScreen
 import com.wakeplan.app.ui.plan.PlanDetailScreen
 import com.wakeplan.app.ui.plan.PlanDetailViewModel
@@ -74,28 +70,21 @@ fun AppNavHost() {
     Scaffold(
         bottomBar = {
             if (currentRoute in TOP_LEVEL_ROUTES) {
-                NavigationBar {
-                    BottomTab.entries.forEach { tab ->
-                        val selected = backStackEntry?.destination?.hierarchy
-                            ?.any { it.route == tab.route } == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                if (currentRoute != tab.route) {
-                                    navController.navigate(tab.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                WakePlanBottomBar(
+                    currentRoute = currentRoute,
+                    onTabClick = { route ->
+                        if (currentRoute != route) {
+                            navController.navigate(route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
                                 }
-                            },
-                            icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(stringResource(tab.labelRes)) },
-                        )
-                    }
-                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    },
+                    tabs = bottomTabItems(),
+                )
             }
         }
     ) { innerPadding ->
@@ -107,6 +96,22 @@ fun AppNavHost() {
 }
 
 private val TOP_LEVEL_ROUTES: Set<String> = BottomTab.entries.map { it.route }.toSet()
+
+/**
+ * 把 [BottomTab] enum 映射成 [BottomTabItem]，供 [WakePlanBottomBar] 用
+ *
+ * 这里集中做"图标 + 标签字符串"的转换，避免在 BottomBar 内做 stringResource() 调用
+ * （M3 体系里 stringResource 是 @Composable 函数，必须在 Composable 上下文内调）
+ */
+@Composable
+private fun bottomTabItems(): List<BottomTabItem> = BottomTab.entries.map { tab ->
+    BottomTabItem(
+        route = tab.route,
+        label = androidx.compose.ui.res.stringResource(tab.labelRes),
+        icon = tab.icon,
+        contentDescription = androidx.compose.ui.res.stringResource(tab.labelRes),
+    )
+}
 
 @Composable
 private fun AppNavGraph(
