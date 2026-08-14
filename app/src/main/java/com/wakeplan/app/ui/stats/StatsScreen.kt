@@ -1,5 +1,8 @@
 package com.wakeplan.app.ui.stats
 
+import com.wakeplan.app.ui.common.WpRadius
+
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -166,9 +169,13 @@ private fun NumberCard(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(WpRadius.lg),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -190,9 +197,13 @@ private fun NumberCard(
 private fun PerPlanList(result: StatsUseCase.StatsResult) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(WpRadius.lg),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -246,9 +257,13 @@ private fun PerPlanList(result: StatsUseCase.StatsResult) {
 private fun EmptyStatsState() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(WpRadius.lg),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
@@ -297,9 +312,13 @@ private fun PerDayLineChart(result: StatsUseCase.StatsResult) {
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(WpRadius.lg),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -425,9 +444,13 @@ private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(WpRadius.lg),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(

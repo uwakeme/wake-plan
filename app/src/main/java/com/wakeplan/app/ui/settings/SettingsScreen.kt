@@ -1,5 +1,8 @@
 package com.wakeplan.app.ui.settings
 
+import com.wakeplan.app.ui.common.WpRadius
+
+
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -516,9 +519,13 @@ private fun LeadMinutesRow(
     var expanded by remember { mutableStateOf(false) }
     val options = UserPreferences.ALLOWED_LEAD_VALUES.toList().sorted()
     Surface(
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(WpRadius.lg),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
     ) {
         Row(
             modifier = Modifier
@@ -568,9 +575,13 @@ private fun ToggleRow(
     onChange: (Boolean) -> Unit,
 ) {
     Surface(
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(WpRadius.lg),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -602,9 +613,13 @@ private fun SettingsItem(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(WpRadius.lg),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),

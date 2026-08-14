@@ -1,5 +1,8 @@
 package com.wakeplan.app.ui.template
 
+import com.wakeplan.app.ui.common.WpRadius
+
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -149,9 +152,13 @@ fun TemplateDetailScreen(
 @Composable
 private fun TemplateHeader(template: PlanTemplate) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(WpRadius.xxl),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
@@ -192,9 +199,13 @@ private fun TemplateHeader(template: PlanTemplate) {
 @Composable
 private fun TaskPreviewRow(task: Task) {
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(WpRadius.lg),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        ),
+        shadowElevation = 1.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
