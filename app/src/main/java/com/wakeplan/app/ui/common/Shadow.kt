@@ -84,7 +84,7 @@ fun Modifier.wpShadow(
  * "卡" 的合集：阴影 + 边线 — 一个 modifier 调用就完事
  *
  * 视觉刷新 v0.4 的核心样式 token，全屏统一：
- * - 卡片 surface: 纯白（dark 时是 WpBgCardDark）
+ * - 卡片 surface: warm cream #FAF8F4（dark 时是 WpBgCardDark）— 不再是纯白，跟 page #F2F0EC 同色族
  * - 边线: 1px subtle 3% black / 8% white
  * - 圆角: 24dp（plan card）/ 16dp（task card）/ 12dp（segment card）
  * - 阴影: sm 默认

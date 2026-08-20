@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,7 +31,8 @@ import androidx.compose.ui.unit.sp
  * Wake Plan — 底部 4 tab 栏（v0.4 视觉刷新）
  *
  * 替代 M3 `NavigationBar`，匹配 design HTML 的玻璃模糊风格：
- * - 背景：`rgba(250,250,248,0.95)`（light）/ `#121A2C`（dark）+ 顶上 0.5px 边线
+ * - 背景：`MaterialTheme.colorScheme.surfaceContainerLow`（warm cream，跟 page 同色族）
+ * - 顶上 0.5px outlineVariant 边线
  * - 4 tab：今天 / 计划 / 统计 / 设置
  * - active tab：icon + label = onSurface
  * - inactive tab：icon + label = onSurfaceVariant
@@ -54,8 +54,7 @@ fun WakePlanBottomBar(
     tabs: List<BottomTabItem>,
     modifier: Modifier = Modifier,
 ) {
-    val isLight = isLightTheme()
-    val containerColor = if (isLight) Color(0xF2FAFAF8) else Color(0xFF121A2C)
+    val containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     val borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
 
     androidx.compose.foundation.layout.Box(
@@ -131,13 +130,3 @@ data class BottomTabItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val contentDescription: String? = null,
 )
-
-/** 简易亮/暗判断：看主题背景的近似亮度 */
-@Composable
-private fun isLightTheme(): Boolean {
-    val r = MaterialTheme.colorScheme.background.red
-    val g = MaterialTheme.colorScheme.background.green
-    val b = MaterialTheme.colorScheme.background.blue
-    val luminance = 0.299f * r + 0.587f * g + 0.114f * b
-    return luminance > 0.5f
-}

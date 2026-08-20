@@ -14,9 +14,9 @@ val WpPrimaryHoverLight = Color(0xFFA86F14)
 val WpPrimaryLightSurface = Color(0xFFFCEED4) // 10% alpha blend to bg
 
 val WpBgLight = Color(0xFFF2F0EC)
-val WpBgElevatedLight = Color(0xFFFAFAF8)
+val WpBgElevatedLight = Color(0xFFF6F4EF)
 val WpBgOverlayLight = Color(0xFFEAE7E2)
-val WpBgCardLight = Color(0xFFFFFFFF)
+val WpBgCardLight = Color(0xFFFAF8F4)
 val WpBgInputLight = Color(0xFFEAE7E2)
 
 val WpTextPrimaryLight = Color(0xFF18160F)
