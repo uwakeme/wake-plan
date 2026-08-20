@@ -68,26 +68,26 @@
 - **AC-01.2** Given 表单填写完毕 **When** 点击保存 **Then** 计划出现在列表中，并在主屏"当前时刻"视图空窗时显示（无任务时不阻塞）
 - **AC-01.3** 标题为空时按钮置灰；超长输入提示"标题不能超过 30 字"而非弹 modal
 
-#### US-02 [P0] 时间分段
-**As a** 用户 **I want to** 把一天按时间段切分（如"晨练 06:30-07:30"、"学习 09:00-12:00"）**so that** 我能按段填充任务，而不是逐分钟安排。
+#### US-02 [P0] 任务时间安排
+**As a** 用户 **I want to** 为每个任务直接设置起止时间（如"晨跑 06:35-07:05"）**so that** 不用先建段再塞任务，任务自身就是时间安排的最小单元。
 
-- **AC-02.1** 计划详情页提供"时间段管理" Tab，可新增 / 编辑 / 删除段
-- **AC-02.2** 段定义包含：`startTime`（HH:mm, 当天内）、`endTime`（HH:mm, 必须 > startTime）、`title`（可空）、`repeatRule`（仅一次 / 工作日 / 自定义星期）
-- **AC-02.3** 同一计划内两个时间段重叠时，编辑器内联提示"与段 X 重叠"，但允许保存（不强制 modal）
-- **AC-02.4** 跨午夜段（如 23:00-01:00）按"次日 01:00"处理，写入数据库时按"开始日 + endTime"的 dayOffset 计算
+- **AC-02.1** 计划详情页直接展示任务列表（按时间排序），可新增 / 编辑 / 删除任务
+- **AC-02.2** 任务字段包含：`title`（必填）、`startMinutes`（0..1440，当天分钟数）、`endMinutes`（必须 > startMinutes，可 > 1440 表示跨午夜）、`repeatRule`（仅一次 / 每天 / 工作日 / 自定义星期）、`customDays`（仅 CUSTOM 时填）、`isLocked`（boolean，默认 false）、`note`（可选）
+- **AC-02.3** 同一计划内两个任务时间重叠时，编辑器内联提示"与任务 X 重叠"，但允许保存（不强制 modal）
+- **AC-02.4** 跨午夜任务（如 23:00-00:30）写入时 `endMinutes` 可 > 1440，运行时按 dayOffset 折算到次日
 
-#### US-03 [P0] 段内任务绑定
-**As a** 用户 **I want to** 在某段时间段内绑定多个任务（"晨练"段里有"热身 5min + 跑步 30min + 拉伸 5min"）**so that** 段可以承载多任务组合。
+#### US-03 [P0] 任务排序与链式延期
+**As a** 用户 **I want to** 任务按时间自动排列，超时后后续任务自动顺延 **so that** 不用手动逐个调整时间。
 
-- **AC-03.1** 段详情页任务列表，按预设顺序展示；可拖拽重排
-- **AC-03.2** 每个任务字段：`title`（必填）、`plannedDuration`（分钟，整数）、`autoExtend`（boolean，默认 true）、`isLocked`（boolean，默认 false）、`note`（可选）
-- **AC-03.3** 总任务时长超过段时长时，段头显示红字提示"+ X 分钟超载"，可保存但有警告
-- **AC-03.4** `isLocked=true` 的任务不参与自动延期，永远钉在原定时点
+- **AC-03.1** 计划详情页任务列表按 `(startMinutes, orderInPlan)` 排序展示
+- **AC-03.2** 所有未锁定任务（`isLocked=false`）都参与链式碰撞延期；`isLocked=true` 的任务钉死在原定时点，链式延期到此停止
+- **AC-03.3** 总任务时长超过可用时间时，冲突检测内联提示，但不阻止保存
+- **AC-03.4** `isLocked=true` 的任务在列表中有明显的"钉死"视觉标记
 
 #### US-04 [P0] 任务模板
 **As a** 用户 **I want to** 把常用任务组合存为模板（如"标准晨练"）**so that** 新计划时直接套用。
 
-- **AC-04.1** 计划完成后 / 段详情页提供"另存为模板"操作
+- **AC-04.1** 计划详情页提供"另存为模板"操作
 - **AC-04.2** 模板库独立 Tab 入口，预置 3 个模板：标准晨练 / 标准学习 / 周末阅读
 - **AC-04.3** 从模板新建计划时，可编辑标题、颜色、起始日期；任务列表一次性灌入
 
@@ -95,33 +95,33 @@
 **As a** 用户 **I want to** 点击任务卡片"开始"按钮 **so that** 记录实际开始时间。
 
 - **AC-05.1** 任务卡片大点击区显示"开始"按钮；点击后写入 `TaskCompletion` 行：`taskInstanceId`, `actualStart = now`, `status = IN_PROGRESS`
-- **AC-05.2** 任务进入"进行中"状态后：按钮变"完成"、底部出现倒计时（`plannedDuration - elapsed`，超时变红 + 显示 "+X 分钟"）
-- **AC-05.3** 同时只允许一个任务处于 IN_PROGRESS 状态；启动新任务前若存在进行中任务，需先"完成 / 暂停"老任务（提示但不弹强制 modal——文案："X 还在进行，先完成它？"+ 两个按钮）
+- **AC-05.2** 任务进入"进行中"状态后：按钮变"完成"、底部出现倒计时（`endMinutes - now`，超时变红 + 显示 "+X 分钟"）
+- **AC-05.3** 同时只允许一个任务处于 IN_PROGRESS 状态；启动新任务前若存在进行中任务，需先"完成 / 跳过"老任务（提示但不弹强制 modal——文案："X 还在进行，先完成它？"+ 两个按钮）
 
-#### US-06 [P0] 完成任务 + 自动延期
-**As a** 用户 **I want to** 完成任务后，应用根据溢出时间和 `autoExtend` 标志决定后续任务是否后移 **so that** 不会一路手动改时间。
+#### US-06 [P0] 完成任务 + 链式延期
+**As a** 用户 **I want to** 完成任务后，应用根据溢出时间自动后移后续未锁定任务 **so that** 不会一路手动改时间。
 
-- **AC-06.1** 任务完成时，计算 `overrun = actualEnd - plannedEnd`（任务级），单位精确到分钟，向下取整
-- **AC-06.2** 按顺序遍历同一计划同日的后续"未完成"任务：
-  - 若 `autoExtend=true && isLocked=false` → 调整 `plannedStart += overrun`，并继续级联
-  - 若任一任务 `isLocked=true` 或 `autoExtend=false` → **立即停止级联**，剩余任务原位保留
-- **AC-06.3** 写入 `TaskCompletion` 时记录 `overrunAppliedTo` 字段（受影响任务 id 数组），便于回溯
+- **AC-06.1** 任务完成时，计算 `overrun = max(0, actualEnd - plannedEnd)`（任务级），单位精确到分钟，向下取整
+- **AC-06.2** 按时间顺序遍历同一计划同日的后续"未开始"任务：
+  - 若 `isLocked=false` → 调整 `startMinutes += overrun`、`endMinutes += overrun`，继续级联
+  - 若遇到 `isLocked=true` → **立即停止级联**，锁定任务及其后任务原位保留
+- **AC-06.3** 写入 `TaskCompletion` 时记录受影响任务 id 列表，便于回溯
 - **AC-06.4** 自动延期后通知推送：根据用户设置，可选"已延期 X 分钟 / Y 任务已推迟到 HH:mm"
 - **AC-06.5** Edge case：A 计划内的延期**不传播**到 B 计划的同期任务（B 独立计时）
 
 #### US-07 [P0] 当前时刻聚合视图
 **As a** 用户 **I want to** 打开 App 直接看到当前时间正在进行的任务（跨多个计划）**so that** 一眼掌握此刻该做什么。
 
-- **AC-07.1** 主屏布局：顶部"现在 HH:mm" + 滚动卡片列表，按计划分组；卡片显示任务名、所属计划（带颜色标签）、剩余时间 / 进行中状态
-- **AC-07.2** 同一时段（A 计划"晨练"段 + B 计划"晨练"段）同时存在 → 两张卡片都展示，互不覆盖，按计划排序规则显示（用户可拖动排序）
-- **AC-07.3** 主屏支持"今日剩余"时间线在底部一行，看到下一个即将开始的任务
+- **AC-07.1** 主屏布局：顶部"现在 HH:mm" + 巨型当前任务卡 + 24h 水平时间线（跨计划聚合）+ 后续任务列表；卡片显示任务名、所属计划（带颜色标签）、剩余时间 / 进行中状态
+- **AC-07.2** 同一时点存在多个计划任务 → 时间线上以色块叠加展示，当前任务以最大卡片突出
+- **AC-07.3** 主屏支持"今日"水平时间线，红线标记当前时刻，一眼看到后续安排
 - **AC-07.4** 没有任何任务时显示空白态文案："今天还没有安排，去创建计划 →"
 
 #### US-08 [P1] 时间线预览
 **As a** 用户 **I want to** 在计划详情页看到一整天的所有任务在时间轴上的分布 **so that** 我能提前发现超载或空白。
 
-- **AC-08.1** 计划详情"时间线" Tab：水平 24 小时时间轴，每小时一格，任务以色块显示，长度按 `plannedDuration`
-- **AC-08.2** 段以浅色背景显示，任务以深色块在段内显示
+- **AC-08.1** 计划详情页顶部统计栏 + 任务列表；未来可扩展"时间线预览"模式（水平 24h 时间轴）
+- **AC-08.2** 任务以色块在时间轴上显示，长度按 `durationMinutes`，颜色按所属计划
 - **AC-08.3** 支持左右滑动切换日期（默认今天 + 未来 7 天可预览）
 - **AC-08.4** 点击任一色块跳转至该任务编辑界面
 - **AC-08.5** 滚动到底显示"明天 / 后天"快速跳转锚点
@@ -129,8 +129,8 @@
 #### US-09 [P0] 任务冲突检测
 **As a** 用户 **I want to** 在新增任务时，App 提醒我与现有任务的冲突，**so that** 我能避免日程打架。
 
-- **AC-09.1** 任务编辑表单实时检测：当前任务的 `[plannedStart, plannedStart + plannedDuration]` 与同计划 / 其他计划的任务时间区间重叠时，编辑器底部出现折叠面板"⚠ X 个冲突"
-- **AC-09.2** 展开面板显示冲突任务清单：对方计划色 + 标题 + 时间段；用户可分别点击跳转
+- **AC-09.1** 任务编辑表单实时检测：当前任务的 `[startMinutes, endMinutes]` 与同计划 / 其他计划的任务时间区间重叠时，编辑器底部出现折叠面板"⚠ X 个冲突"
+- **AC-09.2** 展开面板显示冲突任务清单：对方计划色 + 标题 + 时间区间；用户可分别点击跳转
 - **AC-09.3** **不弹模态**，冲突只是提示；保存按钮永远可点——这是产品原则：能用正确实现解决的，不用 modal 兜底
 - **AC-09.4** 冲突来源区分"同计划内"（强烈警告，红色）和"跨计划"（柔和提示，黄色）
 
@@ -150,7 +150,7 @@
 **As a** 用户 **I want to** 把所有计划数据导出成 JSON 文件备份 **so that** 换机或重装不丢数据。
 
 - **AC-11.1** 设置页"导出数据"按钮，调用系统 SAF（Storage Access Framework）让用户选保存位置
-- **AC-11.2** 导出 JSON 包含全部计划、段、任务、模板、完成记录
+- **AC-11.2** 导出 JSON 包含全部计划、任务、模板、完成记录
 - **AC-11.3** 备份文件可设 AES 加密（用户自定义 passphrase，可选）
 - **AC-11.4** 同样入口支持"从备份导入"，导入前显示影响范围预览（"将影响 X 个计划、Y 个任务"）
 
@@ -240,27 +240,20 @@ data class Plan(
 )
 
 @Entity
-data class TimeSegment(
-    @PrimaryKey val id: String,
-    val planId: String,                  // FK -> Plan
-    val title: String?,
-    val startMinutes: Int,               // 0..1440, 跨日允许 >1440
-    val endMinutes: Int,
-    val repeatRule: RepeatRule,          // enum: ONCE / WEEKDAYS / CUSTOM
-    val customDays: Set<DayOfWeek> = emptySet()
-)
-
-@Entity
 data class Task(
     @PrimaryKey val id: String,
-    val segmentId: String,               // FK -> TimeSegment
+    val planId: String,                  // FK -> Plan
     val title: String,
-    val plannedDurationMinutes: Int,
-    val autoExtend: Boolean,
-    val isLocked: Boolean,
-    val orderInSegment: Int,
-    val note: String?
-)
+    val startMinutes: Int,               // 0..1440，跨日允许 >1440
+    val endMinutes: Int,                 // 必须 > startMinutes
+    val repeatRule: RepeatRule,          // enum: ONCE / DAILY / WEEKDAYS / CUSTOM
+    val customDays: Set<DayOfWeek> = emptySet(),
+    val isLocked: Boolean = false,       // true = 钉死，链式延期到此停止
+    val orderInPlan: Int,
+    val note: String? = null
+) {
+    val durationMinutes: Int get() = endMinutes - startMinutes
+}
 
 @Entity
 data class PlanTemplate(
@@ -268,7 +261,7 @@ data class PlanTemplate(
     val title: String,
     val colorHex: String,
     val isBuiltIn: Boolean,
-    val segments: List<TemplateSegment>  // @Embedded 或关联表
+    val tasks: List<TemplateTask>        // @Embedded 或关联表
 )
 
 @Entity
@@ -283,7 +276,7 @@ data class TaskCompletion(
     val actualEnd: LocalDateTime?,
     val status: TaskStatus,              // PENDING / IN_PROGRESS / COMPLETED / SKIPPED
     val overrunMinutes: Int = 0,         // actualEnd - plannedEnd
-    val affectedTasks: List<String> = emptyList()
+    val affectedTaskIds: List<String> = emptyList()
 )
 ```
 
@@ -292,45 +285,44 @@ data class TaskCompletion(
 **触发时机**：任务状态变更 `IN_PROGRESS -> COMPLETED`
 
 ```
-function applyAutoExtend(completedTask, allTasksInPlan, scheduleDate):
+function applyChainExtend(completedTask, allTasks, scheduleDate):
     overrun = max(0, minutesBetween(completedTask.plannedEnd, completedTask.actualEnd))
     if overrun == 0:
         return []
     
     affected = []
-    cursor = completedTask
-    remainingTasks = allTasksInPlan
+    remainingTasks = allTasks
                         .where(t => t.planId == completedTask.planId
                                  && t.scheduledDate == scheduleDate
                                  && t.status == PENDING
-                                 && t.orderInSegment > completedTask.orderInSegment)
-                        .sortedBy(t => (t.plannedStart, t.orderInSegment))
+                                 && t.startMinutes > completedTask.startMinutes)
+                        .sortedBy(t => (t.startMinutes, t.orderInPlan))
     
     for nextTask in remainingTasks:
-        if nextTask.isLocked || !nextTask.autoExtend:
-            break                              // 停止级联
-        nextTask.plannedStart += overrun
-        nextTask.plannedEnd += overrun
+        if nextTask.isLocked:
+            break                          // 钉死任务，停止级联
+        nextTask.startMinutes += overrun
+        nextTask.endMinutes += overrun
         affected.append(nextTask)
     
     persist(affected)
-    emit AutoExtendEvent(overrun, affected)
+    emit ChainExtendEvent(overrun, affected)
     return affected
 ```
 
 **关键约束**：
 - 单计划内级联，跨计划独立
-- 任一环节遇到 `isLocked` 或 `autoExtend=false` 即终止后续级联
+- 任一环节遇到 `isLocked=true` 即终止后续级联
 - 已 `IN_PROGRESS` 的任务不参与级联（避免把用户正在进行的工作推后）
 - 已 `COMPLETED / SKIPPED` 的任务不参与
-- 跨段任务（如段尾任务溢出到下一段空档）：不修改所属段，**仅挪任务时间**——保留段落定义
+- 跨午夜任务：`endMinutes` 可 > 1440，运行时按 dayOffset 折算到次日
 
 ### 4.4 Conflict Detection Algorithm · 冲突检测
 
 ```
 function detectConflicts(candidateTask, allTasks):
-    candidateStart = candidateTask.plannedStart
-    candidateEnd = candidateTask.plannedStart + candidateTask.plannedDuration
+    candidateStart = candidateTask.startMinutes
+    candidateEnd = candidateTask.endMinutes
     
     samePlan = []
     crossPlan = []
@@ -338,8 +330,8 @@ function detectConflicts(candidateTask, allTasks):
     for other in allTasks.where(t => t.id != candidateTask.id
                               && t.scheduledDate == candidateTask.scheduledDate
                               && t.status in [PENDING, IN_PROGRESS]):
-        otherStart = other.plannedStart
-        otherEnd = other.plannedStart + other.plannedDuration
+        otherStart = other.startMinutes
+        otherEnd = other.endMinutes
         
         if otherStart < candidateEnd && otherEnd > candidateStart:
             if other.planId == candidateTask.planId:
@@ -394,7 +386,7 @@ function detectConflicts(candidateTask, allTasks):
 
 | 阶段 | 范围 | 预计周期 | 发布形式 |
 |---|---|---|---|
-| **v0.1 MVP** | 计划 CRUD · 时间段 · 任务绑定 · 模板（基础）· 开始/完成 · 自动延期 · 当前时刻视图 · 冲突提示（内联）· 本地通知（任务开始+超时）· JSON 备份导出 | 8–10 周（个人节奏） | APK 直装 / 内测 |
+| **v0.1 MVP** | 计划 CRUD · 任务时间安排 · 模板（基础）· 开始/完成/跳过 · 链式延期 · 当前时刻视图（含时间线）· 冲突提示（内联）· 本地通知（任务开始+超时）· JSON 备份导出 | 8–10 周（个人节奏） | APK 直装 / 内测 |
 | **v0.2** | 时间线预览 · 模板库 UX 打磨 · 通知渠道细化 · 完成统计面板 | 4–6 周 | 同上 |
 | **v0.3** | 桌面小部件（AppWidget）· 快捷设置磁贴（Quick Settings Tile） | 3–4 周 | 同上 |
 | **v1.0 正式** | 隐私政策完善 · 应用市场上架（小米/华为/Play 商店）· 完整 E2E 测试 | 4 周 | 应用市场 |
@@ -413,7 +405,7 @@ function detectConflicts(candidateTask, allTasks):
 | Room 数据库迁移 | 低 | 高 | 严格版本号 + 自动化迁移测试（androidx.room.testing） |
 | 备份导出跨设备兼容（不同 Android 版本时间格式） | 低 | 中 | 使用 ISO-8601 + java.time；版本号字段嵌入备份 JSON |
 | 单设备 SQLite 容量上限 | 低 | 低 | 设计目标 5 年 ≤ 50MB，留足余量 |
-| 跨午夜段计算 bug | 中 | 中 | 单独抽 `TimeWindowCalculator` 用例；可视化预览让用户看到实际日期归属 |
+| 跨午夜任务计算 bug | 中 | 中 | 单独抽 `TimeWindowCalculator` 用例；任务编辑器预览实际日期归属 |
 
 ### 5.3 Open Questions · 待定问题
 
@@ -435,12 +427,12 @@ function detectConflicts(candidateTask, allTasks):
 
 | 术语 | 定义 |
 |---|---|
-| 计划 (Plan) — 数据模型 | 一组目标的容器，如"健身计划"。一条计划下含多个时间段。**注意**：这是数据模型实体名（Kotlin `data class Plan`），与产品名 "Wake Plan" 区分 |
-| 时间段 (TimeSegment) | 一天中的一段时间，如"晨练 06:30-07:30"。可重复 |
-| 任务 (Task) | 时间段内的具体可执行项，如"跑步 30min" |
-| 任务实例 (TaskInstance) | 任务在某一天的具象化（同一任务在周一和周二是两个实例） |
-| 自动延期 (Auto-Extend) | 当前任务超时时，把后续同计划任务后移到完成时间的能力 |
-| 当前时刻视图 (TodayView) | 主屏，按当前时间过滤出跨计划的活跃任务 |
+| 计划 (Plan) — 数据模型 | 一组目标的容器，如"健身计划"。一条计划下含多个任务。**注意**：这是数据模型实体名（Kotlin `data class Plan`），与产品名 "Wake Plan" 区分 |
+| 任务 (Task) | 计划下的具体可执行项，自带起止时间（`startMinutes`/`endMinutes`）、重复规则、锁定标记，如"晨跑 06:35-07:05" |
+| 任务实例 (TaskCompletion) | 任务在某一天的具象化执行记录（同一任务在周一和周二是两个实例） |
+| 链式延期 (Chain Extend) | 当前任务超时时，把同计划后续未锁定任务依次后移到完成时间的机制；遇到 `isLocked=true` 的钉死任务即停止 |
+| 钉死 (Locked) | 任务的 `isLocked=true` 属性，表示该任务时间固定，链式延期碰到它就停止传播 |
+| 当前时刻视图 (TodayView) | 主屏，按当前时间过滤出跨计划的活跃任务，展示时间线和即将开始的任务 |
 
 ### A.2 参考竞品
 
@@ -450,7 +442,7 @@ function detectConflicts(candidateTask, allTasks):
 - **TimeBloc** (iOS)：时间块 + 任务（仅 iOS，无 Android）
 - **Sectograph**：圆形时间线（Android 老牌，体验陈旧）
 
-本产品差异化：任务级 auto-extend + 多计划时间线聚合 + 零外联。
+本产品差异化：扁平任务链式延期 + 多计划时间线聚合 + 钉死机制 + 零外联。
 
 ### A.3 文档版本
 
