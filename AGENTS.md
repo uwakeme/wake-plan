@@ -16,7 +16,7 @@ Wake Plan — 本地优先的多计划时间管理 Android App。
 
 - `app/` — Android app module（Kotlin / Compose / Hilt / Room / SQLCipher）
 - `docs/` — PRD / 路线图 / 计划文档
-- `design/` — UI 设计稿（HTML + CSS）
+- `designs/` — UI 设计稿（HTML 原型 + 界面截图）
 - `app/schemas/` — Room schema 导出（commit 上去便于 Migration 测试）
 - `gradle/libs.versions.toml` — 依赖版本目录
 
@@ -33,11 +33,11 @@ Wake Plan — 本地优先的多计划时间管理 Android App。
 - JVM 单元测试：`./gradlew :app:testDebugUnitTest`（JUnit 5 + MockK）
 - 仪器测试：`./gradlew :app:connectedAndroidTest`（需设备）
 - 新增 behavior 必须同步加测试（参考同包已有 `*Test.kt`）
-- 所有测试通过再开 PR
+- 所有测试通过再提交推送
 
-## PR & commit conventions
+## Commit conventions
 
-- 主分支 `main`；从 main checkout feature 分支，不要直接 push
+- 主分支 `main`；初期单人开发阶段直接在 main 提交并推送，不建 feature 分支（等多人协作时再恢复分支 + PR 流程）
 - 一个 commit 一个逻辑单元，不要大杂烩
 - 平实中文 commit 消息，无 emoji
 - 类型前缀：`feat:` / `fix:` / `docs:` / `refactor:` / `test:`
