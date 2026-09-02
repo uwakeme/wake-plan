@@ -36,6 +36,6 @@ object WpRadius {
     val md: Dp = 12.dp
     val lg: Dp = 16.dp
     val xl: Dp = 22.dp
-    val xxl: Dp = 24.dp       // PlanCard 视觉刷新用的"bold" 圆角
+    val xxl: Dp = 28.dp       // PlanCard 视觉刷新用的"bold" 圆角
     val full: Dp = 9999.dp     // pill / 圆形
 }

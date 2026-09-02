@@ -87,6 +87,9 @@
     <string name="today_undo_action">撤销</string>
     <string name="today_conflict">与 %1$s 冲突 %2$d 分钟</string>
     <string name="today_conflict_other_plan">其他计划</string>
+    <string name="today_section_in_progress">进行中</string>
+    <string name="today_section_upcoming">即将开始</string>
+    <string name="today_section_completed">已完成</string>
 
     <!-- ============================================================ -->
     <!-- Plan 列表 / 详情 / 创建 -->
@@ -120,8 +123,15 @@
     <string name="plan_detail_repeat_capsule">%1$s · 锁定</string>
     <string name="plan_detail_no_tasks_in_segment">段内还没有任务</string>
     <string name="plan_detail_add_task">添加任务</string>
+    <string name="plan_detail_today_completed">今日完成</string>
+    <string name="plan_detail_week_completed">本周完成</string>
+    <string name="plan_detail_total_completed">总计完成</string>
+    <string name="plan_detail_section_schedule">时间安排</string>
+    <string name="plan_detail_cd_more">更多选项</string>
+    <string name="plan_detail_edit">编辑</string>
 
     <string name="plan_create_title">新建计划</string>
+    <string name="plan_edit_title">编辑计划</string>
     <string name="plan_create_section_color">颜色</string>
     <string name="plan_create_section_start_date">起始日期</string>
     <string name="plan_create_default_today">%1$s （默认今天）</string>
@@ -207,6 +217,7 @@
 
     <string name="settings_section_backup">数据备份</string>
     <string name="settings_backup_intro">把数据导出到本地文件，或从备份文件恢复。\n加密备份用 AES-256 + PBKDF2，密码请妥善保管。</string>
+    <string name="settings_backup_export_title">导出备份</string>
     <string name="settings_backup_export_plain">导出明文</string>
     <string name="settings_backup_export_encrypted">导出加密</string>
     <string name="settings_backup_import">导入备份</string>
@@ -245,11 +256,18 @@
     <string name="stats_title">统计</string>
     <string name="stats_range_7d">近 7 天</string>
     <string name="stats_range_30d">近 30 天</string>
+    <string name="stats_range_week">本周</string>
+    <string name="stats_range_month">本月</string>
     <string name="stats_metric_completed">已完成</string>
     <string name="stats_metric_on_time_rate">准时率</string>
     <string name="stats_metric_avg_overrun">平均延期</string>
     <string name="stats_metric_avg_overrun_empty">—</string>
     <string name="stats_metric_skipped_missed">跳过/未完成</string>
+    <string name="stats_metric_total_duration">总时长</string>
+    <string name="stats_metric_tasks_done">完成任务</string>
+    <string name="stats_metric_focus">专注度</string>
+    <string name="stats_metric_streak">连续天数</string>
+    <string name="stats_streak_days">%1$d 天</string>
     <string name="stats_per_plan_title">按计划完成数</string>
     <string name="stats_per_plan_empty">这段时间还没完成任务</string>
     <string name="stats_empty_title">暂无数据</string>
@@ -281,6 +299,7 @@
     <!-- 设置页底部「关于」section：隐私政策 + 版本 + 源代码 -->
     <!-- ============================================================ -->
     <string name="about_section">关于</string>
+    <string name="about_tagline">让计划更自由</string>
     <string name="about_privacy_policy_title">隐私政策</string>
     <string name="about_privacy_policy_summary">不上传数据，本地加密</string>
     <string name="about_privacy_policy_content">Wake Plan 是一款本地优先的时间管理 App：\n\n• 不发任何网络请求，不收集任何使用数据\n• 所有数据存于本机，SQLCipher AES-256 加密\n• 备份由用户主动控制位置（SAF 选取）\n• 无任何第三方统计/广告/追踪 SDK\n\n如果发现问题，欢迎到 GitHub repo 提 issue 或 PR。</string>

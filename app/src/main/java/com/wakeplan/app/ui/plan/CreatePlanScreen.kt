@@ -68,6 +68,7 @@ fun CreatePlanScreen(
     val colorHex by viewModel.colorHex.collectAsStateWithLifecycle()
     val startDate by viewModel.startDate.collectAsStateWithLifecycle()
     val isValid by viewModel.isValid.collectAsStateWithLifecycle()
+    val isEditMode = viewModel.isEditMode
 
     val startDateText = remember(startDate) {
         startDate.format(DateTimeFormatter.ofPattern("M月d日"))
@@ -82,7 +83,12 @@ fun CreatePlanScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.plan_create_title)) },
+                title = {
+                    Text(
+                        if (isEditMode) stringResource(R.string.plan_edit_title)
+                        else stringResource(R.string.plan_create_title)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
@@ -124,7 +130,10 @@ fun CreatePlanScreen(
                 enabled = isValid,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(stringResource(R.string.task_save))
+                Text(
+                    if (isEditMode) stringResource(R.string.common_save)
+                    else stringResource(R.string.task_save)
+                )
             }
         }
     }

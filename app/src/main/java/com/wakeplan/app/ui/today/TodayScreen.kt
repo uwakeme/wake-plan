@@ -1,7 +1,15 @@
 package com.wakeplan.app.ui.today
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,106 +21,99 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.R
 import com.wakeplan.app.domain.model.Plan
-import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.usecase.TaskConflict
 import com.wakeplan.app.ui.common.HighlightBus
 import com.wakeplan.app.ui.common.WpAnimateInContainer
 import com.wakeplan.app.ui.common.WpRadius
 import com.wakeplan.app.ui.common.parseHexColor
-import com.wakeplan.app.ui.plan.PlanIconKey
+import com.wakeplan.app.ui.theme.WpSuccessDark
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodayScreen() {
-    val context = androidx.compose.ui.platform.LocalContext.current
     val viewModel: TodayViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val highlightedTaskId by HighlightBus.highlightedTaskId.collectAsState()
     val undoableAction by viewModel.undoableAction.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val snackbarScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.ensureTodayCompletions()
     }
 
-    // Deep link 触发的高亮：滚动到对应 plan item + 5s 后清掉
     LaunchedEffect(highlightedTaskId, state.planItems) {
         val targetId = highlightedTaskId ?: return@LaunchedEffect
         val targetIndex = state.planItems.indexOfFirst { planItem ->
             planItem.tasks.any { it.id == targetId }
         }
         if (targetIndex >= 0) {
-            listState.animateScrollToItem(targetIndex + 1)  // +1 是 timeline item
+            listState.animateScrollToItem(targetIndex + 2)
             delay(5_000L)
             HighlightBus.clear()
         }
     }
 
-    // 撤销 Snackbar：5s 窗口，点了撤销调 viewModel.undo()
     val startedMsg = stringResource(R.string.today_status_started)
     val completedMsg = stringResource(R.string.stats_metric_completed)
     val skippedMsg = stringResource(R.string.today_status_skipped)
@@ -128,7 +129,7 @@ fun TodayScreen() {
             message = message,
             actionLabel = undoLabel,
             withDismissAction = true,
-            duration = SnackbarDuration.Short,  // ~5s
+            duration = SnackbarDuration.Short,
         )
         when (result) {
             SnackbarResult.ActionPerformed -> viewModel.undo()
@@ -136,61 +137,21 @@ fun TodayScreen() {
         }
     }
 
-    val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     val isViewingToday by viewModel.isViewingToday.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (isViewingToday) {
-                            stringResource(R.string.today_title_today, state.date.format(dateFmt(context)))
-                        } else {
-                            stringResource(R.string.today_title_other, state.date.format(dateFmt(context)))
-                        },
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = { viewModel.switchDate(state.date.minusDays(1)) },
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
-                            contentDescription = stringResource(R.string.today_cd_prev_day),
-                        )
-                    }
-                },
-                actions = {
-                    if (!isViewingToday) {
-                        TextButton(onClick = { viewModel.goToToday() }) {
-                            Text(stringResource(R.string.today_btn_today))
-                        }
-                    }
-                    IconButton(
-                        onClick = { viewModel.switchDate(state.date.plusDays(1)) },
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                            contentDescription = stringResource(R.string.today_cd_next_day),
-                        )
-                    }
-                },
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-    ) { padding ->
+        snackbarHost = { SnackbarHost(snackbarHostState) { data -> WpSnackbar(data) } },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { _ ->
         if (state.planItems.isEmpty()) {
             EmptyTodayState(
                 isViewingToday = isViewingToday,
                 date = state.date,
-                modifier = Modifier.padding(padding),
             )
         } else {
             TodayContent(
                 state = state,
                 isViewingToday = isViewingToday,
-                contentPadding = padding,
                 listState = listState,
                 highlightedTaskId = highlightedTaskId,
                 onStartTask = viewModel::onStartTask,
@@ -201,71 +162,527 @@ fun TodayScreen() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TodayContent(
     state: TodayUiState,
     isViewingToday: Boolean,
-    contentPadding: PaddingValues,
     listState: androidx.compose.foundation.lazy.LazyListState,
     highlightedTaskId: String?,
     onStartTask: (String) -> Unit,
     onCompleteTask: (String) -> Unit,
     onSkipTask: (String) -> Unit,
 ) {
+    val currentTask = state.todayTaskItems.firstOrNull { item ->
+        item.completion.status == TaskStatus.IN_PROGRESS
+    } ?: state.todayTaskItems.firstOrNull { item ->
+        // PENDING 且开始时间在过去 30 分钟内（已经"应开始"但还没开始）
+        item.completion.status == TaskStatus.PENDING &&
+                !item.completion.plannedStart.isAfter(state.now) &&
+                item.completion.plannedStart.isAfter(state.now.minusMinutes(30))
+    }
+
+    val pendingTasks = state.todayTaskItems.filter { it.completion.status == TaskStatus.PENDING }
+    val completedTasks = state.todayTaskItems.filter {
+        it.completion.status == TaskStatus.COMPLETED || it.completion.status == TaskStatus.SKIPPED
+    }
+    val inProgressOrCurrent = state.todayTaskItems.filter {
+        it.completion.status == TaskStatus.IN_PROGRESS
+    }
+
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            top = contentPadding.calculateTopPadding() + 8.dp,
-            bottom = contentPadding.calculateBottomPadding() + 16.dp,
-            start = 16.dp,
-            end = 16.dp,
+            top = 16.dp,
+            bottom = 100.dp,
+            start = 0.dp,
+            end = 0.dp,
         ),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // 24h 时间线
-        item(key = "timeline") {
-            TodayTimeLine(
-                date = state.date,
-                isViewingToday = isViewingToday,
-                now = state.now,
-                planItems = state.planItems,
-                conflicts = state.conflicts,
-            )
+        item(key = "header") {
+            TodayHeader(date = state.date, isViewingToday = isViewingToday)
         }
 
-        // v0.4：扁平任务列表（按时间排，跨 plan 混合）
-        // 每行带 plan 颜色 + 名称标签，让用户知道是哪个计划的任务
-        itemsIndexed(state.todayTaskItems, key = { _, item -> "task-${item.completion.id}" }) { index, item ->
-            val planConflicts = state.conflicts.filter { c ->
-                c.taskA.planId == item.plan.id || c.taskB.planId == item.plan.id
+        item(key = "now-card") {
+            Spacer(Modifier.height(16.dp))
+            Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                NowCard(
+                    currentTask = currentTask,
+                    now = state.now,
+                    isViewingToday = isViewingToday,
+                    onComplete = currentTask?.let { { onCompleteTask(it.completion.id) } },
+                    onSkip = currentTask?.let { { onSkipTask(it.completion.id) } },
+                    onStart = currentTask?.completion?.status?.let { status ->
+                        if (status == TaskStatus.PENDING) {
+                            { onStartTask(currentTask.completion.id) }
+                        } else null
+                    },
+                )
             }
-            WpAnimateInContainer(index = index + 1) {
-                TodayTaskCard(
-                    item = item,
-                    conflicts = planConflicts,
-                    highlighted = item.completion.taskId == highlightedTaskId,
-                    onStart = { onStartTask(item.completion.id) },
-                    onComplete = { onCompleteTask(item.completion.id) },
-                    onSkip = { onSkipTask(item.completion.id) },
+        }
+
+        item(key = "timeline") {
+            Spacer(Modifier.height(16.dp))
+            Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                TodayTimeLine(
+                    date = state.date,
+                    isViewingToday = isViewingToday,
+                    now = state.now,
+                    planItems = state.planItems,
+                    conflicts = state.conflicts,
+                )
+            }
+        }
+
+        if (inProgressOrCurrent.isNotEmpty()) {
+            item(key = "section-in-progress") {
+                Spacer(Modifier.height(24.dp))
+                SectionHeader(title = stringResource(R.string.today_section_in_progress))
+            }
+            itemsIndexed(inProgressOrCurrent, key = { _, item -> "task-ip-${item.completion.id}" }) { index, item ->
+                val planConflicts = state.conflicts.filter { c ->
+                    c.taskA.planId == item.plan.id || c.taskB.planId == item.plan.id
+                }
+                Spacer(Modifier.height(if (index == 0) 12.dp else 0.dp))
+                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    WpAnimateInContainer(index = index) {
+                        TodayTaskCard(
+                            item = item,
+                            conflicts = planConflicts,
+                            highlighted = item.completion.taskId == highlightedTaskId,
+                            onStart = { onStartTask(item.completion.id) },
+                            onComplete = { onCompleteTask(item.completion.id) },
+                            onSkip = { onSkipTask(item.completion.id) },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
+        if (pendingTasks.isNotEmpty()) {
+            item(key = "section-upcoming") {
+                Spacer(Modifier.height(24.dp))
+                SectionHeader(title = stringResource(R.string.today_section_upcoming))
+            }
+            itemsIndexed(pendingTasks, key = { _, item -> "task-pending-${item.completion.id}" }) { index, item ->
+                val planConflicts = state.conflicts.filter { c ->
+                    c.taskA.planId == item.plan.id || c.taskB.planId == item.plan.id
+                }
+                Spacer(Modifier.height(if (index == 0) 12.dp else 0.dp))
+                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    WpAnimateInContainer(index = index + inProgressOrCurrent.size) {
+                        TodayTaskCard(
+                            item = item,
+                            conflicts = planConflicts,
+                            highlighted = item.completion.taskId == highlightedTaskId,
+                            onStart = { onStartTask(item.completion.id) },
+                            onComplete = { onCompleteTask(item.completion.id) },
+                            onSkip = { onSkipTask(item.completion.id) },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
+        if (completedTasks.isNotEmpty()) {
+            item(key = "section-completed") {
+                Spacer(Modifier.height(24.dp))
+                SectionHeader(title = stringResource(R.string.today_section_completed))
+            }
+            itemsIndexed(completedTasks, key = { _, item -> "task-done-${item.completion.id}" }) { index, item ->
+                Spacer(Modifier.height(if (index == 0) 12.dp else 0.dp))
+                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    TodayTaskCard(
+                        item = item,
+                        conflicts = emptyList(),
+                        highlighted = false,
+                        onStart = { onStartTask(item.completion.id) },
+                        onComplete = { onCompleteTask(item.completion.id) },
+                        onSkip = { onSkipTask(item.completion.id) },
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TodayHeader(date: LocalDate, isViewingToday: Boolean) {
+    val dayOfWeek = when (date.dayOfWeek) {
+        DayOfWeek.MONDAY -> "周一"
+        DayOfWeek.TUESDAY -> "周二"
+        DayOfWeek.WEDNESDAY -> "周三"
+        DayOfWeek.THURSDAY -> "周四"
+        DayOfWeek.FRIDAY -> "周五"
+        DayOfWeek.SATURDAY -> "周六"
+        DayOfWeek.SUNDAY -> "周日"
+        else -> ""
+    }
+    val now = LocalDateTime.now()
+    val timeStr = String.format("%02d:%02d", now.hour, now.minute)
+    val dateStr = "$dayOfWeek · ${date.monthValue}月${date.dayOfMonth}日"
+    val metaStr = if (isViewingToday) "$dateStr · $timeStr" else dateStr
+
+    val greeting = when {
+        isViewingToday -> {
+            val hour = LocalDateTime.now().hour
+            when {
+                hour < 6 -> "夜深了，什么在等你"
+                hour < 12 -> "早上好，什么在等你"
+                hour < 14 -> "中午好，什么在等你"
+                hour < 18 -> "下午好，什么在等你"
+                else -> "晚上好，什么在等你"
+            }
+        }
+        else -> "${date.monthValue}月${date.dayOfMonth}日，什么在等你"
+    }
+
+    val highlightWord = "什么"
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 8.dp),
+    ) {
+        Text(
+            text = metaStr,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 0.05.sp,
+            color = MaterialTheme.colorScheme.tertiary,
+        )
+        Spacer(Modifier.height(4.dp))
+        val highlightStart = greeting.indexOf(highlightWord)
+        if (highlightStart >= 0) {
+            val before = greeting.substring(0, highlightStart)
+            val after = greeting.substring(highlightStart + highlightWord.length)
+            Row {
+                Text(
+                    text = before,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.04).sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = highlightWord,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.04).sp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = after,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.04).sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            }
+        } else {
+            Text(
+                text = greeting,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.04).sp,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        fontSize = 15.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = (-0.01).sp,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 12.dp),
+    )
+}
+
+@Composable
+private fun NowCard(
+    currentTask: TodayTaskItem?,
+    now: LocalDateTime,
+    isViewingToday: Boolean,
+    onComplete: (() -> Unit)?,
+    onSkip: (() -> Unit)?,
+    onStart: (() -> Unit)?,
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "pulseAlpha",
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = RoundedCornerShape(28.dp),
+            )
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF1E2A45),
+                        MaterialTheme.colorScheme.surface,
+                    ),
+                ),
+            ),
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = 60.dp, y = (-60).dp)
+                .size(200.dp)
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            Color.Transparent,
+                        ),
+                    ),
+                ),
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+        ) {
+            if (currentTask != null && isViewingToday) {
+                val isInProgress = currentTask.completion.status == TaskStatus.IN_PROGRESS
+                val planColor = parseHexColor(currentTask.plan.colorHex)
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.error.copy(alpha = pulseAlpha),
+                                shape = CircleShape,
+                            ),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = if (isInProgress) "进行中" else "即将开始",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.12.sp,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = currentTask.task.title,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(WpRadius.full))
+                            .background(planColor.copy(alpha = 0.15f))
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(planColor),
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                text = currentTask.plan.title,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = planColor,
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                val start = currentTask.completion.plannedStart
+                val end = currentTask.completion.plannedEnd
+                val startTime = formatHm(start)
+                val endTime = formatHm(end)
+                val totalMinutes = java.time.Duration.between(start, end).toMinutes().coerceAtLeast(1)
+                val elapsedMinutes = if (isInProgress) {
+                    java.time.Duration.between(start, now).toMinutes().coerceIn(0, totalMinutes)
+                } else 0
+                val remainingMinutes = (totalMinutes - elapsedMinutes).coerceAtLeast(0)
+                val progress = if (totalMinutes > 0) elapsedMinutes.toFloat() / totalMinutes else 0f
+                val remainingText = when {
+                    remainingMinutes >= 60 -> "${remainingMinutes / 60}小时${remainingMinutes % 60}分"
+                    remainingMinutes > 0 -> "${remainingMinutes}分钟"
+                    else -> "即将结束"
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "$startTime – $endTime",
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.6f),
+                    )
+                    Text(
+                        text = "剩余 $remainingText",
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(Color.White.copy(alpha = 0.08f)),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress.coerceIn(0f, 1f))
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                                    ),
+                                ),
+                            ),
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    val actionLabel = when {
+                        isInProgress -> stringResource(R.string.today_btn_complete)
+                        onStart != null -> stringResource(R.string.today_btn_start)
+                        else -> stringResource(R.string.today_btn_complete)
+                    }
+                    val actionCallback = when {
+                        isInProgress -> onComplete
+                        onStart != null -> onStart
+                        else -> onComplete
+                    }
+                    val actionIcon = when {
+                        isInProgress -> Icons.Outlined.Check
+                        onStart != null -> Icons.Outlined.PlayArrow
+                        else -> Icons.Outlined.Check
+                    }
+                    val actionButtonColor = when {
+                        isInProgress -> WpSuccessDark
+                        else -> MaterialTheme.colorScheme.primary
+                    }
+
+                    Surface(
+                        onClick = { actionCallback?.invoke() },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        color = actionButtonColor,
+                        shadowElevation = 8.dp,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = actionIcon,
+                                contentDescription = null,
+                                tint = Color(0xFF090E1A),
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = actionLabel,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF090E1A),
+                            )
+                        }
+                    }
+
+                    Surface(
+                        onClick = { onSkip?.invoke() },
+                        modifier = Modifier.size(48.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White.copy(alpha = 0.08f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            width = 1.dp,
+                            color = Color.White.copy(alpha = 0.12f),
+                        ),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.Close,
+                                contentDescription = stringResource(R.string.today_cd_skip),
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    text = if (isViewingToday) "接下来是..." else "暂无进行中的任务",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = if (isViewingToday) "享受这段空档，或提前准备下一个任务" else "选择其他日期查看安排",
+                    fontSize = 15.sp,
+                    color = Color.White.copy(alpha = 0.7f),
                 )
             }
         }
     }
 }
 
-// ====================================================================
-// 24h 水平时间线 — v0.4 "Bold Edition" 第二次重做
-// ====================================================================
-// 关键变化（vs 上一版 per-plan lane）：
-//   - 单条 track — 计划多了也不会拉高，所有 plan 的 task 都在一条线上
-//   - 画布 24h 宽（2112dp），用户可水平拖动
-//   - 默认视图把 now 滚到视口中央（用户看到 ±3h）
-//   - 时间轴 + track 一起滚（同一 Column）
-//   - 任务块 40dp 高，8dp 圆角；宽到 56dp+ 时画「起时间 + 任务名」白字
-//   - 时间轴上加 4dp 红点标记 now（用户拖走后还能看到"现在"在轴上的位置）
-//   - now 线 2px 主线 + 双侧 4dp 8px 18% 光晕
 
 @Composable
 private fun TodayTimeLine(
@@ -275,27 +692,25 @@ private fun TodayTimeLine(
     planItems: List<TodayPlanItem>,
     conflicts: List<TaskConflict>,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer()
     val tickLabelStyle = MaterialTheme.typography.labelSmall.copy(
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.tertiary,
         fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
     )
-    val nowLineColor = MaterialTheme.colorScheme.error
+    val nowLineColor = Color(0xFFE85B56)
     val outlineColor = MaterialTheme.colorScheme.outlineVariant
-    val onTrackColor = MaterialTheme.colorScheme.surface  // task 块内的白/底色
+    val onTrackColor = Color.White
 
-    // ---- 布局尺寸 ----
-    val hourAxisHeight = 20.dp         // 顶部整点刻度行
+    val hourAxisHeight = 20.dp
     val axisToTrackGap = 6.dp
-    val trackHeight = 56.dp            // 单条 track 高度
-    val blockHeight = 40.dp            // task 色块高度
+    val trackHeight = 56.dp
+    val blockHeight = 40.dp
     val blockCornerRadius = 8.dp
-    val pixelsPerHour = 88.dp          // 每小时占多少 dp（24h = 2112dp 总宽）
+    val pixelsPerHour = 88.dp
     val totalCanvasWidth = pixelsPerHour * 24
     val maxMinutes = 24 * 60
-    val nowTimeText = String.format("%02d:%02d", now.hour, now.minute)
 
     val tasksById = remember(planItems) {
         planItems.flatMap { it.tasks }.associateBy { it.id }
@@ -307,277 +722,265 @@ private fun TodayTimeLine(
     val titleText = if (isViewingToday) {
         stringResource(R.string.today_timeline_title_today)
     } else {
-        stringResource(R.string.today_timeline_title_other, date.format(dateFmt(context)))
+        stringResource(R.string.today_timeline_title_other, date.format(dateFmt()))
     }
 
     val scrollState = rememberScrollState()
 
-    // 不再用 Surface card — 跟 page 背景融合
     Column(modifier = Modifier.fillMaxWidth()) {
-        // ---- 头部行：标题 + 当前时间 pill ----
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = titleText,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-            if (isViewingToday) {
-                NowTimePill(time = nowTimeText, color = nowLineColor)
-            }
-        }
+        Text(
+            text = titleText,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.01).sp,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
         Spacer(Modifier.height(12.dp))
 
-        // ---- 主体：水平滚动时间线 ----
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val viewportWidthPx = with(density) { maxWidth.toPx() }.toInt()
-            val totalWidthPx = with(density) { totalCanvasWidth.toPx() }.toInt()
-
-            // 首次进入：把 now 滚到视口中央（让用户看到 ±3h）
-            val initialTargetPx = if (isViewingToday) {
-                val nowMin = now.hour * 60 + now.minute
-                val nowX = (nowMin.toFloat() / maxMinutes) * totalWidthPx
-                (nowX - viewportWidthPx / 2f).toInt().coerceAtLeast(0)
-            } else 0
-            var didInitialScroll by remember { mutableStateOf(false) }
-            LaunchedEffect(viewportWidthPx) {
-                if (isViewingToday && !didInitialScroll && initialTargetPx > 0) {
-                    scrollState.scrollTo(initialTargetPx)
-                    didInitialScroll = true
-                }
-            }
-
-            Box(
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(WpRadius.lg))
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    shape = RoundedCornerShape(WpRadius.lg),
+                )
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(scrollState),
             ) {
-                Column(
-                    modifier = Modifier.width(totalCanvasWidth),
+                val viewportWidthPx = with(density) { maxWidth.toPx() }.toInt()
+                val totalWidthPx = with(density) { totalCanvasWidth.toPx() }.toInt()
+
+                val initialTargetPx = if (isViewingToday) {
+                    val nowMin = now.hour * 60 + now.minute
+                    val nowX = (nowMin.toFloat() / maxMinutes) * totalWidthPx
+                    (nowX - viewportWidthPx / 2f).toInt().coerceAtLeast(0)
+                } else 0
+                var didInitialScroll by remember { mutableStateOf(false) }
+                LaunchedEffect(viewportWidthPx) {
+                    if (isViewingToday && !didInitialScroll && initialTargetPx > 0) {
+                        scrollState.scrollTo(initialTargetPx)
+                        didInitialScroll = true
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(scrollState),
                 ) {
-                    // ---- 顶部 hour axis ----
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(hourAxisHeight),
+                    Column(
+                        modifier = Modifier.width(totalCanvasWidth),
                     ) {
-                        val w = size.width
-                        val minuteWidth = w / maxMinutes.toFloat()
-                        val tickBottomY = size.height
-                        val ticks = listOf(0, 3, 6, 9, 12, 15, 18, 21, 24)
-                        ticks.forEach { h ->
-                            val x = h * 60 * minuteWidth
-                            val isMajor = h % 6 == 0
-                            val isMid = h % 3 == 0
-                            val tickLen = when {
-                                isMajor -> with(density) { 5.dp.toPx() }
-                                isMid -> with(density) { 3.dp.toPx() }
-                                else -> with(density) { 1.5.dp.toPx() }
-                            }
-                            drawLine(
-                                color = outlineColor.copy(alpha = if (isMajor) 0.7f else 0.3f),
-                                start = Offset(x, tickBottomY - tickLen),
-                                end = Offset(x, tickBottomY),
-                                strokeWidth = if (isMajor) 1.2f else 0.8f,
-                            )
-                            if (isMajor) {
-                                val text = if (h == 24) "24" else String.format("%02d", h)
-                                val measured = textMeasurer.measure(text, style = tickLabelStyle)
-                                val textX = when (h) {
-                                    0 -> 0f
-                                    24 -> w - measured.size.width
-                                    else -> x - measured.size.width / 2f
+                        Canvas(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(hourAxisHeight),
+                        ) {
+                            val w = size.width
+                            val minuteWidth = w / maxMinutes.toFloat()
+                            val tickBottomY = size.height
+                            val ticks = (0..22 step 2).toList()
+                            ticks.forEach { h ->
+                                val x = h * 60 * minuteWidth
+                                val isMajor = h % 4 == 0
+                                val tickLen = when {
+                                    isMajor -> with(density) { 5.dp.toPx() }
+                                    else -> with(density) { 3.dp.toPx() }
                                 }
+                                drawLine(
+                                    color = outlineColor.copy(alpha = if (isMajor) 0.5f else 0.25f),
+                                    start = Offset(x, tickBottomY - tickLen),
+                                    end = Offset(x, tickBottomY),
+                                    strokeWidth = if (isMajor) 1.0f else 0.7f,
+                                )
+                                val text = String.format("%02d", h)
+                                val measured = textMeasurer.measure(text, style = tickLabelStyle)
+                                val textX = if (h == 0) 0f else x - measured.size.width / 2f
                                 val textY = tickBottomY - tickLen - measured.size.height - 2f
                                 drawText(
                                     textMeasurer = textMeasurer,
                                     text = text,
                                     topLeft = Offset(textX, textY),
-                                    style = tickLabelStyle,
+                                    style = tickLabelStyle.copy(
+                                        fontWeight = if (isMajor) FontWeight.SemiBold else FontWeight.Normal,
+                                    ),
+                                )
+                            }
+
+                            if (isViewingToday) {
+                                val nowMin = now.hour * 60 + now.minute
+                                val nowX = (nowMin.toFloat() / maxMinutes) * w
+                                val dotRadius = with(density) { 4.dp.toPx() }
+                                drawCircle(
+                                    color = nowLineColor.copy(alpha = 0.18f),
+                                    radius = dotRadius + with(density) { 3.dp.toPx() },
+                                    center = Offset(nowX, tickBottomY - with(density) { 7.dp.toPx() }),
+                                )
+                                drawCircle(
+                                    color = nowLineColor,
+                                    radius = dotRadius,
+                                    center = Offset(nowX, tickBottomY - with(density) { 7.dp.toPx() }),
                                 )
                             }
                         }
+                        Spacer(Modifier.height(axisToTrackGap))
 
-                        // now dot on axis — 拖走后还能看到"现在"在轴上的位置
-                        if (isViewingToday) {
-                            val nowMin = now.hour * 60 + now.minute
-                            val nowX = (nowMin.toFloat() / maxMinutes) * w
-                            val dotRadius = with(density) { 4.dp.toPx() }
-                            // halo
-                            drawCircle(
-                                color = nowLineColor.copy(alpha = 0.18f),
-                                radius = dotRadius + with(density) { 3.dp.toPx() },
-                                center = Offset(nowX, tickBottomY - with(density) { 7.dp.toPx() }),
-                            )
-                            // dot
-                            drawCircle(
-                                color = nowLineColor,
-                                radius = dotRadius,
-                                center = Offset(nowX, tickBottomY - with(density) { 7.dp.toPx() }),
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(axisToTrackGap))
+                        Canvas(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(trackHeight),
+                        ) {
+                            val w = size.width
+                            val tlHeight = trackHeight.toPx()
+                            val minuteWidth = w / maxMinutes.toFloat()
+                            val blockPx = blockHeight.toPx()
+                            val cornerPx = with(density) { blockCornerRadius.toPx() }
 
-                    // ---- 单条 track canvas ----
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(trackHeight),
-                    ) {
-                        val w = size.width
-                        val tlHeight = trackHeight.toPx()
-                        val minuteWidth = w / maxMinutes.toFloat()
-                        val blockPx = blockHeight.toPx()
-                        val cornerPx = with(density) { blockCornerRadius.toPx() }
-
-                        // 1) 时间网格
-                        for (h in 0..24) {
-                            val x = h * 60 * minuteWidth
-                            val isProminent = h == 0 || h == 24
-                            val isMajor = h % 6 == 0
-                            val isMid = h % 3 == 0
-                            val (alpha, width) = when {
-                                isProminent -> 0.55f to 1.2f
-                                isMajor -> 0.4f to 1f
-                                isMid -> 0.22f to 0.7f
-                                else -> 0.10f to 0.4f
+                            for (h in 0..22 step 2) {
+                                val x = h * 60 * minuteWidth
+                                val isProminent = h == 0 || h == 22
+                                val isMajor = h % 4 == 0
+                                val (alpha, width) = when {
+                                    isProminent -> 0.35f to 1.0f
+                                    isMajor -> 0.22f to 0.8f
+                                    else -> 0.12f to 0.5f
+                                }
+                                drawLine(
+                                    color = outlineColor.copy(alpha = alpha),
+                                    start = Offset(x, 0f),
+                                    end = Offset(x, tlHeight),
+                                    strokeWidth = width,
+                                )
                             }
-                            drawLine(
-                                color = outlineColor.copy(alpha = alpha),
-                                start = Offset(x, 0f),
-                                end = Offset(x, tlHeight),
-                                strokeWidth = width,
+
+                            val blockTextStyle = tickLabelStyle.copy(
+                                color = onTrackColor,
+                                fontWeight = FontWeight.SemiBold,
                             )
-                        }
+                            val minTextWidth = with(density) { 56.dp.toPx() }
+                            val blockPadding = with(density) { 7.dp.toPx() }
+                            val blockGap = with(density) { 5.dp.toPx() }
 
-                        // 2) task 块（所有 plan 共享一条 track，按时间排）
-                        val blockTextStyle = tickLabelStyle.copy(
-                            color = onTrackColor,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        val minTextWidth = with(density) { 56.dp.toPx() }
-                        val blockPadding = with(density) { 7.dp.toPx() }
-                        val blockGap = with(density) { 5.dp.toPx() }
+                            val allCompletions = planItems.flatMap { it.completions }
+                                .sortedBy { it.plannedStart }
+                            allCompletions.forEach { c ->
+                                val plan = plansById[c.planId] ?: return@forEach
+                                val planColor = parseHexColor(plan.colorHex)
 
-                        val allCompletions = planItems.flatMap { it.completions }
-                            .sortedBy { it.plannedStart }
-                        allCompletions.forEach { c ->
-                            val plan = plansById[c.planId] ?: return@forEach
-                            val planColor = parseHexColor(plan.colorHex)
+                                // 跨日的 completion：plannedEnd 落到 date+1（如 23:00→次日 01:00）
+                                // 这种任务"实际还在今天"，仍然在今天时间线画；plannedEnd 跨到 date+2
+                                // （如 23:00→次日 23:00，应是结束于"后天"）则整个属于后天，不画
+                                // 数据异常保护：plannedEnd 在 date+1 但 >= 12:00（如次日 09:00），
+                                // 通常是 picker 把当日时间误转成跨日的产物，不画
+                                val endDate = c.plannedEnd.toLocalDate()
+                                if (endDate.isAfter(date.plusDays(1))) return@forEach
+                                if (endDate == date.plusDays(1) && c.plannedEnd.hour >= 12) return@forEach
 
-                            val startMin = minuteOfDay(c.plannedStart, date).coerceIn(0, maxMinutes)
-                            val endMin = minuteOfDay(c.plannedEnd, date)
-                                .coerceAtLeast(startMin + 1)
-                                .coerceAtMost(maxMinutes)
-                            if (endMin <= startMin) return@forEach
-                            val left = startMin * minuteWidth
-                            val blockWidth = (endMin - startMin) * minuteWidth
-                            val blockTop = (tlHeight - blockPx) / 2f
+                                val startMin = minuteOfDay(c.plannedStart, date).coerceIn(0, maxMinutes)
+                                val endMin = minuteOfDay(c.plannedEnd, date)
+                                    .coerceAtLeast(startMin + 1)
+                                    .coerceAtMost(maxMinutes)
+                                if (endMin <= startMin) return@forEach
+                                val left = startMin * minuteWidth
+                                val blockWidth = (endMin - startMin) * minuteWidth
+                                val blockTop = (tlHeight - blockPx) / 2f
 
-                            // 主体（plan color 填充）
-                            drawRoundRect(
-                                color = planColor,
-                                topLeft = Offset(left, blockTop),
-                                size = Size(blockWidth, blockPx),
-                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerPx, cornerPx),
-                            )
-
-                            // in-progress：2px 红边
-                            if (isViewingToday &&
-                                c.status == TaskStatus.IN_PROGRESS &&
-                                now.isAfter(c.plannedStart) && now.isBefore(c.plannedEnd)) {
                                 drawRoundRect(
-                                    color = nowLineColor,
+                                    color = planColor,
                                     topLeft = Offset(left, blockTop),
                                     size = Size(blockWidth, blockPx),
                                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerPx, cornerPx),
-                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f),
-                                )
-                            }
-
-                            // 文字：宽到 minTextWidth 时画「起时间」；再宽画「任务名」
-                            if (blockWidth >= minTextWidth) {
-                                val startText = String.format(
-                                    "%02d:%02d",
-                                    c.plannedStart.hour, c.plannedStart.minute,
-                                )
-                                val startMeasured = textMeasurer.measure(startText, style = blockTextStyle)
-                                val centerY = blockTop + blockPx / 2f
-                                drawText(
-                                    textMeasurer = textMeasurer,
-                                    text = startText,
-                                    topLeft = Offset(
-                                        left + blockPadding,
-                                        centerY - startMeasured.size.height / 2f,
-                                    ),
-                                    style = blockTextStyle,
                                 )
 
-                                val titleSpace = blockWidth - blockPadding * 2 -
-                                        startMeasured.size.width - blockGap
-                                if (titleSpace > with(density) { 24.dp.toPx() }) {
-                                    val taskTitle = tasksById[c.taskId]?.title ?: ""
-                                    var shown = ""
-                                    for (i in taskTitle.indices) {
-                                        val candidate = taskTitle.substring(0, i + 1)
-                                        val m = textMeasurer.measure(candidate, style = blockTextStyle)
-                                        if (m.size.width.toFloat() > titleSpace) break
-                                        shown = candidate
-                                    }
-                                    val finalText = if (shown.length < taskTitle.length && shown.isNotEmpty()) {
-                                        shown.dropLast(1) + "…"
-                                    } else if (shown.isEmpty() && taskTitle.isNotEmpty()) {
-                                        "…"
-                                    } else {
-                                        shown
-                                    }
-                                    if (finalText.isNotEmpty()) {
-                                        val titleMeasured = textMeasurer.measure(finalText, style = blockTextStyle)
-                                        drawText(
-                                            textMeasurer = textMeasurer,
-                                            text = finalText,
-                                            topLeft = Offset(
-                                                left + blockPadding + startMeasured.size.width + blockGap,
-                                                centerY - titleMeasured.size.height / 2f,
-                                            ),
-                                            style = blockTextStyle,
-                                        )
+                                if (isViewingToday &&
+                                    c.status == TaskStatus.IN_PROGRESS &&
+                                    now.isAfter(c.plannedStart) && now.isBefore(c.plannedEnd)) {
+                                    drawRoundRect(
+                                        color = nowLineColor,
+                                        topLeft = Offset(left, blockTop),
+                                        size = Size(blockWidth, blockPx),
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerPx, cornerPx),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f),
+                                    )
+                                }
+
+                                if (blockWidth >= minTextWidth) {
+                                    val startText = String.format(
+                                        "%02d:%02d",
+                                        c.plannedStart.hour, c.plannedStart.minute,
+                                    )
+                                    val startMeasured = textMeasurer.measure(startText, style = blockTextStyle)
+                                    val centerY = blockTop + blockPx / 2f
+                                    drawText(
+                                        textMeasurer = textMeasurer,
+                                        text = startText,
+                                        topLeft = Offset(
+                                            left + blockPadding,
+                                            centerY - startMeasured.size.height / 2f,
+                                        ),
+                                        style = blockTextStyle,
+                                    )
+
+                                    val titleSpace = blockWidth - blockPadding * 2 -
+                                            startMeasured.size.width - blockGap
+                                    if (titleSpace > with(density) { 24.dp.toPx() }) {
+                                        val taskTitle = tasksById[c.taskId]?.title ?: ""
+                                        var shown = ""
+                                        for (i in taskTitle.indices) {
+                                            val candidate = taskTitle.substring(0, i + 1)
+                                            val m = textMeasurer.measure(candidate, style = blockTextStyle)
+                                            if (m.size.width.toFloat() > titleSpace) break
+                                            shown = candidate
+                                        }
+                                        val finalText = if (shown.length < taskTitle.length && shown.isNotEmpty()) {
+                                            shown.dropLast(1) + "…"
+                                        } else if (shown.isEmpty() && taskTitle.isNotEmpty()) {
+                                            "…"
+                                        } else {
+                                            shown
+                                        }
+                                        if (finalText.isNotEmpty()) {
+                                            val titleMeasured = textMeasurer.measure(finalText, style = blockTextStyle)
+                                            drawText(
+                                                textMeasurer = textMeasurer,
+                                                text = finalText,
+                                                topLeft = Offset(
+                                                    left + blockPadding + startMeasured.size.width + blockGap,
+                                                    centerY - titleMeasured.size.height / 2f,
+                                                ),
+                                                style = blockTextStyle,
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        // 3) now 线（2px 主线 + 双侧 4dp 8px 18% 光晕）
-                        if (isViewingToday) {
-                            val nowMin = minuteOfDay(now, date).coerceIn(0, maxMinutes)
-                            val nowX = (nowMin.toFloat() / maxMinutes) * w
-                            val haloOffset = with(density) { 4.dp.toPx() }
-                            val haloWidth = with(density) { 8.dp.toPx() }
+                            if (isViewingToday) {
+                                val nowMin = minuteOfDay(now, date).coerceIn(0, maxMinutes)
+                                val nowX = (nowMin.toFloat() / maxMinutes) * w
+                                val lineHeight = with(density) { 40.dp.toPx() }
+                                val lineTop = (tlHeight - lineHeight) / 2f
+                                val pillWidth = with(density) { 12.dp.toPx() }
 
-                            drawLine(
-                                color = nowLineColor.copy(alpha = 0.18f),
-                                start = Offset(nowX - haloOffset, 0f),
-                                end = Offset(nowX - haloOffset, tlHeight),
-                                strokeWidth = haloWidth,
-                            )
-                            drawLine(
-                                color = nowLineColor.copy(alpha = 0.18f),
-                                start = Offset(nowX + haloOffset, 0f),
-                                end = Offset(nowX + haloOffset, tlHeight),
-                                strokeWidth = haloWidth,
-                            )
-                            drawLine(
-                                color = nowLineColor,
-                                start = Offset(nowX, 0f),
-                                end = Offset(nowX, tlHeight),
-                                strokeWidth = 2f,
-                            )
+                                drawRoundRect(
+                                    color = nowLineColor.copy(alpha = 0.15f),
+                                    topLeft = Offset(nowX - pillWidth / 2f, lineTop),
+                                    size = Size(pillWidth, lineHeight),
+                                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(pillWidth / 2f, pillWidth / 2f),
+                                )
+                                drawLine(
+                                    color = nowLineColor,
+                                    start = Offset(nowX, lineTop),
+                                    end = Offset(nowX, lineTop + lineHeight),
+                                    strokeWidth = 2f,
+                                )
+                            }
                         }
                     }
                 }
@@ -586,50 +989,11 @@ private fun TodayTimeLine(
     }
 }
 
-/**
- * 当前时间 pill — 时间线右上角
- *
- * 圆角胶囊 + 红色 10% 淡底 + 红色文字（强调），表示"现在几点"
- */
-@Composable
-private fun NowTimePill(time: String, color: androidx.compose.ui.graphics.Color) {
-    androidx.compose.foundation.layout.Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier
-            .background(color.copy(alpha = 0.10f), androidx.compose.foundation.shape.RoundedCornerShape(WpRadius.full))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    ) {
-        androidx.compose.foundation.Canvas(modifier = Modifier.size(6.dp)) {
-            drawCircle(color = color)
-        }
-        Text(
-            text = time,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-            color = color,
-        )
-    }
-}
-
 private fun minuteOfDay(dt: LocalDateTime, date: LocalDate): Int {
-    // 不区分日期，只看时分（跨午夜段如果 dt 是次日，minuteOfDay > 24*60）
     val dayOffset = (dt.toLocalDate().toEpochDay() - date.toEpochDay()).toInt()
     return dt.hour * 60 + dt.minute + dayOffset * 24 * 60
 }
 
-// ====================================================================
-// v0.4 扁平任务卡（按时间排，跨 plan 混合）
-// ====================================================================
-
-/**
- * 单个任务卡 — 1 行布局：
- *   [09:30-10:00] [●ces]  task title    [开始][×]
- *
- * 左侧 56dp 留给时间（mono 数字 + 透明边框感）
- * 中间是 plan 颜色点 + plan 短名（最多 8 字）
- * 右边任务标题（weight 1f，吃剩余空间）
- * 最右是 action 按钮（按状态切换）
- */
 @Composable
 private fun TodayTaskCard(
     item: TodayTaskItem,
@@ -639,143 +1003,167 @@ private fun TodayTaskCard(
     onComplete: () -> Unit,
     onSkip: () -> Unit,
 ) {
-    val planColor = parseHexColor(item.plan.colorHex)
     val start = formatHm(item.completion.plannedStart)
     val end = formatHm(item.completion.plannedEnd)
     val timeText = "$start – $end"
 
-    val bg = if (highlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-             else MaterialTheme.colorScheme.surface
-
     val status = item.completion.status
-    val isInProgressOrDone = status == TaskStatus.IN_PROGRESS ||
-                             status == TaskStatus.COMPLETED ||
-                             status == TaskStatus.SKIPPED
-    val isCompleted = status == TaskStatus.COMPLETED
-    val isSkipped = status == TaskStatus.SKIPPED
+    val isCompleted = status == TaskStatus.COMPLETED || status == TaskStatus.SKIPPED
+    val isInProgress = status == TaskStatus.IN_PROGRESS
     val isPending = status == TaskStatus.PENDING
 
+    val defaultColor = MaterialTheme.colorScheme.primary
+    val planColor = remember(item.plan.colorHex) {
+        runCatching { parseHexColor(item.plan.colorHex) }.getOrElse { defaultColor }
+    }
+
+    val statusDotColor = when {
+        isInProgress -> Color(0xFFE85B56)
+        isPending -> planColor
+        else -> MaterialTheme.colorScheme.tertiary
+    }
+    val timeTextColor = when {
+        isInProgress -> Color(0xFFE85B56)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val borderColor = when {
+        isInProgress -> Color(0xFFE85B56).copy(alpha = 0.2f)
+        highlighted -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.outlineVariant
+    }
+    val alphaMod = if (isCompleted) 0.5f else 1f
+
+    val bgBrush = when {
+        isInProgress -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFE85B56).copy(alpha = 0.08f),
+                MaterialTheme.colorScheme.surface,
+            )
+        )
+        highlighted -> Brush.linearGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                MaterialTheme.colorScheme.surface,
+            )
+        )
+        else -> null
+    }
+
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(WpRadius.lg),
-        color = bg,
+        modifier = Modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(WpRadius.xl),
+        color = Color.Transparent,
         border = androidx.compose.foundation.BorderStroke(
             width = 1.dp,
-            color = if (highlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            color = borderColor,
         ),
         shadowElevation = 0.dp,
     ) {
-        Row(
+        Box(
             modifier = Modifier
+                .then(if (bgBrush != null) Modifier.background(bgBrush) else Modifier.background(MaterialTheme.colorScheme.surface))
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            // 时间 (mono 数字，固定 56dp 宽)
-            Text(
-                text = timeText,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                ),
-                color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant
-                        else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.width(80.dp),
-            )
-
-            Spacer(Modifier.width(8.dp))
-
-            // Plan 颜色点 + 短名
             Row(
                 modifier = Modifier
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(WpRadius.full))
-                    .background(planColor.copy(alpha = 0.10f))
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                Text(
+                    text = timeText,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = timeTextColor.copy(alpha = alphaMod),
+                    modifier = Modifier.width(96.dp),
+                )
+
                 Box(
                     modifier = Modifier
-                        .size(6.dp)
-                        .clip(androidx.compose.foundation.shape.CircleShape)
-                        .background(planColor),
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(statusDotColor.copy(alpha = alphaMod)),
                 )
-                Spacer(Modifier.width(5.dp))
-                Text(
-                    text = item.plan.title.take(8),
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                    color = planColor,
-                    maxLines = 1,
-                )
-            }
 
-            Spacer(Modifier.width(10.dp))
-
-            // 任务标题（吃剩余空间）
-            Text(
-                text = item.task.title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = if (isPending) FontWeight.Normal else FontWeight.Medium,
-                    textDecoration = if (isCompleted || isSkipped) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
-                ),
-                color = if (isCompleted || isSkipped) MaterialTheme.colorScheme.onSurfaceVariant
-                        else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-
-            // Action 按钮
-            Spacer(Modifier.width(8.dp))
-            when (status) {
-                TaskStatus.PENDING -> {
-                    ActionChip(
-                        icon = Icons.Outlined.PlayArrow,
-                        label = stringResource(R.string.today_btn_start),
-                        onClick = onStart,
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item.task.title,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = alphaMod),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
                     )
-                    Spacer(Modifier.width(4.dp))
-                    IconActionButton(
-                        icon = Icons.Outlined.Close,
-                        contentDescription = stringResource(R.string.today_cd_skip),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = onSkip,
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = item.plan.title,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = alphaMod),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
-                TaskStatus.IN_PROGRESS -> {
-                    ActionChip(
-                        icon = Icons.Outlined.Check,
-                        label = stringResource(R.string.today_btn_complete),
-                        onClick = onComplete,
-                        primary = true,
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    IconActionButton(
-                        icon = Icons.Outlined.Close,
-                        contentDescription = stringResource(R.string.today_cd_skip),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = onSkip,
-                    )
-                }
-                TaskStatus.COMPLETED, TaskStatus.SKIPPED -> {
-                    IconActionButton(
-                        icon = Icons.Outlined.PlayArrow,
-                        contentDescription = stringResource(R.string.today_cd_start),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = onStart,
-                    )
+
+                when (status) {
+                    TaskStatus.PENDING -> {
+                        Surface(
+                            onClick = onStart,
+                            modifier = Modifier.size(36.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.PlayArrow,
+                                    contentDescription = stringResource(R.string.today_cd_start),
+                                    tint = Color(0xFF090E1A),
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+                    }
+                    TaskStatus.IN_PROGRESS -> {
+                        Surface(
+                            onClick = onComplete,
+                            modifier = Modifier.size(36.dp),
+                            shape = CircleShape,
+                            color = WpSuccessDark,
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = stringResource(R.string.today_btn_complete),
+                                    tint = Color(0xFF090E1A),
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+                    }
+                    TaskStatus.COMPLETED, TaskStatus.SKIPPED -> {
+                        Box(
+                            modifier = Modifier.size(36.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 
-    // 冲突警告内联（这行的 plan 有冲突时）
     if (conflicts.isNotEmpty()) {
         Spacer(Modifier.height(4.dp))
-        // 复用现有的 ConflictBanner
-        // （构造一个空 plan map —— 实际只有 taskA/taskB 的 planId，
-        //  这里我们用 item.plan 单值近似。如果真冲突多 plan，
-        //  ConflictBanner 会显示"其他计划"字样）
         ConflictBanner(
             conflicts = conflicts,
             plansById = mapOf(item.plan.id to item.plan),
@@ -784,84 +1172,10 @@ private fun TodayTaskCard(
 }
 
 @Composable
-private fun ActionChip(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    primary: Boolean = false,
-) {
-    val containerColor = if (primary) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surface
-    val contentColor = if (primary) MaterialTheme.colorScheme.onPrimary
-                       else MaterialTheme.colorScheme.primary
-    androidx.compose.material3.Surface(
-        onClick = onClick,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(WpRadius.full),
-        color = if (primary) containerColor
-                else containerColor.copy(alpha = 0.0f),
-        border = if (!primary) androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-        ) else null,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier.size(14.dp),
-            )
-            Spacer(Modifier.width(4.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = contentColor,
-            )
-        }
-    }
-}
-
-@Composable
-private fun IconActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    contentDescription: String,
-    tint: androidx.compose.ui.graphics.Color,
-    onClick: () -> Unit,
-) {
-    androidx.compose.material3.IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(32.dp),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = tint,
-            modifier = Modifier.size(18.dp),
-        )
-    }
-}
-
-private fun formatHm(dt: java.time.LocalDateTime): String =
-    String.format("%02d:%02d", dt.hour, dt.minute)
-
-// ====================================================================
-// 旧的 plan-grouped card（已废弃，留作 v0.3 回滚参考）
-// ====================================================================
-//
-// @Composable
-// private fun TodayPlanCard(...) { ... }  // v0.3 扁平前的实现
-// @Composable
-// private fun TaskRow(...) { ... }        // v0.3 扁平前的内联任务行
-
-@Composable
 private fun ConflictBanner(
     conflicts: List<TaskConflict>,
     plansById: Map<String, Plan>,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
     val maxOverlap = conflicts.maxOf { it.overlapMinutes }
     val otherPlan = conflicts.firstOrNull()?.let { c ->
         plansById[c.taskA.planId]?.takeIf { it.id != c.taskB.planId }
@@ -899,11 +1213,12 @@ private fun ConflictBanner(
 private fun EmptyTodayState(
     isViewingToday: Boolean,
     date: LocalDate,
-    modifier: Modifier = Modifier,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
     Box(
-        modifier = modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
+            .padding(top = 44.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -911,7 +1226,7 @@ private fun EmptyTodayState(
                 text = if (isViewingToday) {
                     stringResource(R.string.today_empty_title_today)
                 } else {
-                    stringResource(R.string.today_empty_title_other, date.format(dateFmt(context)))
+                    stringResource(R.string.today_empty_title_other, date.format(dateFmt()))
                 },
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -926,13 +1241,78 @@ private fun EmptyTodayState(
     }
 }
 
-// helper：把分钟数（0..1440，跨日可 >1440）格式化为 HH:mm
-private fun formatMinutes(minutes: Int): String {
-    val total = ((minutes % 1440) + 1440) % 1440  // 折叠到 0..1439
-    val h = total / 60
-    val m = total % 60
-    return "%02d:%02d".format(h, m)
-}
+private fun formatHm(dt: LocalDateTime): String =
+    String.format("%02d:%02d", dt.hour, dt.minute)
 
-private fun dateFmt(context: android.content.Context): DateTimeFormatter =
-    DateTimeFormatter.ofPattern(context.getString(R.string.today_date_pattern))
+private fun dateFmt(): DateTimeFormatter =
+    DateTimeFormatter.ofPattern("M月d日")
+
+/**
+ * 暗色主题下的 Snackbar：保持与卡片一致的圆角、深色背景、primary 色的 action 文字。
+ * 默认 M3 Snackbar 走 inverseSurface（浅灰），跟暗色 UI 冲突。
+ */
+@Composable
+private fun WpSnackbar(data: SnackbarData) {
+    val actionLabel = data.visuals.actionLabel
+    val showDismiss = data.visuals.withDismissAction
+    Surface(
+        modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 8.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = data.visuals.message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (actionLabel != null) {
+                Spacer(Modifier.width(8.dp))
+                TextButton(
+                    onClick = { data.performAction() },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 12.dp, vertical = 4.dp,
+                    ),
+                ) {
+                    Text(
+                        text = actionLabel,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+            if (showDismiss) {
+                Spacer(Modifier.width(4.dp))
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .clickable { data.dismiss() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+    }
+}

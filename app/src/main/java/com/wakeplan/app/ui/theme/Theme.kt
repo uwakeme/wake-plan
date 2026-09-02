@@ -1,6 +1,5 @@
 package com.wakeplan.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -61,8 +60,8 @@ private val DarkColors = darkColorScheme(
     secondary = WpTextSecondaryDark,
     onSecondary = WpTextInverseDark,
 
-    tertiary = WpInfoDark,
-    onTertiary = WpTextInverseDark,
+    tertiary = WpTextTertiaryDark,
+    onTertiary = WpTextPrimaryDark,
 
     background = WpBgDark,
     onBackground = WpTextPrimaryDark,
@@ -87,10 +86,11 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun WakePlanTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColors else LightColors
+    // 强制深色主题 — 始终使用DarkColors
+    val colorScheme = DarkColors
 
     MaterialTheme(
         colorScheme = colorScheme,

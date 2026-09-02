@@ -14,6 +14,7 @@ import com.wakeplan.app.domain.usecase.ConflictDetector
 import com.wakeplan.app.domain.usecase.ScheduleManager
 import com.wakeplan.app.domain.usecase.TaskCompletionInstantiator
 import com.wakeplan.app.domain.usecase.TaskConflict
+import com.wakeplan.app.domain.usecase.TaskWindowCalculator
 import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.notification.StartingAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -93,6 +94,7 @@ class TodayViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
     private val taskCompletionRepository: TaskCompletionRepository,
     private val taskCompletionInstantiator: TaskCompletionInstantiator,
+    private val taskWindowCalculator: TaskWindowCalculator,
     private val cascadeDelayCalculator: CascadeDelayCalculator,
     private val conflictDetector: ConflictDetector,
     private val scheduleManager: ScheduleManager,
@@ -180,6 +182,8 @@ class TodayViewModel @Inject constructor(
 
         // 扁平任务列表：按 plannedStart 升序，跨 plan 混合
         val tasksById = allTasks.associateBy { it.id }
+
+        
         val todayTaskItems = adjusted
             .mapNotNull { completion ->
                 val plan = plansById[completion.planId] ?: return@mapNotNull null
@@ -210,6 +214,8 @@ class TodayViewModel @Inject constructor(
             val tasks = taskRepository.observeAll().first()
             val existing = taskCompletionRepository.observeByDate(targetDate).first()
             val existingTaskIds = existing.map { it.taskId }.toSet()
+            val existingByTaskId = existing.associateBy { it.taskId }
+            val tasksById = tasks.associateBy { it.id }
 
             plans.filter { it.isActive }.forEach { plan ->
                 val planTasks = tasks.filter { it.planId == plan.id }
@@ -219,6 +225,24 @@ class TodayViewModel @Inject constructor(
                     date = targetDate,
                 ).filter { it.taskId !in existingTaskIds }
                 pending.forEach { taskCompletionRepository.upsert(it) }
+
+                // 同步已存在 completion 的时间窗口（修复 picker bug 留下的跨日数据）
+                // 不限制 PENDING：COMPLETED/IN_PROGRESS 也修（只改 planned 时间，不动 status/actualStart/actualEnd）
+                planTasks.forEach { task ->
+                    val old = existingByTaskId[task.id] ?: return@forEach
+                    val window = taskWindowCalculator(task, targetDate) ?: return@forEach
+                    val plannedDuration = java.time.Duration.between(window.plannedStart, window.plannedEnd).toMinutes()
+                    val storedDuration = java.time.Duration.between(old.plannedStart, old.plannedEnd).toMinutes()
+                    val drift = kotlin.math.abs(plannedDuration - storedDuration)
+                    if (drift > 5) {
+                        taskCompletionRepository.upsert(
+                            old.copy(
+                                plannedStart = window.plannedStart,
+                                plannedEnd = window.plannedEnd,
+                            )
+                        )
+                    }
+                }
             }
             val todaysCompletions = taskCompletionRepository.observeByDate(targetDate).first()
             val now = LocalDateTime.now(clock)

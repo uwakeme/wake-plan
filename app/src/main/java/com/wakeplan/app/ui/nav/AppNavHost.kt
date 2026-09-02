@@ -19,6 +19,7 @@ import com.wakeplan.app.ui.common.BottomTabItem
 import com.wakeplan.app.ui.common.NavEventBus
 import com.wakeplan.app.ui.common.WakePlanBottomBar
 import com.wakeplan.app.ui.plan.CreatePlanScreen
+import com.wakeplan.app.ui.plan.CreatePlanViewModel
 import com.wakeplan.app.ui.plan.PlanDetailScreen
 import com.wakeplan.app.ui.plan.PlanDetailViewModel
 import com.wakeplan.app.ui.plan.PlanListScreen
@@ -156,10 +157,22 @@ private fun AppNavGraph(
             val planId = entry.arguments?.getString(PlanDetailViewModel.ARG_PLAN_ID).orEmpty()
             PlanDetailScreen(
                 onBack = { navController.popBackStack() },
+                onEditPlan = { navController.navigate(Route.planEdit(planId)) },
                 onAddTask = { navController.navigate(Route.taskEditorCreate(planId)) },
                 onTaskClick = { taskId ->
                     navController.navigate(Route.taskEditorEdit(planId, taskId))
                 },
+            )
+        }
+        composable(
+            route = Route.PlanEditPattern,
+            arguments = listOf(
+                navArgument(CreatePlanViewModel.ARG_PLAN_ID) { type = NavType.StringType },
+            ),
+        ) {
+            CreatePlanScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
             )
         }
         composable(
@@ -215,12 +228,14 @@ private fun AppNavGraph(
 object Route {
     const val PlanCreate = "plans/create"
     const val PlanDetailPattern = "plans/{planId}"
+    const val PlanEditPattern = "plans/{planId}/edit"
     const val TaskEditorCreatePattern = "plans/{planId}/tasks/new"
     const val TaskEditorEditPattern = "plans/{planId}/tasks/{taskId}"
     const val Templates = "settings/templates"
     const val TemplateDetailPattern = "settings/templates/{templateId}"
 
     fun planDetail(planId: String) = "plans/$planId"
+    fun planEdit(planId: String) = "plans/$planId/edit"
     fun taskEditorCreate(planId: String) = "plans/$planId/tasks/new"
     fun taskEditorEdit(planId: String, taskId: String) = "plans/$planId/tasks/$taskId"
     fun templateDetail(templateId: String) = "settings/templates/$templateId"

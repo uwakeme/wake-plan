@@ -16,3 +16,5 @@ val WpShapes = Shapes(
     large = RoundedCornerShape(16.dp),       // --radius-lg
     extraLarge = RoundedCornerShape(22.dp),  // --radius-xl
 )
+
+val WpShapeXXL = RoundedCornerShape(28.dp)    // --radius-xxl

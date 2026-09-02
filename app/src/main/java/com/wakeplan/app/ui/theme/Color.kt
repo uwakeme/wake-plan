@@ -8,6 +8,12 @@ import androidx.compose.ui.graphics.Color
  * 不要直接用这里的常量，业务层用 MaterialTheme.colorScheme.xxx
  */
 
+// ===== PLAN COLORS (base) =====
+val PlanFitness = Color(0xFFE87B9B)
+val PlanStudy = Color(0xFF5B9BD5)
+val PlanWriting = Color(0xFF5DB88A)
+val PlanSideProject = Color(0xFFB07FE8)
+
 // ===== LIGHT =====
 val WpPrimaryLight = Color(0xFFC48520)
 val WpPrimaryHoverLight = Color(0xFFA86F14)
@@ -33,6 +39,11 @@ val WpWarningLight = Color(0xFFD4901A)
 val WpErrorLight = Color(0xFFC84545)
 val WpInfoLight = Color(0xFF3B6FB5)
 
+val PlanFitnessLight = Color(0xFFD05A7D)
+val PlanStudyLight = Color(0xFF4480C0)
+val PlanWritingLight = Color(0xFF3A9E6C)
+val PlanSideProjectLight = Color(0xFF9660D3)
+
 // ===== DARK =====
 val WpPrimaryDark = Color(0xFFF0B44A)
 val WpPrimaryHoverDark = Color(0xFFD4962E)
@@ -57,3 +68,8 @@ val WpSuccessDark = Color(0xFF5DB88A)
 val WpWarningDark = Color(0xFFF0B44A)
 val WpErrorDark = Color(0xFFE85C5C)
 val WpInfoDark = Color(0xFF4A90D9)
+
+val PlanFitnessDark = Color(0xFFF29AB3)
+val PlanStudyDark = Color(0xFF7EB3E6)
+val PlanWritingDark = Color(0xFF7ED0A6)
+val PlanSideProjectDark = Color(0xFFCAA0F2)

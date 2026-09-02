@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -40,24 +42,9 @@ import com.wakeplan.app.ui.plan.PlanCardData
 import com.wakeplan.app.ui.plan.PlanIconKey
 import com.wakeplan.app.ui.plan.PlanStatus
 import com.wakeplan.app.ui.theme.WakePlanTheme
+import com.wakeplan.app.ui.theme.WpSuccessDark
 import java.time.LocalDate
 
-/**
- * 计划列表卡片 — 视觉刷新 v0.4 的"标志性"组件
- *
- * 视觉规范（来源于 .superdesign/init/design-system.md §11 Plan Card），
- * 实际渲染参考 superdesign draft `2763b9c6-12ae-479e-8ef6-4795559c69a1`：
- *
- *   24dp 圆角（设计系统允许：large=16dp / xl=22dp，这里用 24dp 走"bold edition"）
- *   20dp padding、纯白 surface、1px subtle border、shadow-sm（多层）
- *   顶部行：40dp icon 方块（淡色 plan-color 底 + plan-color icon 20dp）
- *           | 标题 17sp semibold + 副标 "X 任务 · Y 分钟" 13sp text-tertiary
- *           | 状态徽章 11sp bold uppercase，8dp radius
- *   底部行：'Progress' 13sp semibold text-secondary + 'X%' 13sp semibold plan-color
- *           | 8dp 进度条（rounded-full，track=border-strong，fill=plan-color）
- *
- * 入场：stagger fade-in-up（80ms 错峰），用 index 计算 delay
- */
 @Composable
 fun PlanCard(
     data: PlanCardData,
@@ -65,17 +52,22 @@ fun PlanCard(
     modifier: Modifier = Modifier,
     index: Int = 0,
 ) {
+    val defaultColor = MaterialTheme.colorScheme.primary
     val planColor = remember(data.plan.colorHex) {
-        runCatching { parseHexColor(data.plan.colorHex) }.getOrElse { Color(0xFFC48520) }
+        runCatching { parseHexColor(data.plan.colorHex) }.getOrElse { defaultColor }
     }
-    val iconBg = planColor.copy(alpha = 0.10f)
+    val iconBg = planColor.copy(alpha = 0.12f)
     val statusLabel = when (data.status) {
         PlanStatus.ACTIVE -> stringResource(R.string.plan_card_status_active)
         PlanStatus.SCHEDULED -> stringResource(R.string.plan_card_status_scheduled)
         PlanStatus.IDLE -> stringResource(R.string.plan_card_status_idle)
     }
+    val statusColor = when (data.status) {
+        PlanStatus.ACTIVE -> WpSuccessDark
+        PlanStatus.SCHEDULED -> WpSuccessDark
+        PlanStatus.IDLE -> MaterialTheme.colorScheme.tertiary
+    }
 
-    // Stagger 入场 — 80ms 错峰
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(index * 80L)
@@ -92,32 +84,35 @@ fun PlanCard(
         modifier = modifier,
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(WpRadius.xxl),
             color = MaterialTheme.colorScheme.surface,
             border = androidx.compose.foundation.BorderStroke(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.outlineVariant,
             ),
-            tonalElevation = 0.dp,
-            shadowElevation = 1.dp,
+            shadowElevation = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick),
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                // ---- 顶部行：icon + title/sub + status badge ----
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .background(planColor)
+                )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(WpRadius.md))
                             .background(iconBg),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -125,7 +120,7 @@ fun PlanCard(
                             imageVector = data.iconKey.icon,
                             contentDescription = null,
                             tint = planColor,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(22.dp),
                         )
                     }
 
@@ -137,6 +132,7 @@ fun PlanCard(
                             text = data.plan.title,
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
+                                fontSize = 17.sp,
                             ),
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -147,43 +143,24 @@ fun PlanCard(
                                 data.todayDurationMinutes,
                             ),
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Medium,
+                                fontSize = 13.sp,
                             ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.tertiary,
                         )
                     }
 
-                    StatusBadge(label = statusLabel, accent = planColor)
-                }
-
-                // ---- 底部行：Progress 标签 + % + 进度条 ----
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(
-                            text = stringResource(R.string.plan_card_progress_label),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = stringResource(R.string.plan_card_progress_percent, data.progressPercent),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                            color = if (data.progressPercent > 0) planColor
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                        StatusBadge(label = statusLabel, accent = statusColor)
+                        Icon(
+                            imageVector = Icons.Outlined.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(18.dp),
                         )
                     }
-                    ProgressBar(
-                        progress = data.progressPercent / 100f,
-                        fillColor = planColor,
-                    )
                 }
             }
         }
@@ -194,84 +171,66 @@ fun PlanCard(
 private fun StatusBadge(label: String, accent: Color) {
     Box(
         modifier = Modifier
-            .background(accent.copy(alpha = 0.10f), RoundedCornerShape(8.dp))
+            .background(accent.copy(alpha = 0.12f), RoundedCornerShape(WpRadius.full))
             .padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.6.sp,
+                fontWeight = FontWeight.Medium,
+                fontSize = 11.sp,
             ),
             color = accent,
         )
     }
 }
 
-@Composable
-private fun ProgressBar(progress: Float, fillColor: Color) {
-    val clamped = progress.coerceIn(0f, 1f)
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(8.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(clamped)
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(fillColor),
-        )
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFF2F0EC, widthDp = 480)
+@Preview(showBackground = true, widthDp = 480)
 @Composable
 private fun PlanCardPreviewActive() {
     WakePlanTheme {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(20.dp)) {
-            PlanCard(
-                data = sampleData(
-                    title = "Fitness Routine",
-                    colorHex = "#D87093",
-                    iconKey = PlanIconKey.FITNESS,
-                    status = PlanStatus.ACTIVE,
-                    totalTaskCount = 12,
-                    todayTaskCount = 4,
-                    todayDurationMinutes = 90,
-                    progressPercent = 50,
-                ),
-                onClick = {},
-            )
-            PlanCard(
-                data = sampleData(
-                    title = "Deep Study Session",
-                    colorHex = "#3B6FB5",
-                    iconKey = PlanIconKey.STUDY,
-                    status = PlanStatus.SCHEDULED,
-                    totalTaskCount = 18,
-                    todayTaskCount = 6,
-                    todayDurationMinutes = 180,
-                    progressPercent = 17,
-                ),
-                onClick = {},
-            )
-            PlanCard(
-                data = sampleData(
-                    title = "Novel Writing",
-                    colorHex = "#2E9B5E",
-                    iconKey = PlanIconKey.WRITING,
-                    status = PlanStatus.IDLE,
-                    totalTaskCount = 8,
-                    todayTaskCount = 0,
-                    todayDurationMinutes = 0,
-                    progressPercent = 0,
-                ),
-                onClick = {},
-            )
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(20.dp)) {
+                PlanCard(
+                    data = sampleData(
+                        title = "Fitness Routine",
+                        colorHex = "#D87093",
+                        iconKey = PlanIconKey.FITNESS,
+                        status = PlanStatus.ACTIVE,
+                        totalTaskCount = 12,
+                        todayTaskCount = 4,
+                        todayDurationMinutes = 90,
+                        progressPercent = 50,
+                    ),
+                    onClick = {},
+                )
+                PlanCard(
+                    data = sampleData(
+                        title = "Deep Study Session",
+                        colorHex = "#3B6FB5",
+                        iconKey = PlanIconKey.STUDY,
+                        status = PlanStatus.SCHEDULED,
+                        totalTaskCount = 18,
+                        todayTaskCount = 6,
+                        todayDurationMinutes = 180,
+                        progressPercent = 17,
+                    ),
+                    onClick = {},
+                )
+                PlanCard(
+                    data = sampleData(
+                        title = "Novel Writing",
+                        colorHex = "#2E9B5E",
+                        iconKey = PlanIconKey.WRITING,
+                        status = PlanStatus.IDLE,
+                        totalTaskCount = 8,
+                        todayTaskCount = 0,
+                        todayDurationMinutes = 0,
+                        progressPercent = 0,
+                    ),
+                    onClick = {},
+                )
+            }
         }
     }
 }

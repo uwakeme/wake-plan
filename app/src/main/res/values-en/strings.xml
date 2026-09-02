@@ -207,6 +207,7 @@ and manage fitness / study / side hustle separately</string>
     <string name="settings_section_backup">Data backup</string>
     <string name="settings_backup_intro">Export your data to a local file, or restore from a backup.
 Encrypted backups use AES-256 + PBKDF2. Keep your password safe — it cannot be recovered.</string>
+    <string name="settings_backup_export_title">Export backup</string>
     <string name="settings_backup_export_plain">Export plain</string>
     <string name="settings_backup_export_encrypted">Export encrypted</string>
     <string name="settings_backup_import">Import backup</string>
@@ -276,6 +277,7 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <!-- About section — Phase 6.1 (v0.3 P1 US) -->
     <!-- ============================================================ -->
     <string name="about_section">About</string>
+    <string name="about_tagline">Free your plans</string>
     <string name="about_privacy_policy_title">Privacy policy</string>
     <string name="about_privacy_policy_summary">No upload, local encryption</string>
     <string name="about_privacy_policy_content">Wake Plan is a local-first time management app:\n\n• No network requests, no data collection\n• All data stored on the device, SQLCipher AES-256 encryption\n• Backups controlled by the user (SAF picker)\n• No third-party analytics, ads, or tracking SDKs\n\nFound a problem? Open an issue or PR on GitHub.</string>
@@ -318,10 +320,6 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="settings_lead_time_zero">No lead</string>
     <string name="settings_lead_time_n_minutes">%1$d min</string>
     <string name="settings_pick_location">Pick location</string>
-    <string name="settings_export_success_runtime">Export successful: %1$d KB</string>
-    <string name="settings_export_failed_runtime">Export failed: %1$s</string>
-    <string name="settings_import_success_runtime">Import successful: %1$d plans / %2$d tasks / %3$d completions</string>
-    <string name="settings_import_failed_runtime">Import failed: %1$s</string>
     <string name="settings_backup_intro_runtime">Export data to a local file, or restore from a backup file.\\nEncrypted backups use AES-256 + PBKDF2; keep your password safe.</string>
     <string name="settings_export_plain_dialog_text_runtime">Plain backup is not encrypted; the file content is human-readable.\\nThe exported JSON can be opened in any text editor.</string>
     <string name="settings_export_encrypted_dialog_message_runtime">Set a password of at least 8 characters.\\nLost passwords cannot be recovered.</string>
@@ -329,7 +327,6 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="backup_passphrase_repeat">Repeat password</string>
     <string name="backup_passphrase_empty">Password cannot be empty</string>
     <string name="backup_passphrase_too_short">Password must be at least %1$d characters</string>
-    <string name="backup_passphrase_too_short_runtime">Password must be at least %1$d characters</string>
     <string name="backup_passphrase_mismatch">The two passwords do not match</string>
     <string name="backup_confirm">Confirm</string>
     <string name="backup_cancel">Cancel</string>

@@ -1,15 +1,14 @@
 package com.wakeplan.app.ui.stats
 
-import com.wakeplan.app.ui.common.WpRadius
-
-
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,15 +19,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -38,58 +32,79 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.StarOutline
+import com.wakeplan.app.R
 import com.wakeplan.app.domain.usecase.StatsUseCase
+import com.wakeplan.app.ui.common.WpRadius
 import com.wakeplan.app.ui.common.parseHexColor
-import java.time.LocalDate
+import com.wakeplan.app.ui.theme.PlanSideProjectDark
+import com.wakeplan.app.ui.theme.WpInfoDark
+import com.wakeplan.app.ui.theme.WpSuccessDark
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
-import androidx.compose.ui.res.stringResource
-import com.wakeplan.app.R
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen() {
     val viewModel: StatsViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.stats_title)) })
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            RangeToggle(
-                current = state.range,
-                onChange = { viewModel.selectRange(it) },
-            )
-            val result = state.result
-            if (result == null) {
-                // loading 或空 — 都给个空态
-                EmptyStatsState()
-            } else {
-                NumberCards(result)
-                PerDayLineChart(result)
-                PerPlanList(result)
-                PerPlanBarChart(result)
-            }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Spacer(Modifier.height(44.dp))
+
+        Text(
+            text = stringResource(R.string.stats_title),
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.04).sp,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = 20.dp),
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        RangeToggle(
+            current = state.range,
+            onChange = { viewModel.selectRange(it) },
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        val result = state.result
+        if (result == null) {
+            EmptyStatsState()
+        } else {
+            StatsGrid(result)
+            Spacer(Modifier.height(16.dp))
+            PerDayLineChart(result)
+            Spacer(Modifier.height(16.dp))
+            PerPlanList(result)
+            Spacer(Modifier.height(16.dp))
+            PerPlanBarChart(result)
         }
+
+        Spacer(Modifier.height(100.dp))
     }
 }
 
@@ -98,22 +113,38 @@ private fun RangeToggle(
     current: StatsUseCase.Range,
     onChange: (StatsUseCase.Range) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(WpRadius.xl))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = RoundedCornerShape(WpRadius.xl),
+            )
+            .padding(4.dp),
     ) {
-        RangeButton(
-            label = stringResource(R.string.stats_range_7d),
-            selected = current == StatsUseCase.Range.LAST_7_DAYS,
-            onClick = { onChange(StatsUseCase.Range.LAST_7_DAYS) },
-            modifier = Modifier.weight(1f),
-        )
-        RangeButton(
-            label = stringResource(R.string.stats_range_30d),
-            selected = current == StatsUseCase.Range.LAST_30_DAYS,
-            onClick = { onChange(StatsUseCase.Range.LAST_30_DAYS) },
-            modifier = Modifier.weight(1f),
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            RangeButton(
+                label = stringResource(R.string.stats_range_week),
+                selected = current == StatsUseCase.Range.LAST_7_DAYS,
+                onClick = { onChange(StatsUseCase.Range.LAST_7_DAYS) },
+                modifier = Modifier.weight(1f),
+            )
+            RangeButton(
+                label = stringResource(R.string.stats_range_month),
+                selected = current == StatsUseCase.Range.LAST_30_DAYS,
+                onClick = { onChange(StatsUseCase.Range.LAST_30_DAYS) },
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
@@ -124,70 +155,133 @@ private fun RangeButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (selected) {
-        Button(onClick = onClick, modifier = modifier) { Text(label) }
-    } else {
-        OutlinedButton(onClick = onClick, modifier = modifier) { Text(label) }
-    }
-}
-
-@Composable
-private fun NumberCards(result: StatsUseCase.StatsResult) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumberCard(
-                title = stringResource(R.string.stats_metric_completed),
-                value = "${result.totalCompleted}",
-                modifier = Modifier.weight(1f),
-            )
-            NumberCard(
-                title = stringResource(R.string.stats_metric_on_time_rate),
-                value = "${(result.onTimeRate * 100).toInt()}%",
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumberCard(
-                title = stringResource(R.string.stats_metric_avg_overrun),
-                value = if (result.avgOverrunMinutes == 0) "—" else stringResource(R.string.stats_metric_avg_overrun_runtime, result.avgOverrunMinutes),
-                modifier = Modifier.weight(1f),
-            )
-            NumberCard(
-                title = stringResource(R.string.stats_metric_skipped_missed),
-                value = "${result.totalSkipped + result.totalPending}",
-                modifier = Modifier.weight(1f),
+    Surface(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth().fillMaxHeight(),
+        shape = RoundedCornerShape(WpRadius.lg),
+        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (selected) Color(0xFF090E1A) else MaterialTheme.colorScheme.tertiary,
             )
         }
     }
 }
 
 @Composable
-private fun NumberCard(
-    title: String,
+private fun StatsGrid(result: StatsUseCase.StatsResult) {
+    val totalTasks = result.totalCompleted + result.totalSkipped + result.totalPending
+    val focusRate = (result.onTimeRate * 100).toInt()
+    val streakDays = calculateStreak(result.perDay)
+
+    Column(
+        modifier = Modifier.padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            StatCard(
+                icon = Icons.Outlined.Schedule,
+                value = totalTasks.toString(),
+                label = stringResource(R.string.stats_metric_total_duration),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            StatCard(
+                icon = Icons.Outlined.CheckCircle,
+                value = result.totalCompleted.toString(),
+                label = stringResource(R.string.stats_metric_tasks_done),
+                color = WpInfoDark,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            StatCard(
+                icon = Icons.Outlined.StarOutline,
+                value = "$focusRate%",
+                label = stringResource(R.string.stats_metric_focus),
+                color = WpSuccessDark,
+                modifier = Modifier.weight(1f),
+            )
+            StatCard(
+                icon = Icons.Outlined.LocalFireDepartment,
+                value = stringResource(R.string.stats_streak_days, streakDays),
+                label = stringResource(R.string.stats_metric_streak),
+                color = PlanSideProjectDark,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+private fun calculateStreak(perDay: List<StatsUseCase.DayBucket>): Int {
+    var streak = 0
+    for (bucket in perDay.asReversed()) {
+        if (bucket.completedCount > 0) {
+            streak++
+        } else {
+            break
+        }
+    }
+    return streak
+}
+
+@Composable
+private fun StatCard(
+    icon: ImageVector,
     value: String,
+    label: String,
+    color: Color,
     modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(WpRadius.lg),
+        shape = RoundedCornerShape(WpRadius.xl),
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.outlineVariant,
         ),
-        shadowElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineSmall,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurface,
+                lineHeight = 28.sp,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = label,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.tertiary,
             )
         }
     }
@@ -196,22 +290,24 @@ private fun NumberCard(
 @Composable
 private fun PerPlanList(result: StatsUseCase.StatsResult) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(WpRadius.lg),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        shape = RoundedCornerShape(WpRadius.xl),
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.outlineVariant,
         ),
-        shadowElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = stringResource(R.string.stats_per_plan_title),
-                style = MaterialTheme.typography.titleSmall,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             if (result.perPlan.isEmpty()) {
                 Text(
                     text = stringResource(R.string.stats_per_plan_empty),
@@ -243,7 +339,8 @@ private fun PerPlanList(result: StatsUseCase.StatsResult) {
                         )
                         Text(
                             text = "${bucket.completedCount}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
@@ -256,14 +353,15 @@ private fun PerPlanList(result: StatsUseCase.StatsResult) {
 @Composable
 private fun EmptyStatsState() {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(WpRadius.lg),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        shape = RoundedCornerShape(WpRadius.xl),
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
             width = 1.dp,
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         ),
-        shadowElevation = 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
@@ -278,24 +376,21 @@ private fun EmptyStatsState() {
                 text = stringResource(R.string.stats_empty_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
             )
         }
     }
 }
 
-// ====================================================================
-// Phase 5.2.2: 折线图（7/30 天完成趋势）
-// ====================================================================
-
 @Composable
 private fun PerDayLineChart(result: StatsUseCase.StatsResult) {
     val perDay = result.perDay
-    // maxOf 在空集合上抛 NoSuchElementException — 空数据时直接给空态
     if (perDay.isEmpty() || perDay.all { it.completedCount == 0 }) {
         Text(
             text = stringResource(R.string.stats_per_day_empty),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 20.dp),
         )
         return
     }
@@ -311,22 +406,24 @@ private fun PerDayLineChart(result: StatsUseCase.StatsResult) {
     val density = LocalDensity.current
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(WpRadius.lg),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        shape = RoundedCornerShape(WpRadius.xl),
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.outlineVariant,
         ),
-        shadowElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = stringResource(R.string.stats_per_day_title),
-                style = MaterialTheme.typography.titleSmall,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             if (perDay.all { it.completedCount == 0 }) {
                 Text(
                     text = stringResource(R.string.stats_per_day_empty),
@@ -341,17 +438,15 @@ private fun PerDayLineChart(result: StatsUseCase.StatsResult) {
                 ) {
                     val w = size.width
                     val h = size.height
-                    val padding = with(density) { 24.dp.toPx() }   // 给 Y 轴文字留位
+                    val padding = with(density) { 24.dp.toPx() }
                     val plotW = w - padding
-                    val plotH = h - with(density) { 18.dp.toPx() } // 给 X 轴文字留位
+                    val plotH = h - with(density) { 18.dp.toPx() }
                     val plotTop = with(density) { 4.dp.toPx() }
                     val plotLeft = padding
 
-                    // 网格线（3 条：0, max/2, max；中间值跟 0/1 重合时跳过）
                     for (i in 0..2) {
                         val y = plotTop + plotH * (1f - i / 2f)
                         val label = ((maxY.toFloat() * i / 2f).toInt()).toString()
-                        // 跳过重复 label（maxY=1, i=1 → "0" 跟 i=0 一样）
                         if (i == 1 && (label == "0" || label == maxY.toString())) continue
                         drawLine(
                             color = outlineColor.copy(alpha = 0.4f),
@@ -371,7 +466,6 @@ private fun PerDayLineChart(result: StatsUseCase.StatsResult) {
 
                     if (perDay.size < 2) return@Canvas
 
-                    // 折线 + 点
                     val xStep = plotW / (perDay.size - 1).toFloat()
                     val points = perDay.mapIndexed { idx, bucket ->
                         Offset(
@@ -396,7 +490,6 @@ private fun PerDayLineChart(result: StatsUseCase.StatsResult) {
                         )
                     }
 
-                    // X 轴标签：第 1 个、中间、最后 1 个
                     val xLabelStyle = labelStyle
                     val xLabelIndices = listOf(0, perDay.size / 2, perDay.size - 1).distinct()
                     xLabelIndices.forEach { idx ->
@@ -419,19 +512,15 @@ private fun PerDayLineChart(result: StatsUseCase.StatsResult) {
 
 private val X_LABEL_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("M/d")
 
-// ====================================================================
-// Phase 5.2.2: 柱状图（按计划完成数）
-// ====================================================================
-
 @Composable
 private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
     val perPlan = result.perPlan
-    // maxOf 在空集合上抛 NoSuchElementException — 新装 App 没有任何完成记录时直接 crash
     if (perPlan.isEmpty()) {
         Text(
             text = stringResource(R.string.stats_per_plan_empty),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 20.dp),
         )
         return
     }
@@ -443,22 +532,24 @@ private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
     val density = LocalDensity.current
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(WpRadius.lg),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        shape = RoundedCornerShape(WpRadius.xl),
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.outlineVariant,
         ),
-        shadowElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = stringResource(R.string.stats_per_plan_bar_title),
-                style = MaterialTheme.typography.titleSmall,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             if (perPlan.isEmpty()) {
                 Text(
                     text = stringResource(R.string.stats_per_day_empty),
@@ -473,14 +564,13 @@ private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
                 ) {
                     val w = size.width
                     val h = size.height
-                    val paddingBottom = with(density) { 28.dp.toPx() }   // X 轴标签
-                    val paddingLeft = with(density) { 24.dp.toPx() }     // Y 轴标签
+                    val paddingBottom = with(density) { 28.dp.toPx() }
+                    val paddingLeft = with(density) { 24.dp.toPx() }
                     val plotW = w - paddingLeft
                     val plotH = h - paddingBottom
                     val plotTop = with(density) { 4.dp.toPx() }
                     val plotLeft = paddingLeft
 
-                    // 0 基线
                     drawLine(
                         color = outlineColor,
                         start = Offset(plotLeft, plotTop + plotH),
@@ -488,11 +578,9 @@ private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
                         strokeWidth = 1f,
                     )
 
-                    // Y 轴标签：0, max/2, max；中间值跟 0/1 重合时跳过避免重复
                     for (i in 0..2) {
                         val yVal = (maxY.toFloat() * i / 2f).toInt()
                         val y = plotTop + plotH * (1f - i / 2f)
-                        // 跳过中间值跟两端重复的（比如 maxY=1, i=1 → 0，跟 i=0 重复）
                         if (i == 1 && (yVal == 0 || yVal == maxY)) continue
                         val text = textMeasurer.measure(yVal.toString(), style = labelStyle)
                         drawText(
@@ -504,7 +592,6 @@ private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
                         )
                     }
 
-                    // 柱
                     val barCount = perPlan.size
                     val groupWidth = plotW / barCount
                     val barWidth = groupWidth * 0.6f
@@ -520,7 +607,6 @@ private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
                             topLeft = Offset(barLeft, barTop),
                             size = Size(barWidth, barHeight),
                         )
-                        // 柱顶数字
                         val valueText = textMeasurer.measure(
                             bucket.completedCount.toString(),
                             style = labelStyle.copy(fontSize = 10.sp),
@@ -532,7 +618,6 @@ private fun PerPlanBarChart(result: StatsUseCase.StatsResult) {
                                 y = barTop - valueText.size.height - 2f,
                             ),
                         )
-                        // X 轴标签：plan 标题（截断）
                         val labelText = if (bucket.planTitle.length > 6) {
                             bucket.planTitle.take(5) + "…"
                         } else {

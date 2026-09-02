@@ -26,7 +26,6 @@ private val tightLineHeightStyle = LineHeightStyle(
 )
 
 val WpTypography = Typography(
-    // display: 60sp/66sp Bold -0.04em — 用于启动屏 / 大数字
     displayLarge = TextStyle(
         fontFamily = displayFamily,
         fontWeight = FontWeight.Bold,
@@ -35,7 +34,22 @@ val WpTypography = Typography(
         letterSpacing = (-0.04f * 60).sp,
         lineHeightStyle = tightLineHeightStyle,
     ),
-    // 3xl: 36sp/44sp Bold
+    displayMedium = TextStyle(
+        fontFamily = displayFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 48.sp,
+        lineHeight = 54.sp,
+        letterSpacing = (-0.04f * 48).sp,
+        lineHeightStyle = tightLineHeightStyle,
+    ),
+    displaySmall = TextStyle(
+        fontFamily = displayFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 36.sp,
+        lineHeight = 44.sp,
+        letterSpacing = (-0.04f * 36).sp,
+        lineHeightStyle = tightLineHeightStyle,
+    ),
     headlineLarge = TextStyle(
         fontFamily = displayFamily,
         fontWeight = FontWeight.Bold,
@@ -43,7 +57,6 @@ val WpTypography = Typography(
         lineHeight = 44.sp,
         letterSpacing = (-0.04f * 36).sp,
     ),
-    // 2xl: 28sp/36sp Semibold
     headlineMedium = TextStyle(
         fontFamily = displayFamily,
         fontWeight = FontWeight.SemiBold,
@@ -51,53 +64,72 @@ val WpTypography = Typography(
         lineHeight = 36.sp,
         letterSpacing = (-0.04f * 28).sp,
     ),
-    // xl: 20sp/28sp Semibold — 卡片标题
+    headlineSmall = TextStyle(
+        fontFamily = displayFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
+        letterSpacing = (-0.02f * 24).sp,
+    ),
     titleLarge = TextStyle(
         fontFamily = bodyFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
         lineHeight = 28.sp,
     ),
-    // lg: 17sp/24sp Medium — 列表项主文案
     titleMedium = TextStyle(
         fontFamily = bodyFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 17.sp,
         lineHeight = 24.sp,
     ),
-    // base: 15sp/22sp Normal — 正文
+    titleSmall = TextStyle(
+        fontFamily = bodyFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 15.sp,
+        lineHeight = 22.sp,
+    ),
     bodyLarge = TextStyle(
         fontFamily = bodyFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 15.sp,
         lineHeight = 22.sp,
     ),
-    // sm: 13sp/18sp Normal — 副文案
     bodyMedium = TextStyle(
         fontFamily = bodyFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 13.sp,
         lineHeight = 18.sp,
     ),
-    // xs: 11sp/16sp Medium 0.06em — tab 标签 / 角标
+    bodySmall = TextStyle(
+        fontFamily = bodyFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+    ),
+    labelLarge = TextStyle(
+        fontFamily = bodyFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 13.sp,
+        lineHeight = 18.sp,
+        letterSpacing = 0.78.sp,
+    ),
     labelMedium = TextStyle(
         fontFamily = bodyFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.66.sp, // 0.06em
+        letterSpacing = 0.66.sp,
     ),
-    // 2xs: 10sp/14sp Medium 0.06em — 最小标签
     labelSmall = TextStyle(
         fontFamily = bodyFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 10.sp,
         lineHeight = 14.sp,
-        letterSpacing = 0.6.sp, // 0.06em
+        letterSpacing = 0.6.sp,
     ),
 )
 
-/** 时间 / 倒计时专用字体族：等宽数字 */
 val WpMonoStyle = TextStyle(
     fontFamily = monoFamily,
     fontWeight = FontWeight.Medium,

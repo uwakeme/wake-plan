@@ -1,5 +1,6 @@
 package com.wakeplan.app.ui.plan
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wakeplan.app.domain.repository.PlanRepository
@@ -17,15 +18,20 @@ import java.time.LocalDate
 import javax.inject.Inject
 
 /**
- * 新建计划 ViewModel
+ * 新建/编辑计划 ViewModel
  * - 表单状态：title / colorHex / startDate
  * - 派生：isValid（标题 1-30 字）
  * - savedEvent：保存成功事件，UI 收到后 popBackStack
+ * - 当 SavedStateHandle 含有 ARG_PLAN_ID 时进入编辑模式，加载现有 plan 并在 save() 时 update
  */
 @HiltViewModel
 class CreatePlanViewModel @Inject constructor(
     private val planRepository: PlanRepository,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+
+    private val editingPlanId: String? = savedStateHandle[ARG_PLAN_ID]
+    val isEditMode: Boolean = editingPlanId != null
 
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
@@ -48,6 +54,18 @@ class CreatePlanViewModel @Inject constructor(
     private val _savedEvent = Channel<Unit>(Channel.BUFFERED)
     val savedEvent = _savedEvent.receiveAsFlow()
 
+    init {
+        if (editingPlanId != null) {
+            viewModelScope.launch {
+                planRepository.getById(editingPlanId)?.let { existing ->
+                    _title.value = existing.title
+                    _colorHex.value = existing.colorHex
+                    _startDate.value = existing.startDate
+                }
+            }
+        }
+    }
+
     fun setTitle(value: String) {
         _title.value = value.take(MAX_TITLE_LENGTH + 5) // 允许超长输入以便 isError 显示
     }
@@ -67,16 +85,28 @@ class CreatePlanViewModel @Inject constructor(
         if (currentTitle.isEmpty() || currentTitle.length > MAX_TITLE_LENGTH) return
 
         viewModelScope.launch {
-            planRepository.create(
-                title = currentTitle,
-                colorHex = _colorHex.value,
-                startDate = _startDate.value,
-            )
+            if (editingPlanId != null) {
+                val existing = planRepository.getById(editingPlanId) ?: return@launch
+                planRepository.update(
+                    existing.copy(
+                        title = currentTitle,
+                        colorHex = _colorHex.value,
+                        startDate = _startDate.value,
+                    )
+                )
+            } else {
+                planRepository.create(
+                    title = currentTitle,
+                    colorHex = _colorHex.value,
+                    startDate = _startDate.value,
+                )
+            }
             _savedEvent.send(Unit)
         }
     }
 
     companion object {
         const val MAX_TITLE_LENGTH = 30
+        const val ARG_PLAN_ID = "planId"
     }
 }
