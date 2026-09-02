@@ -14,6 +14,7 @@ lifecycle = "2.8.6"
 activityCompose = "1.9.3"
 datastore = "1.1.1"
 appcompat = "1.7.0"
+splashscreen = "1.0.1"
 serialization = "1.7.3"
 coroutines = "1.8.1"
 desugar = "2.1.2"
@@ -33,6 +34,9 @@ compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+
+# Material Components — Theme.Material3.* XML 主题（启动主题 postSplashScreenTheme 用）
+material = { group = "com.google.android.material", name = "material", version = "1.12.0" }
 
 # Activity + Lifecycle
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -64,6 +68,10 @@ datastore-preferences = { group = "androidx.datastore", name = "datastore-prefer
 
 # AppCompat — v0.3 Per-app locale 支持（AppCompatDelegate.setApplicationLocales）
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+
+# SplashScreen — Android 12+ 官方启动主题 API，向下兼容到 API 23
+# v0.4 启动动画：Theme.WakePlan.Splash + installSplashScreen() + setOnExitAnimationListener
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 
 # Serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Splash 图标（静态）— 日出意象
+  - 太阳（品牌主色 #F0B44A）：圆心 (54,52) 半径 11
+  - 地平线弧（冷白 40%）：圆心 (54,60) 半径 24 的下半弧，太阳坐在弧口
+
+  系统 splash icon 会被居中圆形 mask 裁剪（安全半径约 viewport 的 0.42 ≈ 45），
+  所有元素最远点距 (54,54) 不超过 30，保证不被裁切。
+  动画由 Compose 层 BrandedSplash 负责，系统侧只放静态图，避免 API 31+ AVD 只播一次的怪异行为。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 地平线弧：开口朝上的下半弧，从 (32,60) 到 (76,60) -->
+    <path
+        android:name="horizon"
+        android:strokeColor="#668492AD"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M32,60 A24,24 0 0 1 76,60" />
+
+    <!-- 太阳：品牌主色实心圆，压在地平线弧口上 -->
+    <path
+        android:name="sun"
+        android:fillColor="#F0B44A"
+        android:pathData="M54,52 m-11,0 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0 Z" />
+</vector>

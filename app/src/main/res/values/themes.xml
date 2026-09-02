@@ -1,14 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Splash / 启动主题：Compose 接管前先用浅色避免白屏闪烁 -->
-    <!-- parent 用 framework Material 主题——零依赖；Compose Material3 立即接管 -->
-    <style name="Theme.WakePlan.Splash" parent="@android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/splash_bg</item>
-        <item name="android:statusBarColor">@color/system_bar_light</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
-        <item name="android:navigationBarColor">@color/splash_bg</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+    <!-- 启动主题（v0.4）
+         - 用 androidx.core-splashscreen 提供的 Theme.SplashScreen 桥接（兼容 API 23+）
+         - windowSplashScreenBackground = 深色背景（强制深色，与主 App 一致）
+         - windowSplashScreenAnimatedIcon = 静态日出图标（动画由 Compose 层 BrandedSplash 负责；
+           系统侧不放 AVD —— API 31+ 上 AVD 只播一次且 keep-condition 重评估依赖 view 重绘，易卡死）
+         - postSplashScreenTheme = 真实 App 主题 Theme.WakePlan（MainActivity 切过去） -->
+    <style name="Theme.WakePlan.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.WakePlan</item>
+
+        <!-- 系统栏：深色背景 + 亮色图标 = false（图标是亮色 → false 表示不强制浅色图标） -->
+        <item name="android:statusBarColor">@color/system_bar_dark</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <item name="android:navigationBarColor">@color/system_bar_dark</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+    </style>
+
+    <!-- 真实 App 主题（v0.4）
+         - 仍走 Material 3 桥接：enableEdgeToEdge 之后再切到这个主题
+         - DayNight 让 system bar 的颜色自适应（亮/暗模式），
+           实际业务层 WakePlanTheme 强制深色，所以这层主要是给 system bar 一个初始值 -->
+    <style name="Theme.WakePlan" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
     </style>
 
 </resources>

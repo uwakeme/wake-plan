@@ -92,6 +92,8 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
+    // Material Components — Theme.Material3.* XML 主题用（postSplashScreenTheme 切到这里）
+    implementation(libs.material)
     debugImplementation(libs.compose.ui.tooling)
 
     // Activity + Lifecycle
@@ -124,6 +126,9 @@ dependencies {
     // AppCompat — v0.3 Per-app locale (AppCompatDelegate.setApplicationLocales)
     // 跨 API 26-35 都能用：API 33+ 走 system LocaleManager，< 33 走 appcompat 自己的实现
     implementation(libs.appcompat)
+
+    // SplashScreen — v0.4 启动动画（官方 API，向下兼容到 API 23）
+    implementation(libs.androidx.core.splashscreen)
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)

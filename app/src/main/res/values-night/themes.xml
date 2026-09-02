@@ -1,12 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- 深色模式启动主题 -->
-    <style name="Theme.WakePlan.Splash" parent="@android:style/Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/splash_bg</item>
+    <!-- 启动主题 — 强制深色，与日间/夜间都一致 -->
+    <style name="Theme.WakePlan.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.WakePlan</item>
+
         <item name="android:statusBarColor">@color/system_bar_dark</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
         <item name="android:navigationBarColor">@color/system_bar_dark</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+    </style>
+
+    <!-- 真实 App 主题 — 夜间也走同一个 Theme.WakePlan（强制深色） -->
+    <style name="Theme.WakePlan" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
     </style>
 
