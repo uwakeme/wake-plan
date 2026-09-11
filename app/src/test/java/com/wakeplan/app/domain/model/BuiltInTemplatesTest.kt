@@ -1,22 +1,22 @@
 package com.wakeplan.app.domain.model
 
+import java.time.DayOfWeek
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * BuiltInTemplates 单测 — v0.3 扁平化
- *
- * v0.3 砍段后模板元数据简化：只保留 id / title / colorHex，segments + tasks 完整 spec
- * 留 commit 6 整体重写模板系统时再实装。
+ * BuiltInTemplates 单测 — v0.4 实装完整 spec
  *
  * 覆盖：
  * - 3 个元数据都存在
- * - specFor 全部返回 null（v0.3 简化）
- * - toPlanTemplate(meta) 直接返回 meta（不 enrich）
- * - toPlanTemplate(spec) 返回带 spec 元数据的 PlanTemplate
+ * - specFor 内置 id 返回完整 spec（非空任务），未知 id 返回 null
+ * - toPlanTemplate(meta) 对内置模板 enrich 出任务，用户模板原样返回
+ * - toPlanTemplate(spec) 的任务占位 id 唯一（详情页列表 key 依赖）
+ * - spec 数据合法性：时间窗有序、CUSTOM 必填 customDays
  */
 class BuiltInTemplatesTest {
 
@@ -43,39 +43,75 @@ class BuiltInTemplatesTest {
         assertEquals("#8B5CF6", weekend.colorHex)
     }
 
-    @Test fun `specFor v0_3 全部返回 null（commit 6 整体重写）`() {
-        // v0.3 砍段：完整 spec 暂不实装；specFor 全部 null
-        assertNull(BuiltInTemplates.specFor("tpl_morning"))
-        assertNull(BuiltInTemplates.specFor("tpl_study"))
-        assertNull(BuiltInTemplates.specFor("tpl_weekend_reading"))
+    @Test fun `specFor 内置 id 返回非空任务 spec — 未知 id 返回 null`() {
+        BuiltInTemplates.ALL.forEach { spec ->
+            val found = BuiltInTemplates.specFor(spec.id)
+            assertNotNull(found, spec.id)
+            assertTrue(found!!.tasks.isNotEmpty(), "${spec.id} 任务列表为空")
+        }
         assertNull(BuiltInTemplates.specFor("tpl_unknown"))
         assertNull(BuiltInTemplates.specFor(""))
     }
 
-    @Test fun `toPlanTemplate(meta) 直接返回 meta（v0_3 不 enrich）`() {
-        val meta = PlanTemplate(
+    @Test fun `spec 数据合法 — 时间窗有序且 CUSTOM 必填 customDays`() {
+        BuiltInTemplates.ALL.forEach { spec ->
+            spec.tasks.forEach { t ->
+                assertTrue(t.startMinutes < t.endMinutes, "${spec.id}/${t.title} 时间窗无序")
+                assertTrue(t.endMinutes <= 2880, "${spec.id}/${t.title} endMinutes 超界")
+                if (t.repeatRule == RepeatRule.CUSTOM) {
+                    assertTrue(t.customDays.isNotEmpty(), "${spec.id}/${t.title} CUSTOM 缺 customDays")
+                }
+            }
+        }
+        // 周末阅读任务必须只落在周末
+        val weekend = BuiltInTemplates.specFor("tpl_weekend_reading")!!
+        weekend.tasks.forEach { t ->
+            assertEquals(RepeatRule.CUSTOM, t.repeatRule, "${t.title} 应为 CUSTOM")
+            assertEquals(setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY), t.customDays, "${t.title} 应只在周末")
+        }
+    }
+
+    @Test fun `toPlanTemplate(meta) 对内置模板 enrich 出任务，用户模板原样返回`() {
+        val builtinMeta = PlanTemplate(
+            id = "tpl_morning",
+            title = "标准晨练",
+            colorHex = "#C48520",
+            isBuiltIn = true,
+        )
+        val enriched = BuiltInTemplates.toPlanTemplate(builtinMeta)
+        assertTrue(enriched.tasks.isNotEmpty())
+        assertEquals("跑步 40 分钟", enriched.tasks.first { it.isLocked }.title)
+
+        val userMeta = PlanTemplate(
             id = "tpl_user",
             title = "用户模板",
             colorHex = "#999999",
             isBuiltIn = false,
         )
-        val result = BuiltInTemplates.toPlanTemplate(meta)
-        // v0.3：返回原 meta
-        assertSame(meta, result)
+        assertSame(userMeta, BuiltInTemplates.toPlanTemplate(userMeta))
     }
 
-    @Test fun `toPlanTemplate(spec) 返回带 spec 元数据的 PlanTemplate（tasks 列表空）`() {
-        val spec = BuiltInTemplateSpec(
-            id = "tpl_morning",
-            title = "标准晨练",
-            colorHex = "#C48520",
-        )
+    @Test fun `toPlanTemplate(spec) 任务字段映射正确且占位 id 唯一`() {
+        val spec = BuiltInTemplates.specFor("tpl_study")!!
         val result = BuiltInTemplates.toPlanTemplate(spec)
-        assertEquals("tpl_morning", result.id)
-        assertEquals("标准晨练", result.title)
-        assertEquals("#C48520", result.colorHex)
+        assertEquals("tpl_study", result.id)
+        assertEquals("标准学习", result.title)
+        assertEquals("#3B6FB5", result.colorHex)
         assertEquals(true, result.isBuiltIn)
-        // v0.3：tasks 列表空（commit 6 实装完整 spec 时再填）
-        assertEquals(0, result.tasks.size)
+
+        assertEquals(spec.tasks.size, result.tasks.size)
+        assertEquals(spec.tasks.map { it.title }, result.tasks.map { it.title })
+        assertEquals(spec.tasks.mapIndexed { i, _ -> i }, result.tasks.map { it.orderInPlan })
+        // 详情页 items(key = task.id)：占位 id 必须唯一
+        assertEquals(result.tasks.size, result.tasks.map { it.id }.toSet().size)
+        result.tasks.zip(spec.tasks).forEach { (task, s) ->
+            assertEquals(s.startMinutes, task.startMinutes)
+            assertEquals(s.endMinutes, task.endMinutes)
+            assertEquals(s.repeatRule, task.repeatRule)
+            assertEquals(s.customDays, task.customDays)
+            assertEquals(s.isLocked, task.isLocked)
+            assertEquals(s.note, task.note)
+            assertEquals(spec.id, task.planId)
+        }
     }
 }
