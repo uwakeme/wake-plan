@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Unarchive
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -83,6 +84,7 @@ fun PlanDetailScreen(
     val plan by viewModel.plan.collectAsStateWithLifecycle()
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val stats by viewModel.stats.collectAsStateWithLifecycle()
+    val todayConflicts by viewModel.todayConflicts.collectAsStateWithLifecycle()
     var showDeletePlanDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
 
@@ -170,6 +172,7 @@ fun PlanDetailScreen(
                             task = task,
                             accent = planColor,
                             onClick = { onTaskClick(task.id) },
+                            conflictMinutes = todayConflicts[task.id]?.overlapMinutes,
                         )
                     }
                 }
@@ -434,6 +437,7 @@ private fun PlanTaskItem(
     task: Task,
     accent: Color,
     onClick: () -> Unit,
+    conflictMinutes: Int? = null,
 ) {
     val isCompleted = false
     val completedAlpha = if (isCompleted) 0.5f else 1f
@@ -510,6 +514,28 @@ private fun PlanTaskItem(
                                 fontWeight = FontWeight.Medium,
                             ),
                             color = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
+                }
+
+                // v0.4 内联冲突标注（PRD US-09：不弹 modal）
+                if (conflictMinutes != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Outlined.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(13.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(R.string.plan_detail_conflict, conflictMinutes),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = MaterialTheme.colorScheme.error,
                         )
                     }
                 }

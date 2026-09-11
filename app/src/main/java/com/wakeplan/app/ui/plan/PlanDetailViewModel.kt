@@ -9,6 +9,8 @@ import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.repository.PlanRepository
 import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
+import com.wakeplan.app.domain.usecase.ConflictDetector
+import com.wakeplan.app.domain.usecase.TaskConflict
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +38,7 @@ class PlanDetailViewModel @Inject constructor(
     private val planRepository: PlanRepository,
     private val taskRepository: TaskRepository,
     private val completionRepository: TaskCompletionRepository,
+    private val conflictDetector: ConflictDetector,
 ) : ViewModel() {
 
     val planId: String = checkNotNull(savedStateHandle.get<String>(ARG_PLAN_ID)) {
@@ -47,6 +50,24 @@ class PlanDetailViewModel @Inject constructor(
 
     val tasks: StateFlow<List<Task>> = taskRepository.observeByPlan(planId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /**
+     * 今天本计划任务参与的时间冲突（taskId → 首个冲突）— v0.4 内联冲突标注
+     * 跨 plan 检测（拿全天 completion 合并算），只保留涉及本计划的
+     */
+    val todayConflicts: StateFlow<Map<String, TaskConflict>> = combine(
+        taskRepository.observeByPlan(planId),
+        completionRepository.observeByDate(LocalDate.now()),
+    ) { planTasks, todayCompletions ->
+        if (planTasks.isEmpty()) return@combine emptyMap()
+        val planTaskIds = planTasks.map { it.id }.toSet()
+        val result = linkedMapOf<String, TaskConflict>()
+        conflictDetector(todayCompletions, LocalDate.now()).forEach { c ->
+            if (c.taskA.taskId in planTaskIds) result.putIfAbsent(c.taskA.taskId, c)
+            if (c.taskB.taskId in planTaskIds) result.putIfAbsent(c.taskB.taskId, c)
+        }
+        result
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     private val _stats = MutableStateFlow(PlanDetailStats())
     val stats: StateFlow<PlanDetailStats> = _stats.asStateFlow()

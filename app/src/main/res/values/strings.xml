@@ -112,6 +112,7 @@
     <string name="plan_card_progress_percent">%1$d%%</string>
     <string name="plan_card_stats_tasks_minutes">%1$d 任务 · %2$d 分钟</string>
 
+    <string name="plan_detail_conflict">今日重叠 %1$d 分钟</string>
     <string name="plan_detail_title_fallback">计划详情</string>
     <string name="plan_detail_cd_delete">删除计划</string>
     <string name="plan_detail_cd_add_task">添加任务</string>
