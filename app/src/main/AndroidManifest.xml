@@ -45,6 +45,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- 系统重启 / 时间变更后重排 starting 闹钟 — v0.4
+             AlarmManager 闹钟不跨重启；BOOT_COMPLETED / TIME_SET / TIMEZONE_CHANGED
+             都是受保护广播（仅系统可发），exported=false 防三方伪造，系统投递不受影响 -->
+        <receiver
+            android:name=".notification.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <!-- 今日 mini timeline 桌面小组件 — Phase 5.6
              AppWidgetProvider 系统会主动 broadcast（widget update / enable） -->
         <receiver

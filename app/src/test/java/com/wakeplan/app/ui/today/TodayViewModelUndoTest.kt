@@ -8,9 +8,7 @@ import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.domain.usecase.CascadeDelayCalculator
 import com.wakeplan.app.domain.usecase.ConflictDetector
-import com.wakeplan.app.domain.usecase.ScheduleManager
-import com.wakeplan.app.domain.usecase.TaskCompletionInstantiator
-import com.wakeplan.app.domain.usecase.TaskWindowCalculator
+import com.wakeplan.app.notification.ScheduleRefresher
 import com.wakeplan.app.notification.StartingAlarmScheduler
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -58,12 +56,10 @@ class TodayViewModelUndoTest {
     private val planRepo: PlanRepository = mockk(relaxed = true)
     private val taskRepo: TaskRepository = mockk(relaxed = true)
     private val taskCompletionRepo: TaskCompletionRepository = mockk(relaxed = true)
-    private val taskCompletionInstantiator: TaskCompletionInstantiator = mockk(relaxed = true)
-    private val taskWindowCalculator: TaskWindowCalculator = mockk(relaxed = true)
     private val cascadeDelayCalculator: CascadeDelayCalculator = mockk(relaxed = true)
     private val conflictDetector: ConflictDetector = mockk(relaxed = true)
-    private val scheduleManager: ScheduleManager = mockk(relaxed = true)
     private val startingAlarmScheduler: StartingAlarmScheduler = mockk(relaxed = true)
+    private val scheduleRefresher: ScheduleRefresher = mockk(relaxed = true)
     private val userPreferences: UserPreferences = mockk(relaxed = true)
 
     @BeforeEach
@@ -84,12 +80,10 @@ class TodayViewModelUndoTest {
         planRepository = planRepo,
         taskRepository = taskRepo,
         taskCompletionRepository = taskCompletionRepo,
-        taskCompletionInstantiator = taskCompletionInstantiator,
-        taskWindowCalculator = taskWindowCalculator,
         cascadeDelayCalculator = cascadeDelayCalculator,
         conflictDetector = conflictDetector,
-        scheduleManager = scheduleManager,
         startingAlarmScheduler = startingAlarmScheduler,
+        scheduleRefresher = scheduleRefresher,
         userPreferences = userPreferences,
         clock = fixedClock,
     )

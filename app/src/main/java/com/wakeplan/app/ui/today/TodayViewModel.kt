@@ -11,11 +11,9 @@ import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.domain.usecase.CascadeDelayCalculator
 import com.wakeplan.app.domain.usecase.ConflictDetector
-import com.wakeplan.app.domain.usecase.ScheduleManager
-import com.wakeplan.app.domain.usecase.TaskCompletionInstantiator
 import com.wakeplan.app.domain.usecase.TaskConflict
-import com.wakeplan.app.domain.usecase.TaskWindowCalculator
 import com.wakeplan.app.domain.model.TaskStatus
+import com.wakeplan.app.notification.ScheduleRefresher
 import com.wakeplan.app.notification.StartingAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -93,12 +91,10 @@ class TodayViewModel @Inject constructor(
     private val planRepository: PlanRepository,
     private val taskRepository: TaskRepository,
     private val taskCompletionRepository: TaskCompletionRepository,
-    private val taskCompletionInstantiator: TaskCompletionInstantiator,
-    private val taskWindowCalculator: TaskWindowCalculator,
     private val cascadeDelayCalculator: CascadeDelayCalculator,
     private val conflictDetector: ConflictDetector,
-    private val scheduleManager: ScheduleManager,
     private val startingAlarmScheduler: StartingAlarmScheduler,
+    private val scheduleRefresher: ScheduleRefresher,
     private val userPreferences: UserPreferences,
     private val clock: Clock,
 ) : ViewModel() {
@@ -204,58 +200,14 @@ class TodayViewModel @Inject constructor(
 
     /**
      * 给当天缺 PENDING 的 task 补建 completion
-     * v0.3 扁平化：按 plan 拿 tasks 直接展开，不再按段铺
+     * v0.4：实现下沉到 ScheduleRefresher — BootReceiver 重启后共用同一条
+     * 「补实例 + 同步窗口 + 重排闹钟」链路
      */
     fun ensureTodayCompletions() {
         val targetDate = _selectedDate.value
         if (targetDate != today) return
         viewModelScope.launch {
-            val plans = planRepository.observeAll().first()
-            val tasks = taskRepository.observeAll().first()
-            val existing = taskCompletionRepository.observeByDate(targetDate).first()
-            val existingTaskIds = existing.map { it.taskId }.toSet()
-            val existingByTaskId = existing.associateBy { it.taskId }
-            val tasksById = tasks.associateBy { it.id }
-
-            plans.filter { it.isActive }.forEach { plan ->
-                val planTasks = tasks.filter { it.planId == plan.id }
-                val pending = taskCompletionInstantiator(
-                    plan = plan,
-                    tasks = planTasks,
-                    date = targetDate,
-                ).filter { it.taskId !in existingTaskIds }
-                pending.forEach { taskCompletionRepository.upsert(it) }
-
-                // 同步已存在 completion 的时间窗口（修复 picker bug 留下的跨日数据）
-                // 不限制 PENDING：COMPLETED/IN_PROGRESS 也修（只改 planned 时间，不动 status/actualStart/actualEnd）
-                planTasks.forEach { task ->
-                    val old = existingByTaskId[task.id] ?: return@forEach
-                    val window = taskWindowCalculator(task, targetDate) ?: return@forEach
-                    val plannedDuration = java.time.Duration.between(window.plannedStart, window.plannedEnd).toMinutes()
-                    val storedDuration = java.time.Duration.between(old.plannedStart, old.plannedEnd).toMinutes()
-                    val drift = kotlin.math.abs(plannedDuration - storedDuration)
-                    if (drift > 5) {
-                        taskCompletionRepository.upsert(
-                            old.copy(
-                                plannedStart = window.plannedStart,
-                                plannedEnd = window.plannedEnd,
-                            )
-                        )
-                    }
-                }
-            }
-            val todaysCompletions = taskCompletionRepository.observeByDate(targetDate).first()
-            val now = LocalDateTime.now(clock)
-            val leadMinutes = userPreferences.taskStartingLeadMinutes.first()
-            val startingEnabled = userPreferences.taskStartingEnabled.first()
-            val plan = scheduleManager(
-                completions = todaysCompletions,
-                tasks = tasks,
-                now = now,
-                leadMinutes = leadMinutes,
-                startingEnabled = startingEnabled,
-            )
-            startingAlarmScheduler.scheduleAll(plan)
+            scheduleRefresher.refresh(today)
         }
     }
 
