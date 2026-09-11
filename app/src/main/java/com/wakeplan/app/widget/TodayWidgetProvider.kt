@@ -59,78 +59,81 @@ class TodayWidgetProvider : AppWidgetProvider() {
     ) {
         appWidgetIds.forEach { widgetId ->
             scope.launch {
-                val views = buildRemoteViews(context)
+                val views = buildTodayWidgetViews(context)
                 appWidgetManager.updateAppWidget(widgetId, views)
             }
         }
     }
-
-    private suspend fun buildRemoteViews(context: Context): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.widget_today)
-
-        // 启动 MainActivity + 跳 Today tab
-        val launchIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(EXTRA_NAV_TO_TODAY, true)
-        }
-        val pending = PendingIntent.getActivity(
-            context, 0, launchIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        views.setOnClickPendingIntent(R.id.widget_title, pending)
-        views.setOnClickPendingIntent(R.id.widget_next_task, pending)
-
-        // 拉数据
-        val entry = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
-        val today = LocalDate.now()
-        val completions = entry.taskCompletionRepository().observeByDate(today).first()
-        val plans = entry.planRepository().observeAll().first().filter { it.isActive && !it.archived }
-        val taskCount = completions.count { it.status != TaskStatus.SKIPPED }
-        val now = LocalDateTime.now()
-        val progressPct = ((now.hour * 60 + now.minute) * 100) / (24 * 60)
-
-        // 标题：今日 + 日期
-        val dateStr = today.format(DATE_FMT)
-        views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_title) + " " + dateStr)
-
-        // 进度
-        views.setProgressBar(R.id.widget_progress, 100, progressPct, false)
-        views.setTextViewText(
-            R.id.widget_progress_label,
-            context.getString(R.string.widget_progress_label_pct, progressPct),
-        )
-
-        // 任务数
-        views.setTextViewText(
-            R.id.widget_task_count,
-            if (taskCount == 0) context.getString(R.string.widget_task_count_zero)
-            else context.getString(R.string.widget_task_count_n, taskCount),
-        )
-
-        // 下一个 PENDING 任务（按 plannedStart 升序）
-        val nextTask = completions
-            .filter { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS }
-            .minByOrNull { it.plannedStart }
-        if (nextTask != null) {
-            val taskId = nextTask.taskId
-            val taskTitle = entry.taskRepository().observeAll().first()
-                .firstOrNull { it.id == taskId }?.title ?: ""
-            val timeStr = nextTask.plannedStart.format(TIME_FMT)
-            views.setTextViewText(
-                R.id.widget_next_task,
-                context.getString(R.string.widget_next_task_at, taskTitle, timeStr),
-            )
-        } else if (plans.isEmpty()) {
-            views.setTextViewText(R.id.widget_next_task, context.getString(R.string.widget_no_plan))
-        } else {
-            views.setTextViewText(R.id.widget_next_task, context.getString(R.string.widget_next_task_empty))
-        }
-        return views
-    }
-
     companion object {
         const val EXTRA_NAV_TO_TODAY = "com.wakeplan.app.NAV_TO_TODAY"
-        private val DATE_FMT = DateTimeFormatter.ofPattern("M月d日")
-        private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm")
+        val DATE_FMT = DateTimeFormatter.ofPattern("M月d日")
+        val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm")
     }
+}
+
+/**
+ * 构建 widget 的 RemoteViews — Provider onUpdate 与 [WidgetDataRefresher] 共用
+ * （v0.4 起数据变化即推送，不再只靠系统 30min 周期）
+ */
+internal suspend fun buildTodayWidgetViews(context: Context): RemoteViews {
+    val views = RemoteViews(context.packageName, R.layout.widget_today)
+
+    // 启动 MainActivity + 跳 Today tab
+    val launchIntent = Intent(context, MainActivity::class.java).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        putExtra(TodayWidgetProvider.EXTRA_NAV_TO_TODAY, true)
+    }
+    val pending = PendingIntent.getActivity(
+        context, 0, launchIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+    views.setOnClickPendingIntent(R.id.widget_title, pending)
+    views.setOnClickPendingIntent(R.id.widget_next_task, pending)
+
+    // 拉数据
+    val entry = EntryPointAccessors.fromApplication(context, TodayWidgetProvider.WidgetEntryPoint::class.java)
+    val today = LocalDate.now()
+    val completions = entry.taskCompletionRepository().observeByDate(today).first()
+    val plans = entry.planRepository().observeAll().first().filter { it.isActive && !it.archived }
+    val taskCount = completions.count { it.status != TaskStatus.SKIPPED }
+    val now = LocalDateTime.now()
+    val progressPct = ((now.hour * 60 + now.minute) * 100) / (24 * 60)
+
+    // 标题：今日 + 日期
+    val dateStr = today.format(TodayWidgetProvider.DATE_FMT)
+    views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_title) + " " + dateStr)
+
+    // 进度
+    views.setProgressBar(R.id.widget_progress, 100, progressPct, false)
+    views.setTextViewText(
+        R.id.widget_progress_label,
+        context.getString(R.string.widget_progress_label_pct, progressPct),
+    )
+
+    // 任务数
+    views.setTextViewText(
+        R.id.widget_task_count,
+        if (taskCount == 0) context.getString(R.string.widget_task_count_zero)
+        else context.getString(R.string.widget_task_count_n, taskCount),
+    )
+
+    // 下一个 PENDING 任务（按 plannedStart 升序）
+    val nextTask = completions
+        .filter { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS }
+        .minByOrNull { it.plannedStart }
+    if (nextTask != null) {
+        val taskId = nextTask.taskId
+        val taskTitle = entry.taskRepository().observeAll().first()
+            .firstOrNull { it.id == taskId }?.title ?: ""
+        val timeStr = nextTask.plannedStart.format(TodayWidgetProvider.TIME_FMT)
+        views.setTextViewText(
+            R.id.widget_next_task,
+            context.getString(R.string.widget_next_task_at, taskTitle, timeStr),
+        )
+    } else if (plans.isEmpty()) {
+        views.setTextViewText(R.id.widget_next_task, context.getString(R.string.widget_no_plan))
+    } else {
+        views.setTextViewText(R.id.widget_next_task, context.getString(R.string.widget_next_task_empty))
+    }
+    return views
 }

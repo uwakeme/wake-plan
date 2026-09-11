@@ -43,6 +43,7 @@ class App : Application(), Configuration.Provider {
     @Inject lateinit var overdueWorkScheduler: OverdueWorkScheduler
     @Inject lateinit var databaseKeyStore: DatabaseKeyStore
     @Inject lateinit var localeHelper: LocaleHelper
+    @Inject lateinit var widgetDataRefresher: com.wakeplan.app.widget.WidgetDataRefresher
 
     override fun onCreate() {
         super.onCreate()
@@ -63,6 +64,8 @@ class App : Application(), Configuration.Provider {
         // 7. v0.3 Per-app locale：恢复用户上次选的语言（SharedPreferences → AppCompatDelegate）
         //    第一次启动 prefs 为空 → AppCompatDelegate 保留 system default（中文系统就是中文）
         localeHelper.restoreOnStartup()
+        // 8. v0.4 widget 数据驱动刷新：打卡 / 延期后桌面组件即时更新
+        widgetDataRefresher.start(applicationScope)
     }
 
     // WorkManager Configuration.Provider — WorkManager.getInstance(context) 时如果未初始化会调这个
