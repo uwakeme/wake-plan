@@ -382,7 +382,6 @@ fun SettingsScreen(
     val startingEnabled by viewModel.taskStartingEnabled.collectAsStateWithLifecycle(initialValue = true)
     val overdueEnabled by viewModel.taskOverdueEnabled.collectAsStateWithLifecycle(initialValue = true)
     val completedEnabled by viewModel.taskCompletedEnabled.collectAsStateWithLifecycle(initialValue = false)
-    val recapEnabled by viewModel.planRecapEnabled.collectAsStateWithLifecycle(initialValue = false)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -629,16 +628,10 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_notifications_completed_sub),
                         checked = completedEnabled,
                         onChange = { viewModel.setCompletedEnabled(it) },
-                    )
-                    SettingToggleRow(
-                        icon = Icons.Outlined.Notifications,
-                        iconTint = SettingIconTint.BLUE,
-                        title = stringResource(R.string.settings_notifications_recap),
-                        subtitle = stringResource(R.string.settings_notifications_recap_sub),
-                        checked = recapEnabled,
-                        onChange = { viewModel.setRecapEnabled(it) },
                         showDivider = false,
                     )
+                    // plan_recap 每日回顾 v0.5 实装（每日 21:00 完成率小结），
+                    // 之前只有开关没有行为，先隐藏避免误导；偏好与渠道保留
                 }
             }
 

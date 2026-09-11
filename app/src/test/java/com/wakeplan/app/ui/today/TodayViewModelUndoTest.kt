@@ -8,6 +8,7 @@ import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.domain.usecase.CascadeDelayCalculator
 import com.wakeplan.app.domain.usecase.ConflictDetector
+import com.wakeplan.app.notification.CompletionNotifier
 import com.wakeplan.app.notification.ScheduleRefresher
 import com.wakeplan.app.notification.StartingAlarmScheduler
 import io.mockk.coEvery
@@ -60,6 +61,7 @@ class TodayViewModelUndoTest {
     private val conflictDetector: ConflictDetector = mockk(relaxed = true)
     private val startingAlarmScheduler: StartingAlarmScheduler = mockk(relaxed = true)
     private val scheduleRefresher: ScheduleRefresher = mockk(relaxed = true)
+    private val completionNotifier: CompletionNotifier = mockk(relaxed = true)
     private val userPreferences: UserPreferences = mockk(relaxed = true)
 
     @BeforeEach
@@ -84,6 +86,7 @@ class TodayViewModelUndoTest {
         conflictDetector = conflictDetector,
         startingAlarmScheduler = startingAlarmScheduler,
         scheduleRefresher = scheduleRefresher,
+        completionNotifier = completionNotifier,
         userPreferences = userPreferences,
         clock = fixedClock,
     )

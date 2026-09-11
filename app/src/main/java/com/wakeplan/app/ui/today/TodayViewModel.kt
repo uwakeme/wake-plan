@@ -13,6 +13,7 @@ import com.wakeplan.app.domain.usecase.CascadeDelayCalculator
 import com.wakeplan.app.domain.usecase.ConflictDetector
 import com.wakeplan.app.domain.usecase.TaskConflict
 import com.wakeplan.app.domain.model.TaskStatus
+import com.wakeplan.app.notification.CompletionNotifier
 import com.wakeplan.app.notification.ScheduleRefresher
 import com.wakeplan.app.notification.StartingAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -95,6 +96,7 @@ class TodayViewModel @Inject constructor(
     private val conflictDetector: ConflictDetector,
     private val startingAlarmScheduler: StartingAlarmScheduler,
     private val scheduleRefresher: ScheduleRefresher,
+    private val completionNotifier: CompletionNotifier,
     private val userPreferences: UserPreferences,
     private val clock: Clock,
 ) : ViewModel() {
@@ -232,11 +234,17 @@ class TodayViewModel @Inject constructor(
             if (c.status != TaskStatus.IN_PROGRESS) return@launch
             val now = LocalDateTime.now(clock)
             val overrun = Duration.between(c.plannedEnd, now).toMinutes().coerceAtLeast(0L).toInt()
-            taskCompletionRepository.upsert(c.copy(
+            val completed = c.copy(
                 status = TaskStatus.COMPLETED,
                 actualEnd = now,
                 overrunMinutes = overrun,
-            ))
+            )
+            taskCompletionRepository.upsert(completed)
+            // v0.4：task_completed 渠道实装（偏好默认关，开着才推）
+            val taskTitle = taskRepository.getById(c.taskId)?.title.orEmpty()
+            if (taskTitle.isNotEmpty()) {
+                completionNotifier.notifyCompleted(completed, taskTitle)
+            }
             _undoableAction.value = UndoableAction.Complete(completionId, c)
         }
     }

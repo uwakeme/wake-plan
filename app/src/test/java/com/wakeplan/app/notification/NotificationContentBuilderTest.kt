@@ -80,6 +80,43 @@ class NotificationContentBuilderTest {
         }
     }
 
+    @Nested
+    @DisplayName("completed 通知 (v0.4)")
+    inner class Completed {
+        @Test
+        fun `标题「X 已完成」，按时完成文案不带超时`() {
+            val done = completion.copy(
+                status = TaskStatus.COMPLETED,
+                actualEnd = date.atTime(9, 28),
+                overrunMinutes = 0,
+            )
+            val content = NotificationContentBuilder.buildCompleted(done, "晨练")
+            assertEquals(Channel.TASK_COMPLETED.id, content.channelId)
+            assertEquals("晨练 已完成", content.title)
+            assertTrue("09:28" in content.text, "应显示实际完成时间: ${content.text}")
+            assertTrue("按时完成" in content.text, "0 超时应显示按时: ${content.text}")
+        }
+
+        @Test
+        fun `超时完成文案带超时分钟数`() {
+            val done = completion.copy(
+                status = TaskStatus.COMPLETED,
+                actualEnd = date.atTime(9, 55),
+                overrunMinutes = 25,
+            )
+            val content = NotificationContentBuilder.buildCompleted(done, "晨练")
+            assertTrue("超时 25 分钟" in content.text, "${content.text}")
+            assertTrue("09:55" in content.text)
+        }
+
+        @Test
+        fun `actualEnd 缺失时回退 plannedEnd`() {
+            val done = completion.copy(status = TaskStatus.COMPLETED, actualEnd = null)
+            val content = NotificationContentBuilder.buildCompleted(done, "晨练")
+            assertTrue("09:30" in content.text)
+        }
+    }
+
     @Test
     fun `跨午夜段 — completion 跨日，文案仍能格式化（不会出现负分钟）`() {
         val cross = completion.copy(

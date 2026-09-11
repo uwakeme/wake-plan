@@ -55,6 +55,20 @@ object NotificationContentBuilder {
         )
     }
 
+    /** v0.4 实装 task_completed 渠道：打卡完成确认，超时会带上时长 */
+    fun buildCompleted(
+        completion: TaskCompletion,
+        taskTitle: String,
+    ): NotificationContent {
+        val onTimeText = if (completion.overrunMinutes > 0) "超时 ${completion.overrunMinutes} 分钟" else "按时完成"
+        val endTime = completion.actualEnd ?: completion.plannedEnd
+        return NotificationContent(
+            channelId = Channel.TASK_COMPLETED.id,
+            title = "$taskTitle 已完成",
+            text = "完成于 ${format(endTime)} · $onTimeText",
+        )
+    }
+
     private fun format(dt: LocalDateTime): String = dt.format(TIME_FMT)
 }
 
@@ -104,6 +118,24 @@ object NotificationBuilder {
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+    }
+
+    /** v0.4：完成确认通知（低优先级，不响铃不弹头） */
+    fun buildCompleted(
+        context: Context,
+        completion: TaskCompletion,
+        taskTitle: String,
+    ): Notification {
+        val content = NotificationContentBuilder.buildCompleted(completion, taskTitle)
+        return NotificationCompat.Builder(context, content.channelId)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(content.title)
+            .setContentText(content.text)
+            .setContentIntent(buildContentIntent(context, completion))
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
 
