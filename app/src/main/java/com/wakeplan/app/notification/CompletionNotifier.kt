@@ -29,7 +29,14 @@ class CompletionNotifier @Inject constructor(
             completion = completion,
             taskTitle = taskTitle,
         )
-        NotificationManagerCompat.from(context).notify(notificationIdFor(completion.id), notification)
+        NotificationManagerCompat.from(context).let { notifier ->
+            // 权限检查 + try/catch 双保险（授权可在两次调用间被系统收回）
+            try {
+                notifier.notify(notificationIdFor(completion.id), notification)
+            } catch (_: SecurityException) {
+                // 用户未授权通知，静默跳过
+            }
+        }
     }
 
     companion object {

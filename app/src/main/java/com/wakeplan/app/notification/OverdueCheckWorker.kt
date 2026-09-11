@@ -45,6 +45,10 @@ class OverdueCheckWorker @AssistedInject constructor(
                 && it.plannedEnd.isBefore(now)
         }
         if (overdue.isEmpty()) return Result.success()
+        // Android 13+ 未授权 POST_NOTIFICATIONS 时静默跳过（lint MissingPermission）
+        if (!NotificationPermissionChecker.hasPostNotificationsPermission(applicationContext)) {
+            return Result.success()
+        }
 
         val notifier = NotificationManagerCompat.from(applicationContext)
         overdue.forEach { c ->
@@ -55,7 +59,11 @@ class OverdueCheckWorker @AssistedInject constructor(
                 taskTitle = task.title,
                 overdueCount = 1,  // v0.1 简化：永远是 1
             )
-            notifier.notify(notificationIdFor(c.id), notification)
+            try {
+                notifier.notify(notificationIdFor(c.id), notification)
+            } catch (_: SecurityException) {
+                // 通知权限被收回，跳过本轮
+            }
         }
         return Result.success()
     }

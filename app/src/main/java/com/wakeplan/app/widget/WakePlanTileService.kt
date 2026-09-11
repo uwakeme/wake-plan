@@ -1,5 +1,6 @@
 package com.wakeplan.app.widget
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.service.quicksettings.Tile
@@ -32,7 +33,9 @@ class WakePlanTileService : TileService() {
         // 拉今日 PENDING 任务数决定 Active/Inactive
         qsTile?.apply {
             label = getString(R.string.app_name)
-            subtitle = getString(R.string.tile_subtitle_open_today)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                subtitle = getString(R.string.tile_subtitle_open_today)
+            }
             state = Tile.STATE_ACTIVE
             updateTile()
         }
@@ -56,7 +59,8 @@ class WakePlanTileService : TileService() {
                 ),
             )
         } else {
-            @Suppress("DEPRECATION")
+            // API 29~33 只有 Intent 重载可用（PendingIntent 版本是 API 34+ 的）
+            @SuppressLint("StartActivityAndCollapseDeprecated")
             startActivityAndCollapse(launchIntent)
         }
     }

@@ -485,4 +485,21 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="settings_import_success_runtime_template">Import successful: %1$d plans / %2$d tasks / %3$d completions</string>
     <string name="settings_import_failed_runtime_template">Import failed: %1$s</string>
     <string name="backup_passphrase_too_short_template">Password must be at least %1$d characters</string>
+    <string name="today_section_in_progress">In progress</string>
+    <string name="today_section_upcoming">Upcoming</string>
+    <string name="today_section_completed">Done</string>
+    <string name="plan_detail_today_completed">Today</string>
+    <string name="plan_detail_week_completed">This week</string>
+    <string name="plan_detail_total_completed">Total</string>
+    <string name="plan_detail_section_schedule">Schedule</string>
+    <string name="plan_detail_cd_more">More options</string>
+    <string name="plan_detail_edit">Edit</string>
+    <string name="plan_edit_title">Edit plan</string>
+    <string name="stats_range_week">This week</string>
+    <string name="stats_range_month">This month</string>
+    <string name="stats_metric_total_duration">Total time</string>
+    <string name="stats_metric_tasks_done">Tasks done</string>
+    <string name="stats_metric_focus">Focus</string>
+    <string name="stats_metric_streak">Streak</string>
+    <string name="stats_streak_days">%1$d days</string>
 </resources>

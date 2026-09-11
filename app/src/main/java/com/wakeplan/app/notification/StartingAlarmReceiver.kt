@@ -36,6 +36,8 @@ class StartingAlarmReceiver : BroadcastReceiver() {
             try {
                 val completion = completionRepository.getById(completionId) ?: return@launch
                 if (completion.status != com.wakeplan.app.domain.model.TaskStatus.PENDING) return@launch
+                // Android 13+ 未授权时静默跳过（lint MissingPermission）
+                if (!NotificationPermissionChecker.hasPostNotificationsPermission(context)) return@launch
                 val task = taskRepository.getById(completion.taskId) ?: return@launch
                 val leadMinutes = preferences.taskStartingLeadMinutes.first()
                 val notification = NotificationBuilder.buildStarting(
@@ -44,10 +46,13 @@ class StartingAlarmReceiver : BroadcastReceiver() {
                     taskTitle = task.title,
                     leadMinutes = leadMinutes,
                 )
-                NotificationManagerCompat.from(context).notify(
-                    notificationIdFor(completionId),
-                    notification,
-                )
+                NotificationManagerCompat.from(context).let { notifier ->
+                    try {
+                        notifier.notify(notificationIdFor(completionId), notification)
+                    } catch (_: SecurityException) {
+                        // 通知权限被收回，静默跳过
+                    }
+                }
             } finally {
                 pendingResult.finish()
             }

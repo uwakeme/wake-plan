@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -79,6 +80,7 @@ import com.wakeplan.app.data.prefs.UserPreferences
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.notification.NotificationBuilder
+import com.wakeplan.app.notification.NotificationPermissionChecker
 import com.wakeplan.app.ui.common.WpRadius
 import com.wakeplan.app.ui.theme.PlanSideProjectDark
 import com.wakeplan.app.ui.theme.PlanSideProjectLight
@@ -481,9 +483,11 @@ fun SettingsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
-    ) { _ ->
+        // 布局自己处理系统 insets（44dp 状态栏 spacer），Scaffold 侧置零
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
             contentPadding = PaddingValues(
                 top = 44.dp,
                 bottom = 100.dp,
@@ -655,10 +659,20 @@ fun SettingsScreen(
                                 taskTitle = testNotificationTitle,
                                 leadMinutes = leadMinutes,
                             )
-                            NotificationManagerCompat.from(context).notify(
-                                (System.currentTimeMillis() % Int.MAX_VALUE).toInt(),
-                                notification,
-                            )
+                            // Android 13+ 未授权 POST_NOTIFICATIONS 时直接跳过（lint MissingPermission）
+                            if (!NotificationPermissionChecker.hasPostNotificationsPermission(context)) {
+                                return@launch
+                            }
+                            NotificationManagerCompat.from(context).let { notifier ->
+                                try {
+                                    notifier.notify(
+                                        (System.currentTimeMillis() % Int.MAX_VALUE).toInt(),
+                                        notification,
+                                    )
+                                } catch (_: SecurityException) {
+                                    // 通知权限未授权，测试通知静默跳过
+                                }
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),

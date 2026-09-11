@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -145,6 +146,8 @@ fun TodayScreen() {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> WpSnackbar(data) } },
         containerColor = MaterialTheme.colorScheme.background,
+        // 布局自己处理系统 insets，Scaffold 侧置零（内层统一 padding）
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             // v0.4 快速录入：只在"今天"视图提供（非今天看历史时加任务没有意义）
             if (isViewingToday) {
@@ -160,22 +163,24 @@ fun TodayScreen() {
                 }
             }
         },
-    ) { _ ->
-        if (state.planItems.isEmpty()) {
-            EmptyTodayState(
-                isViewingToday = isViewingToday,
-                date = state.date,
-            )
-        } else {
-            TodayContent(
-                state = state,
-                isViewingToday = isViewingToday,
-                listState = listState,
-                highlightedTaskId = highlightedTaskId,
-                onStartTask = viewModel::onStartTask,
-                onCompleteTask = viewModel::onCompleteTask,
-                onSkipTask = viewModel::onSkipTask,
-            )
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            if (state.planItems.isEmpty()) {
+                EmptyTodayState(
+                    isViewingToday = isViewingToday,
+                    date = state.date,
+                )
+            } else {
+                TodayContent(
+                    state = state,
+                    isViewingToday = isViewingToday,
+                    listState = listState,
+                    highlightedTaskId = highlightedTaskId,
+                    onStartTask = viewModel::onStartTask,
+                    onCompleteTask = viewModel::onCompleteTask,
+                    onSkipTask = viewModel::onSkipTask,
+                )
+            }
         }
     }
 
