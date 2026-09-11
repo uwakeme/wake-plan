@@ -1,6 +1,7 @@
 package com.wakeplan.app.ui.plan
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,8 +14,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -22,8 +26,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.R
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.ui.common.PlanCard
+import com.wakeplan.app.ui.common.WpRadius
 
 @Composable
 fun PlanListScreen(
@@ -42,13 +52,18 @@ fun PlanListScreen(
     viewModel: PlanListViewModel = hiltViewModel(),
 ) {
     val plansWithStats by viewModel.plansWithStats.collectAsStateWithLifecycle()
+    val archivedPlans by viewModel.archivedPlans.collectAsStateWithLifecycle()
+    var showArchived by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        if (plansWithStats.isEmpty()) {
+        if (plansWithStats.isEmpty() && archivedPlans.isEmpty()) {
             EmptyPlansState()
         } else {
             PlansList(
                 plansWithStats = plansWithStats,
+                archivedPlans = archivedPlans,
+                showArchived = showArchived,
+                onToggleArchivedSection = { showArchived = !showArchived },
                 onPlanClick = onPlanClick,
             )
         }
@@ -92,6 +107,9 @@ fun PlanListScreen(
 @Composable
 private fun PlansList(
     plansWithStats: List<PlanCardData>,
+    archivedPlans: List<PlanCardData>,
+    showArchived: Boolean,
+    onToggleArchivedSection: () -> Unit,
     onPlanClick: (Plan) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -105,12 +123,52 @@ private fun PlansList(
         ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        items(plansWithStats, key = { it.plan.id }) { data ->
+        items(plansWithStats, key = { "active-${it.plan.id}" }) { data ->
             PlanCard(
                 data = data,
                 onClick = { onPlanClick(data.plan) },
                 index = plansWithStats.indexOf(data).coerceAtLeast(0),
             )
+        }
+
+        if (archivedPlans.isNotEmpty()) {
+            item("archived-header") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(WpRadius.md))
+                        .clickable(onClick = onToggleArchivedSection)
+                        .padding(vertical = 10.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.plan_list_archived_section, archivedPlans.size),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(
+                        imageVector = if (showArchived) {
+                            Icons.Outlined.ExpandLess
+                        } else {
+                            Icons.Outlined.ExpandMore
+                        },
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+            if (showArchived) {
+                items(archivedPlans, key = { "archived-${it.plan.id}" }) { data ->
+                    PlanCard(
+                        data = data,
+                        onClick = { onPlanClick(data.plan) },
+                        index = 0,
+                        modifier = Modifier.alpha(0.55f),
+                    )
+                }
+            }
         }
     }
 }

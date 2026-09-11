@@ -21,6 +21,7 @@ fun PlanEntity.toDomain(): Plan = Plan(
     colorHex = colorHex,
     startDate = startDate,
     isActive = isActive,
+    archived = archived,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )
@@ -31,6 +32,7 @@ fun Plan.toEntity(): PlanEntity = PlanEntity(
     colorHex = colorHex,
     startDate = startDate,
     isActive = isActive,
+    archived = archived,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )

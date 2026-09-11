@@ -13,6 +13,10 @@ data class Plan(
     val colorHex: String,        // "#RRGGBB"，由 5.3 决策：10 预设 + 自定义 hex
     val startDate: LocalDate,    // 计划起始日期
     val isActive: Boolean,
+
+    /** v0.4 归档：true = 已归档，不进 Today 聚合 / 不再铺 completion，但保留历史统计 */
+    val archived: Boolean = false,
+
     val createdAt: Instant,
     val updatedAt: Instant,
 )

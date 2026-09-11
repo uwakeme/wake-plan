@@ -84,7 +84,7 @@ class TodayWidgetProvider : AppWidgetProvider() {
         val entry = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
         val today = LocalDate.now()
         val completions = entry.taskCompletionRepository().observeByDate(today).first()
-        val plans = entry.planRepository().observeAll().first().filter { it.isActive }
+        val plans = entry.planRepository().observeAll().first().filter { it.isActive && !it.archived }
         val taskCount = completions.count { it.status != TaskStatus.SKIPPED }
         val now = LocalDateTime.now()
         val progressPct = ((now.hour * 60 + now.minute) * 100) / (24 * 60)

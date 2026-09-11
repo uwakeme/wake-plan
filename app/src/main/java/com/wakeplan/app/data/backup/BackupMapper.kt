@@ -18,6 +18,7 @@ fun PlanEntity.toDto() = BackupPlan(
     colorHex = colorHex,
     startDate = startDate,
     isActive = isActive,
+    archived = archived,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )
@@ -28,6 +29,7 @@ fun BackupPlan.toEntity() = PlanEntity(
     colorHex = colorHex,
     startDate = startDate,
     isActive = isActive,
+    archived = archived,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )

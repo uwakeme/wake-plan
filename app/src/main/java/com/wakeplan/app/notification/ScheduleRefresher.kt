@@ -46,7 +46,8 @@ class ScheduleRefresher @Inject constructor(
         val existingTaskIds = existing.map { it.taskId }.toSet()
         val existingByTaskId = existing.associateBy { it.taskId }
 
-        plans.filter { it.isActive }.forEach { plan ->
+        // 归档计划不铺当天实例、不参与调度（v0.4）
+        plans.filter { it.isActive && !it.archived }.forEach { plan ->
             val planTasks = tasks.filter { it.planId == plan.id }
             val pending = taskCompletionInstantiator(
                 plan = plan,

@@ -128,6 +128,9 @@
     <string name="plan_detail_total_completed">总计完成</string>
     <string name="plan_detail_section_schedule">时间安排</string>
     <string name="plan_detail_cd_more">更多选项</string>
+    <string name="plan_archive">归档</string>
+    <string name="plan_unarchive">取消归档</string>
+    <string name="plan_list_archived_section">已归档（%1$d）</string>
     <string name="plan_detail_edit">编辑</string>
 
     <string name="plan_create_title">新建计划</string>

@@ -61,6 +61,10 @@ data class BackupPlan(
     @Serializable(with = LocalDateSerializer::class)
     val startDate: LocalDate,
     val isActive: Boolean,
+
+    /** v0.4 归档；带默认值，老备份文件（无此字段）解码兼容 */
+    val archived: Boolean = false,
+
     @Serializable(with = InstantSerializer::class)
     val createdAt: Instant,
     @Serializable(with = InstantSerializer::class)

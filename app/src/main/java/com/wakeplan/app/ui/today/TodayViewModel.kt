@@ -163,7 +163,8 @@ class TodayViewModel @Inject constructor(
         now: LocalDateTime,
         date: LocalDate,
     ): TodayUiState {
-        val activePlans = plans.filter { it.isActive }
+        // 归档计划不进 Today 聚合（v0.4）
+        val activePlans = plans.filter { it.isActive && !it.archived }
         val plansById = activePlans.associateBy { it.id }
         val planItems = activePlans.map { plan ->
             val planTaskIds = allTasks.filter { it.planId == plan.id }.map { it.id }.toSet()

@@ -12,22 +12,27 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
 /**
  * 计划列表 ViewModel
  *
- * 把 plan + task + completion 三路流合并成 `plansWithStats: List<PlanCardData>`，
+ * 把 plan + task + completion 三路流合并成 `List<PlanCardData>`，
  * UI 层只关心这个聚合 view-model，不需要自己 join 三个仓库。
+ *
+ * v0.4 归档：plansWithStats 只出活跃计划，归档的走 [archivedPlans]；
+ * [setArchived] 归档 / 取消归档。
  *
  * 视觉刷新 v0.4 之后，列表项用 [com.wakeplan.app.ui.common.PlanCard]，
  * 传入 [PlanCardData] 而不是裸 [Plan]。
  */
 @HiltViewModel
 class PlanListViewModel @Inject constructor(
-    planRepository: PlanRepository,
+    private val planRepository: PlanRepository,
     private val taskRepository: TaskRepository,
     private val taskCompletionRepository: TaskCompletionRepository,
 ) : ViewModel() {
@@ -40,7 +45,7 @@ class PlanListViewModel @Inject constructor(
      *   - tasks：所有 task（按 planId 聚合用）
      *   - completions：今日所有 TaskCompletion
      */
-    val plansWithStats: StateFlow<List<PlanCardData>> = combine(
+    private val allWithStats: StateFlow<List<PlanCardData>> = combine(
         planRepository.observeAll(),
         taskRepository.observeAll(),
         taskCompletionRepository.observeByDate(LocalDate.now()),
@@ -52,6 +57,24 @@ class PlanListViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptyList(),
     )
+
+    /** 活跃计划（不含归档） */
+    val plansWithStats: StateFlow<List<PlanCardData>> = allWithStats
+        .map { list -> list.filter { !it.plan.archived } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** 已归档计划（v0.4） */
+    val archivedPlans: StateFlow<List<PlanCardData>> = allWithStats
+        .map { list -> list.filter { it.plan.archived } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** 归档 / 取消归档 */
+    fun setArchived(planId: String, archived: Boolean) {
+        viewModelScope.launch {
+            val plan = planRepository.getById(planId) ?: return@launch
+            planRepository.update(plan.copy(archived = archived))
+        }
+    }
 }
 
 private fun Plan.toCardData(
@@ -68,6 +91,7 @@ private fun Plan.toCardData(
     }
     val progressPercent = if (todayCount == 0) 0 else (completedCount * 100 / todayCount)
     val status = when {
+        this.archived -> PlanStatus.IDLE
         !this.isActive -> PlanStatus.IDLE
         todayCount == 0 -> PlanStatus.IDLE
         completedCount < todayCount -> PlanStatus.ACTIVE

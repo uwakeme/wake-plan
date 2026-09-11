@@ -101,6 +101,9 @@ Tap the button below to continue.</string>
     <string name="plan_list_empty_title">No plans yet</string>
     <string name="plan_list_empty_subtitle">Tap + to create one,
 and manage fitness / study / side hustle separately</string>
+    <string name="plan_archive">Archive</string>
+    <string name="plan_unarchive">Unarchive</string>
+    <string name="plan_list_archived_section">Archived (%1$d)</string>
     <string name="plan_detail_title_fallback">Plan details</string>
     <string name="plan_detail_cd_delete">Delete plan</string>
     <string name="plan_detail_cd_add_task">Add task</string>

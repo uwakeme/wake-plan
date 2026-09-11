@@ -87,6 +87,18 @@ class PlanDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 归档 / 取消归档（v0.4）
+     * 归档成功后回调 onDone（调用方一般用来返回列表页）
+     */
+    fun setArchived(archived: Boolean, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            val current = plan.value ?: planRepository.getById(planId) ?: return@launch
+            planRepository.update(current.copy(archived = archived))
+            if (archived) onDone()
+        }
+    }
+
     fun deleteTask(taskId: String) {
         viewModelScope.launch { taskRepository.delete(taskId) }
     }

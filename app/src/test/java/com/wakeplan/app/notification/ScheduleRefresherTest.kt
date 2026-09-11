@@ -72,12 +72,13 @@ class ScheduleRefresherTest {
         every { startingAlarmScheduler.scheduleAll(capture(schedulePlanSlot)) } just Runs
     }
 
-    private fun plan(id: String, isActive: Boolean = true) = Plan(
+    private fun plan(id: String, isActive: Boolean = true, archived: Boolean = false) = Plan(
         id = id,
         title = "计划-$id",
         colorHex = "#C48520",
         startDate = date,
         isActive = isActive,
+        archived = archived,
         createdAt = Instant.parse("2026-09-01T00:00:00Z"),
         updatedAt = Instant.parse("2026-09-01T00:00:00Z"),
     )
@@ -143,6 +144,20 @@ class ScheduleRefresherTest {
         refresher().refresh(date)
 
         coVerify(exactly = 0) { taskCompletionRepository.upsert(any()) }
+    }
+
+    @Test
+    fun `归档 plan 不铺 completion 也不进调度（v0_4 归档）`() = runTest {
+        val p = plan("plan-arch", isActive = true, archived = true)
+        val t = task("task-arch", "plan-arch")
+        stubData(plans = listOf(p), tasks = listOf(t), completions = emptyList())
+
+        refresher().refresh(date)
+
+        coVerify(exactly = 0) { taskCompletionRepository.upsert(any()) }
+        coVerify(exactly = 1) {
+            startingAlarmScheduler.scheduleAll(match { it.startingTriggers.isEmpty() })
+        }
     }
 
     @Test

@@ -23,11 +23,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Unarchive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -128,6 +130,11 @@ fun PlanDetailScreen(
                         showMenu = false
                         showDeletePlanDialog = true
                     },
+                    onToggleArchive = {
+                        showMenu = false
+                        viewModel.setArchived(!currentPlan.archived, onDone = onBack)
+                    },
+                    isArchived = currentPlan.archived,
                 )
             }
 
@@ -206,6 +213,8 @@ private fun DetailNavBar(
     onDismissMenu: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onToggleArchive: () -> Unit,
+    isArchived: Boolean,
 ) {
     Row(
         modifier = Modifier
@@ -259,6 +268,23 @@ private fun DetailNavBar(
                     onClick = onEdit,
                     leadingIcon = {
                         Icon(Icons.Outlined.Edit, contentDescription = null, Modifier.size(18.dp))
+                    },
+                )
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            stringResource(
+                                if (isArchived) R.string.plan_unarchive else R.string.plan_archive
+                            )
+                        )
+                    },
+                    onClick = onToggleArchive,
+                    leadingIcon = {
+                        Icon(
+                            if (isArchived) Icons.Outlined.Unarchive else Icons.Outlined.Archive,
+                            contentDescription = null,
+                            Modifier.size(18.dp),
+                        )
                     },
                 )
                 DropdownMenuItem(
