@@ -32,10 +32,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -138,10 +140,26 @@ fun TodayScreen() {
     }
 
     val isViewingToday by viewModel.isViewingToday.collectAsStateWithLifecycle()
+    var showQuickAdd by remember { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> WpSnackbar(data) } },
         containerColor = MaterialTheme.colorScheme.background,
+        floatingActionButton = {
+            // v0.4 快速录入：只在"今天"视图提供（非今天看历史时加任务没有意义）
+            if (isViewingToday) {
+                FloatingActionButton(
+                    onClick = { showQuickAdd = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = stringResource(R.string.today_quick_add_title),
+                    )
+                }
+            }
+        },
     ) { _ ->
         if (state.planItems.isEmpty()) {
             EmptyTodayState(
@@ -159,6 +177,17 @@ fun TodayScreen() {
                 onSkipTask = viewModel::onSkipTask,
             )
         }
+    }
+
+    if (showQuickAdd) {
+        QuickAddTaskSheet(
+            plans = state.planItems.map { it.plan },
+            defaultPlanId = state.planItems.firstOrNull()?.plan?.id,
+            onSave = { planId, title, start, end ->
+                viewModel.quickAddTask(planId, title, start, end)
+            },
+            onDismiss = { showQuickAdd = false },
+        )
     }
 }
 

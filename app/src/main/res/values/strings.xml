@@ -60,6 +60,10 @@
     <!-- ============================================================ -->
     <!-- Today 屏 -->
     <!-- ============================================================ -->
+    <string name="today_quick_add_title">快速加任务</string>
+    <string name="today_quick_add_plan_label">所属计划</string>
+    <string name="today_quick_add_no_plan">还没有可用计划，先到「计划」页新建一个</string>
+    <string name="today_quick_add_save">添加</string>
     <string name="today_title_today">今日 %1$s</string>
     <string name="today_title_other">查看 %1$s</string>
     <string name="today_btn_today">今天</string>

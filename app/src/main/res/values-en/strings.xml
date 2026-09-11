@@ -64,6 +64,10 @@ Tap the button below to continue.</string>
     <!-- ============================================================ -->
     <!-- Today screen -->
     <!-- ============================================================ -->
+    <string name="today_quick_add_title">Quick add task</string>
+    <string name="today_quick_add_plan_label">Plan</string>
+    <string name="today_quick_add_no_plan">No active plans yet — create one on the Plans tab first</string>
+    <string name="today_quick_add_save">Add</string>
     <string name="today_title_today">Today %1$s</string>
     <string name="today_title_other">Viewing %1$s</string>
     <string name="today_btn_today">Today</string>

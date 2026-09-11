@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wakeplan.app.data.prefs.UserPreferences
 import com.wakeplan.app.domain.model.Plan
+import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.repository.PlanRepository
@@ -278,5 +279,23 @@ class TodayViewModel @Inject constructor(
 
     fun goToToday() {
         switchDate(today)
+    }
+
+    /**
+     * 快速录入（v0.4）：Today FAB 直接建任务，保存后立刻铺当天实例 + 重排闹钟。
+     * 默认 ONCE（临时任务语义）；标题空或时间窗非法直接忽略（UI 已挡）。
+     */
+    fun quickAddTask(planId: String, title: String, startMinutes: Int, endMinutes: Int) {
+        if (title.isBlank() || endMinutes <= startMinutes) return
+        viewModelScope.launch {
+            taskRepository.create(
+                planId = planId,
+                title = title.trim(),
+                startMinutes = startMinutes,
+                endMinutes = endMinutes,
+                repeatRule = RepeatRule.ONCE,
+            )
+            scheduleRefresher.refresh(today)
+        }
     }
 }
