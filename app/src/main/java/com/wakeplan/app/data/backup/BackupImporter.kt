@@ -1,5 +1,7 @@
 package com.wakeplan.app.data.backup
 
+import androidx.room.withTransaction
+import com.wakeplan.app.data.db.WakePlanDatabase
 import com.wakeplan.app.data.db.dao.PlanDao
 import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
@@ -24,11 +26,12 @@ import javax.inject.Singleton
  *
  * v0.3 砍段后 segments 字段保留但忽略（兼容老 v0.2 备份）
  *
- * **不包事务**：跨多个 DAO 的 Room 事务需要 `database.withTransaction {}`，先把单步测稳，v0.2 再加事务
- * 失败后用户可以再导一次（最坏情况 = 旧数据没了，但新数据也没进来），比"旧数据 + 新数据混着"更可控
+ * v0.4：wipe + insert 包在 `db.withTransaction` 里，任一步失败整体回滚，
+ * 不会出现"旧数据清了、新数据只进来一半"的中间态。
  */
 @Singleton
 class BackupImporter @Inject constructor(
+    private val db: WakePlanDatabase,
     private val planDao: PlanDao,
     private val taskDao: TaskDao,
     private val taskCompletionDao: TaskCompletionDao,
@@ -88,7 +91,7 @@ class BackupImporter @Inject constructor(
         }
     }
 
-    private suspend fun applyV1(envelope: BackupEnvelope): ImportResult {
+    private suspend fun applyV1(envelope: BackupEnvelope): ImportResult = db.withTransaction {
         // 完全覆盖 — 先 wipe（按 FK 依赖的反序：先删依赖别人的）
         wipeAll()
         // 再 insert（按 FK 依赖的正序：先插被依赖的）
@@ -98,7 +101,7 @@ class BackupImporter @Inject constructor(
         envelope.data.tasks.forEach { taskDao.insert(it.toEntity()) }
         envelope.data.taskCompletions.forEach { taskCompletionDao.insert(it.toEntity()) }
 
-        return ImportResult(
+        ImportResult(
             plansImported = envelope.data.plans.size,
             segmentsImported = 0,  // v0.3 砍段
             tasksImported = envelope.data.tasks.size,

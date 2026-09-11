@@ -1,5 +1,7 @@
 package com.wakeplan.app.data.backup
 
+import androidx.room.withTransaction
+import com.wakeplan.app.data.db.WakePlanDatabase
 import com.wakeplan.app.data.db.dao.PlanDao
 import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
@@ -10,12 +12,18 @@ import com.wakeplan.app.data.db.entity.TaskCompletionEntity
 import com.wakeplan.app.data.db.entity.TaskEntity
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.TaskStatus
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -29,10 +37,15 @@ import java.util.Base64
  *
  * v0.3 砍 time_segments 表：importer 不再 mock TimeSegmentDao，segments 字段忽略不导入。
  * TaskEntity 字段重定义：planId / startMinutes / endMinutes / repeatRule / orderInPlan。
+ *
+ * v0.4：wipe + insert 包进 `db.withTransaction`。JVM 测试 mock 掉 Room 的
+ * `RoomDatabaseKt.withTransaction` 扩展（真实回滚语义由 Room 保证，androidTest 层验证），
+ * 这里验证的是"DAO 操作确实在事务块内执行 + 失败时异常向上传播"。
  */
 @DisplayName("BackupImporter")
 class BackupImporterTest {
 
+    private val db: WakePlanDatabase = mockk()
     private val planDao: PlanDao = mockk(relaxed = true)
     private val taskDao: TaskDao = mockk(relaxed = true)
     private val taskCompletionDao: TaskCompletionDao = mockk(relaxed = true)
@@ -44,8 +57,21 @@ class BackupImporterTest {
         ignoreUnknownKeys = true
     }
 
+    @BeforeEach
+    fun setUp() {
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery { db.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            secondArg<suspend () -> Any?>().invoke()
+        }
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
+    }
+
     private fun importer() = BackupImporter(
-        planDao, taskDao, taskCompletionDao, planTemplateDao,
+        db, planDao, taskDao, taskCompletionDao, planTemplateDao,
     )
 
     private fun samplePlan() = PlanEntity(
@@ -307,5 +333,50 @@ class BackupImporterTest {
         assertEquals(0, result.tasksImported)
         assertEquals(0, result.completionsImported)
         assertEquals(0, result.templatesImported)
+    }
+
+    @Test
+    fun `wipe + insert 包在 withTransaction 事务块内执行`() = runTest {
+        val log = mutableListOf<String>()
+        coEvery { db.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            log.add("tx-begin")
+            secondArg<suspend () -> Any?>().invoke()
+            log.add("tx-end")
+        }
+        coEvery { taskCompletionDao.deleteAll() } answers { log.add("wipe-completions"); Unit }
+        coEvery { taskDao.deleteAll() } answers { log.add("wipe-tasks"); Unit }
+        coEvery { planTemplateDao.deleteAll() } answers { log.add("wipe-templates"); Unit }
+        coEvery { planDao.deleteAll() } answers { log.add("wipe-plans"); Unit }
+        coEvery { planTemplateDao.insert(any()) } answers { log.add("ins-template"); Unit }
+        coEvery { planDao.insert(any()) } answers { log.add("ins-plan"); Unit }
+        coEvery { taskDao.insert(any()) } answers { log.add("ins-task"); Unit }
+        coEvery { taskCompletionDao.insert(any()) } answers { log.add("ins-completion"); Unit }
+
+        importer().import(plainFileJson(), passphrase = null)
+
+        assertEquals(
+            listOf(
+                "tx-begin",
+                // wipe：FK-safe 反序
+                "wipe-completions", "wipe-tasks", "wipe-templates", "wipe-plans",
+                // insert：FK 依赖正序
+                "ins-template", "ins-plan", "ins-task", "ins-completion",
+                "tx-end",
+            ),
+            log,
+        )
+    }
+
+    @Test
+    fun `insert 中途失败 — 异常向上传播（真实回滚由 Room 事务保证）`() = runTest {
+        coEvery { taskDao.insert(any()) } throws RuntimeException("disk full")
+
+        val ex = assertThrows<RuntimeException> {
+            importer().import(plainFileJson(), passphrase = null)
+        }
+        assertEquals("disk full", ex.message)
+        // wipe 已发出（模拟场景无真实状态；生产上 withTransaction 会把它一并回滚）
+        coVerify(exactly = 1) { planDao.deleteAll() }
+        coVerify(exactly = 1) { db.withTransaction(any<suspend () -> Any?>()) }
     }
 }
