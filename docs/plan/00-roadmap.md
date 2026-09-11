@@ -315,3 +315,22 @@ Room DAO / DataStore
 
 排序原则：正确性 > 日常体验 > 存量 > 大特性。番茄钟形态已拍板为「绑任务的专注页」。
 
+### v0.4 执行结果（2026-09-11 更新）
+
+阶段一 + 阶段二全部完成并推 main，v0.4.0（versionCode 6）具备内测条件：
+
+| 事项 | commit |
+|---|---|
+| 备份导入包 Room 事务 | `465b079` |
+| BootReceiver 重启重排闹钟（调度链抽成 ScheduleRefresher） | `bcd9402` |
+| 模板应用补全（spec + 同事务复制任务） | `18b2a25` |
+| 计划归档接线（domain / 备份 / 列表 / 详情 / 聚合过滤） | `d16604c` |
+| task_completed 通知实装 + plan_recap 开关隐藏 | `70c69e8` |
+| Widget 数据驱动刷新 | `7ecd831` |
+| Today 快速录入（FAB 弹层） | `4d2ad07` |
+| PlanDetail 内联冲突标注 | `ba42b3f` |
+| 存量 lint 错误清零（17 缺翻译 / 通知权限 / Scaffold / Tile） | `dd1bde1` |
+
+- TaskEditor 的 isLocked 入口核实为已有（「自动延期」开关，isLocked = !autoExtend），无需改动
+- **验收**：256 个 JVM 单测全过（v0.3.1 为 219），lint 0 error，`assembleDebug` 干净，内测文档更新到 v0.4（`docs/INTERNAL_TEST.md`）
+
