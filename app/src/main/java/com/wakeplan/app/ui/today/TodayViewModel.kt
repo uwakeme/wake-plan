@@ -123,8 +123,14 @@ class TodayViewModel @Inject constructor(
         data class Skip(override val completionId: String, override val previous: TaskCompletion) : UndoableAction
     }
 
-    private val _undoableAction = MutableStateFlow<UndoableAction?>(null)
-    val undoableAction: StateFlow<UndoableAction?> = _undoableAction.asStateFlow()
+    /**
+     * 撤销队列 — v0.5 阶段五（此前是单槽：上一条未消费就被新 action 覆盖，无法撤销）。
+     * 深度 [MAX_UNDO_DEPTH]，超出丢最旧；队首即"当前待撤销"，Snackbar 逐条出队。
+     */
+    private val _undoQueue = MutableStateFlow<List<UndoableAction>>(emptyList())
+    val undoableAction: StateFlow<UndoableAction?> = _undoQueue
+        .map { it.firstOrNull() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** 每分钟心跳（可注入，测试换有限流避免虚拟时间挂死） */
     private val tickFlow: Flow<LocalDateTime> = minuteTicker.now
@@ -241,7 +247,7 @@ class TodayViewModel @Inject constructor(
                 actualStart = now,
             ))
             startingAlarmScheduler.cancelStartingAlarm(completionId)
-            _undoableAction.value = UndoableAction.Start(completionId, c)
+            enqueueUndo(UndoableAction.Start(completionId, c))
         }
     }
 
@@ -265,7 +271,7 @@ class TodayViewModel @Inject constructor(
             if (taskTitle.isNotEmpty()) {
                 completionNotifier.notifyCompleted(completed, taskTitle)
             }
-            _undoableAction.value = UndoableAction.Complete(completionId, c)
+            enqueueUndo(UndoableAction.Complete(completionId, c))
         }
     }
 
@@ -299,13 +305,13 @@ class TodayViewModel @Inject constructor(
             if (c.status == TaskStatus.COMPLETED || c.status == TaskStatus.SKIPPED) return@launch
             taskCompletionRepository.upsert(c.copy(status = TaskStatus.SKIPPED))
             startingAlarmScheduler.cancelStartingAlarm(completionId)
-            _undoableAction.value = UndoableAction.Skip(completionId, c)
+            enqueueUndo(UndoableAction.Skip(completionId, c))
         }
     }
 
     fun undo() {
-        val action = _undoableAction.value ?: return
-        _undoableAction.value = null
+        val action = _undoQueue.value.firstOrNull() ?: return
+        _undoQueue.value = _undoQueue.value.drop(1)
         viewModelScope.launch {
             taskCompletionRepository.upsert(action.previous)
             if (action is UndoableAction.Complete) {
@@ -320,7 +326,12 @@ class TodayViewModel @Inject constructor(
     }
 
     fun consumeUndo() {
-        _undoableAction.value = null
+        // 弹出队首（未点撤销的直接跳过），下一条自动顶上
+        _undoQueue.value = _undoQueue.value.drop(1)
+    }
+
+    private fun enqueueUndo(action: UndoableAction) {
+        _undoQueue.value = (_undoQueue.value + action).takeLast(MAX_UNDO_DEPTH)
     }
 
     fun switchDate(date: LocalDate) {
@@ -349,5 +360,10 @@ class TodayViewModel @Inject constructor(
             )
             scheduleRefresher.refresh(LocalDate.now(clock))
         }
+    }
+
+    companion object {
+        /** 撤销队列深度：超出丢最旧 */
+        const val MAX_UNDO_DEPTH = 5
     }
 }

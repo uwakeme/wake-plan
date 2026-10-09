@@ -271,11 +271,12 @@ class TodayViewModelUndoTest {
         assertNotNull(vm.undoableAction.value)
 
         vm.consumeUndo()
+        advanceUntilIdle()
         assertNull(vm.undoableAction.value)
     }
 
     @Test
-    fun `连续两次 action — 第二次的 snapshot 覆盖第一次`() = runTest(testDispatcher) {
+    fun `连续两次 action — 队列排队不覆盖，逐条消费（v0_5 队列语义）`() = runTest(testDispatcher) {
         val snapshot1 = pendingCompletion()
         val snapshot2 = pendingCompletion().copy(status = TaskStatus.IN_PROGRESS)
         coEvery { taskCompletionRepo.getById("comp-1") } returnsMany listOf(snapshot1, snapshot2)
@@ -287,12 +288,89 @@ class TodayViewModelUndoTest {
 
         vm.onCompleteTask("comp-1")
         advanceUntilIdle()
+        // 第二条排在队尾，队首仍是 Start（旧单槽语义是直接覆盖）
+        assertTrue(vm.undoableAction.value is TodayViewModel.UndoableAction.Start)
+
+        vm.consumeUndo()
+        advanceUntilIdle()
         assertTrue(vm.undoableAction.value is TodayViewModel.UndoableAction.Complete)
         assertEquals(TaskStatus.IN_PROGRESS, vm.undoableAction.value!!.previous.status)
 
         vm.undo()
         advanceUntilIdle()
         coVerify { taskCompletionRepo.upsert(match { it.status == TaskStatus.IN_PROGRESS && it.actualStart == null }) }
+    }
+
+    // ===== v0.5 阶段五：撤销队列（深度 5，逐条出队） =====
+
+    @Test
+    fun `连续多次 action — 不再互相覆盖，逐条出队撤销`() = runTest(testDispatcher) {
+        val snapshots = (1..3).map { i ->
+            pendingCompletion().copy(id = "comp-$i", taskId = "task-$i")
+        }
+        snapshots.forEach { snap ->
+            coEvery { taskCompletionRepo.getById(snap.id) } returns snap
+        }
+        val vm = viewModel()
+
+        vm.onSkipTask("comp-1")
+        vm.onSkipTask("comp-2")
+        vm.onSkipTask("comp-3")
+        advanceUntilIdle()
+        // 队首是第一条（FIFO），不再是最后一条覆盖
+        assertEquals("comp-1", vm.undoableAction.value?.completionId)
+
+        vm.undo()
+        advanceUntilIdle()
+        assertEquals("comp-2", vm.undoableAction.value?.completionId)
+
+        vm.undo()
+        vm.undo()
+        advanceUntilIdle()
+        assertNull(vm.undoableAction.value)
+        // 三条都被还原过
+        coVerify(exactly = 3) { taskCompletionRepo.upsert(match { it.status == TaskStatus.PENDING }) }
+    }
+
+    @Test
+    fun `队列深度上限 5 — 超出丢最旧`() = runTest(testDispatcher) {
+        val snapshots = (1..6).map { i ->
+            pendingCompletion().copy(id = "comp-$i", taskId = "task-$i")
+        }
+        snapshots.forEach { snap ->
+            coEvery { taskCompletionRepo.getById(snap.id) } returns snap
+        }
+        val vm = viewModel()
+
+        (1..6).forEach { vm.onSkipTask("comp-$it") }
+        advanceUntilIdle()
+
+        // 第 1 条被挤出，队首是第 2 条
+        assertEquals("comp-2", vm.undoableAction.value?.completionId)
+        // 依次撤销 5 条到底
+        repeat(5) {
+            vm.undo()
+            advanceUntilIdle()
+        }
+        assertNull(vm.undoableAction.value)
+    }
+
+    @Test
+    fun `consumeUndo 跳过队首 — 下一条顶上`() = runTest(testDispatcher) {
+        val s1 = pendingCompletion().copy(id = "comp-1")
+        val s2 = pendingCompletion().copy(id = "comp-2", status = TaskStatus.PENDING)
+        coEvery { taskCompletionRepo.getById("comp-1") } returns s1
+        coEvery { taskCompletionRepo.getById("comp-2") } returns s2
+        val vm = viewModel()
+
+        vm.onSkipTask("comp-1")
+        vm.onSkipTask("comp-2")
+        advanceUntilIdle()
+        assertEquals("comp-1", vm.undoableAction.value?.completionId)
+
+        vm.consumeUndo()
+        advanceUntilIdle()
+        assertEquals("comp-2", vm.undoableAction.value?.completionId)
     }
 
     // ===== Phase 5.3 日期切换 =====
