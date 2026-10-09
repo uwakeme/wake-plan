@@ -13,20 +13,20 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * CascadeDelayCalculator 单测 — v0.3 链式碰撞延期
+ * CascadeDelayCalculator 单测 — v0.4.1 重写（对齐 PRD AC-06）
  *
- * 覆盖（设计稿 §3.4）：
- * 1. 单个超时推下一个
+ * 覆盖：
+ * 1. 单个超时推下一个（IN_PROGRESS actualEnd 推 PENDING 后续）
  * 2. 链式 3 个（A 超时 → 推 B → B 也超时 → 推 C）
  * 3. locked 钉死，链断
- * 4. 已完成的不影响链
- * 5. 跨 plan 任务混排
- * 6. 不影响明天（scheduledDate != today 不参与）
+ * 4. COMPLETED 晚完成推下游（v0.4.1 核心修正：生产路径 overrun 真正传导）
+ * 5. SKIPPED 不推；COMPLETED cur 不被推
+ * 6. 跨 plan 不传播（AC-06.5，v0.4.1 修正）
+ * 7. 不影响明天（scheduledDate != today 不参与）
  *
  * 关键模型：
- * - prev IN_PROGRESS 时 actualEnd = now（或已落库的实际结束时间）
- * - 算法用 computedEndAt = actualEnd ?: plannedEnd
- * - prev.status = COMPLETED/SKIPPED → 不推下游（即使 actualEnd 超过 cur 计划）
+ * - computedEndAt：COMPLETED→actualEnd；IN_PROGRESS→max(plannedEnd, actualEnd?, now)；
+ *   PENDING/SKIPPED→plannedEnd
  */
 @DisplayName("CascadeDelayCalculator")
 class CascadeDelayCalculatorTest {
@@ -201,13 +201,34 @@ class CascadeDelayCalculatorTest {
     }
 
     @Nested
-    @DisplayName("终态不影响链")
+    @DisplayName("终态处理（v0.4.1 修正）")
     inner class Terminal {
         @Test
-        fun `COMPLETED prev 不推下游 — 即使 actualEnd 超 cur start`() {
+        fun `COMPLETED 晚完成推下游 — AC-06 核心（overrun 传导）`() {
+            // A 9:00-9:30 COMPLETED actualEnd=9:45（晚 15 分钟）
+            // B 9:30-10:00 PENDING
+            // 期望：B 推到 9:45-10:15（v0.4.1 前生产路径 COMPLETED 被跳过，永不传导）
+            val a = completion(
+                "c-A", "t-A",
+                start = today.atTime(9, 0), end = today.atTime(9, 30),
+                status = TaskStatus.COMPLETED,
+                actualStart = today.atTime(9, 0),
+                actualEnd = today.atTime(9, 45),
+            )
+            val b = completion("c-B", "t-B", start = today.atTime(9, 30), end = today.atTime(10, 0))
+
+            val result = calculator(listOf(a, b), listOf(task("t-A"), task("t-B")), today, now)
+            val outB = result.single { it.id == "c-B" }
+            assertEquals(today.atTime(9, 45), outB.plannedStart)
+            assertEquals(today.atTime(10, 15), outB.plannedEnd)
+            assertEquals(listOf("t-A"), outB.affectedTasks)
+        }
+
+        @Test
+        fun `COMPLETED 按时完成不推下游 — actualEnd 未超 cur start`() {
             // A 9:00-9:30 COMPLETED actualEnd=9:25
             // B 9:30-10:00 PENDING
-            // 期望：B 不动（COMPLETED 不推）
+            // 期望：B 不动
             val a = completion(
                 "c-A", "t-A",
                 start = today.atTime(9, 0), end = today.atTime(9, 30),
@@ -278,10 +299,11 @@ class CascadeDelayCalculatorTest {
     @DisplayName("跨计划 / 跨日")
     inner class CrossPlanAndDate {
         @Test
-        fun `跨 plan 任务按绝对时间混排 — A_planX 推 B_planY`() {
+        fun `跨 plan 不传播 — A_planX 不推 B_planY（AC-065，v0_4_1 修正）`() {
             // A 9:00-9:30 IN_PROGRESS actualEnd=9:45 (planA)
             // B 9:30-10:00 PENDING (planB)
-            // 期望：B 被 A 推
+            // 期望：B 不被 A 推——A 计划的延期不传播到 B 计划（PRD AC-06.5）；
+            // v0.3 实现是跨 plan 混排互推，违反 PRD
             val a = completion(
                 "c-A", "t-A", planId = planA,
                 start = today.atTime(9, 0), end = today.atTime(9, 30),
@@ -303,9 +325,9 @@ class CascadeDelayCalculatorTest {
 
             val result = calculator(listOf(a, b), listOf(taskA, taskB), today, now)
             val outB = result.single { it.id == "c-B" }
-            assertEquals(today.atTime(9, 45), outB.plannedStart)
-            assertEquals(today.atTime(10, 15), outB.plannedEnd)
-            assertEquals(listOf("t-A"), outB.affectedTasks)
+            assertEquals(today.atTime(9, 30), outB.plannedStart)
+            assertEquals(today.atTime(10, 0), outB.plannedEnd)
+            assertTrue(outB.affectedTasks.isEmpty())
         }
 
         @Test
@@ -392,9 +414,9 @@ class CascadeDelayCalculatorTest {
 
         @Test
         fun `prev_computedEndAt 等于 cur_computedStartAt — 不算碰撞（边界）`() {
-            // A IN_PROGRESS 9:00-9:30 actualEnd=9:30（刚好不超时）
+            // A IN_PROGRESS 9:00-9:30 actualEnd=9:30（刚好不超时），now 也停在 9:30
             // B PENDING 9:30-10:00
-            // expectedEnd = curStart → isAfter = false → 不推
+            // expectedEnd = curStart → isAfter = false → 不推（半开区间语义）
             val a = completion(
                 "c-A", "t-A",
                 start = today.atTime(9, 0), end = today.atTime(9, 30),
@@ -403,8 +425,23 @@ class CascadeDelayCalculatorTest {
                 actualEnd = today.atTime(9, 30),
             )
             val b = completion("c-B", "t-B", start = today.atTime(9, 30), end = today.atTime(10, 0))
-            val result = calculator(listOf(a, b), listOf(task("t-A"), task("t-B")), today, now)
+            val result = calculator(listOf(a, b), listOf(task("t-A"), task("t-B")), today, today.atTime(9, 30))
             assertEquals(today.atTime(9, 30), result.single { it.id == "c-B" }.plannedStart)
+        }
+
+        @Test
+        fun `IN_PROGRESS 拖堂中 — now 超过 plannedEnd 时实时推下游`() {
+            // A IN_PROGRESS 9:00-9:30（actualEnd 还没落库），now=9:45
+            // B PENDING 9:30-10:00 → 被"拖堂中"的 A 实时推到 9:45
+            val a = completion(
+                "c-A", "t-A",
+                start = today.atTime(9, 0), end = today.atTime(9, 30),
+                status = TaskStatus.IN_PROGRESS,
+                actualStart = today.atTime(9, 0),
+            )
+            val b = completion("c-B", "t-B", start = today.atTime(9, 30), end = today.atTime(10, 0))
+            val result = calculator(listOf(a, b), listOf(task("t-A"), task("t-B")), today, now)
+            assertEquals(today.atTime(9, 45), result.single { it.id == "c-B" }.plannedStart)
         }
 
         @Test

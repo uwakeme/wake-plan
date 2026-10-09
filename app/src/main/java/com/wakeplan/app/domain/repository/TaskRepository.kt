@@ -34,8 +34,14 @@ interface TaskRepository {
         note: String? = null,
     ): Task
 
-    /** 更新任务（整个对象） */
+    /** 更新任务（整个对象）。同步把未来未开始实例的窗口对齐新定义（不再生效的日期直接删） */
     suspend fun update(task: Task)
+
+    /**
+     * 把某计划某天的未开始 PENDING 实例窗口重置回任务定义（清掉链式延期位移）。
+     * 撤销"完成任务"时调用——还原被打完成状态推后的下游任务。
+     */
+    suspend fun resyncPlanCompletions(planId: String, date: java.time.LocalDate)
 
     /** 删除任务 */
     suspend fun delete(id: String)

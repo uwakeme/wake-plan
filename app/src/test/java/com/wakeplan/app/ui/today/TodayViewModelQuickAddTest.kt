@@ -1,6 +1,5 @@
 package com.wakeplan.app.ui.today
 
-import com.wakeplan.app.data.prefs.UserPreferences
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.repository.PlanRepository
 import com.wakeplan.app.domain.repository.TaskCompletionRepository
@@ -50,15 +49,15 @@ class TodayViewModelQuickAddTest {
     private val startingAlarmScheduler: StartingAlarmScheduler = mockk(relaxed = true)
     private val scheduleRefresher: ScheduleRefresher = mockk(relaxed = true)
     private val completionNotifier: CompletionNotifier = mockk(relaxed = true)
-    private val userPreferences: UserPreferences = mockk(relaxed = true)
+    private val minuteTicker: com.wakeplan.app.domain.time.MinuteTicker = mockk {
+        every { now } returns flowOf(java.time.LocalDateTime.of(2026, 8, 8, 12, 0))
+    }
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { planRepo.observeAll() } returns flowOf(emptyList())
         every { taskRepo.observeAll() } returns flowOf(emptyList())
-        every { userPreferences.taskStartingLeadMinutes } returns flowOf(5)
-        every { userPreferences.taskStartingEnabled } returns flowOf(true)
         coEvery {
             taskRepo.create(any(), any(), any(), any(), any(), any(), any(), any())
         } returns mockk()
@@ -78,7 +77,7 @@ class TodayViewModelQuickAddTest {
         startingAlarmScheduler = startingAlarmScheduler,
         scheduleRefresher = scheduleRefresher,
         completionNotifier = completionNotifier,
-        userPreferences = userPreferences,
+        minuteTicker = minuteTicker,
         clock = fixedClock,
     )
 

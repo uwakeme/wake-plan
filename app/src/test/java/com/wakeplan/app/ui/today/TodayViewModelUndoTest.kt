@@ -1,6 +1,5 @@
 package com.wakeplan.app.ui.today
 
-import com.wakeplan.app.data.prefs.UserPreferences
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.repository.PlanRepository
@@ -12,6 +11,7 @@ import com.wakeplan.app.notification.CompletionNotifier
 import com.wakeplan.app.notification.ScheduleRefresher
 import com.wakeplan.app.notification.StartingAlarmScheduler
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.mockk
@@ -62,15 +62,18 @@ class TodayViewModelUndoTest {
     private val startingAlarmScheduler: StartingAlarmScheduler = mockk(relaxed = true)
     private val scheduleRefresher: ScheduleRefresher = mockk(relaxed = true)
     private val completionNotifier: CompletionNotifier = mockk(relaxed = true)
-    private val userPreferences: UserPreferences = mockk(relaxed = true)
+    private val minuteTicker: com.wakeplan.app.domain.time.MinuteTicker = mockk {
+        every { now } returns flowOf(java.time.LocalDateTime.of(2026, 8, 8, 12, 0))
+    }
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         coEvery { planRepo.observeAll() } returns flowOf(emptyList())
         coEvery { taskRepo.observeAll() } returns flowOf(emptyList())
-        coEvery { userPreferences.taskStartingLeadMinutes } returns flowOf(5)
-        coEvery { userPreferences.taskStartingEnabled } returns flowOf(true)
+        // v0.4.1：persistCascade / uiState 都会 observeByDate——给有限流，避免 mock Flow 噪声
+        every { taskCompletionRepo.observeByDate(any()) } returns flowOf(emptyList())
+        every { taskCompletionRepo.observeByDateRangeInclusive(any(), any()) } returns flowOf(emptyList())
     }
 
     @AfterEach
@@ -87,7 +90,7 @@ class TodayViewModelUndoTest {
         startingAlarmScheduler = startingAlarmScheduler,
         scheduleRefresher = scheduleRefresher,
         completionNotifier = completionNotifier,
-        userPreferences = userPreferences,
+        minuteTicker = minuteTicker,
         clock = fixedClock,
     )
 
