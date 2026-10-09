@@ -573,4 +573,17 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <!-- v0.5 daily recap -->
     <string name="notif_recap_title">Daily recap</string>
     <string name="notif_recap_body">%1$d of %2$d tasks done today (%3$d%%)</string>
+
+    <!-- v0.5 CSV export -->
+    <string name="settings_csv_export">Export records (CSV)</string>
+    <string name="settings_csv_export_sub">Export all task records as a CSV file</string>
+    <string name="csv_header_date">Date</string>
+    <string name="csv_header_plan">Plan</string>
+    <string name="csv_header_task">Task</string>
+    <string name="csv_header_planned_start">Planned start</string>
+    <string name="csv_header_planned_end">Planned end</string>
+    <string name="csv_header_actual_start">Actual start</string>
+    <string name="csv_header_actual_end">Actual end</string>
+    <string name="csv_header_status">Status</string>
+    <string name="csv_header_overrun">Overrun (min)</string>
 </resources>

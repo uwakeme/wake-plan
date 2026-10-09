@@ -12,6 +12,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.crypto.AEADBadTagException
@@ -21,6 +22,11 @@ import javax.inject.Inject
 @HiltViewModel
 class BackupViewModel @Inject constructor(
     private val backupManager: BackupManager,
+    private val csvExporter: com.wakeplan.app.data.export.CsvExporter,
+    private val fileWriter: com.wakeplan.app.data.backup.BackupFileWriter,
+    private val planRepo: com.wakeplan.app.domain.repository.PlanRepository,
+    private val taskRepo: com.wakeplan.app.domain.repository.TaskRepository,
+    private val completionRepo: com.wakeplan.app.domain.repository.TaskCompletionRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -88,6 +94,33 @@ class BackupViewModel @Inject constructor(
     fun consumeExportError() {
         if (_exportState.value is ExportState.Error) {
             _exportState.update { ExportState.Idle }
+        }
+    }
+
+    /**
+     * 任务执行记录 CSV 导出（v0.5）：全量 completions + 当期计划/任务名 → SAF Uri。
+     * 复用 ExportState 状态机（Running/Success/Error 与备份导出同款 UI 消费）
+     */
+    fun exportCsv(uri: Uri) {
+        if (_exportState.value is ExportState.Running) return
+        _exportState.update { ExportState.Running }
+        viewModelScope.launch {
+            try {
+                val completions = completionRepo.getAll()
+                val plans = planRepo.observeAll().first()
+                val tasks = taskRepo.observeAll().first()
+                val headers = listOf(
+                    R.string.csv_header_date, R.string.csv_header_plan, R.string.csv_header_task,
+                    R.string.csv_header_planned_start, R.string.csv_header_planned_end,
+                    R.string.csv_header_actual_start, R.string.csv_header_actual_end,
+                    R.string.csv_header_status, R.string.csv_header_overrun,
+                ).map(context::getString)
+                val csv = csvExporter.export(completions, plans, tasks, headers)
+                fileWriter.writeToUri(context, uri, csv)
+                _exportState.update { ExportState.Success(csv.toByteArray(Charsets.UTF_8).size.toLong()) }
+            } catch (e: Exception) {
+                _exportState.update { ExportState.Error(formatError(e)) }
+            }
         }
     }
 

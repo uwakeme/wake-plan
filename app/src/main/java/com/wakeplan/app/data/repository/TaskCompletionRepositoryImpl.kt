@@ -42,4 +42,7 @@ class TaskCompletionRepositoryImpl @Inject constructor(
 
     override suspend fun getByDateRange(start: LocalDate, end: LocalDate): List<TaskCompletion> =
         completionDao.getByDateRange(start, end).map { it.toDomain() }
+
+    override suspend fun getAll(): List<TaskCompletion> =
+        completionDao.getAllSnapshot().map { it.toDomain() }
 }

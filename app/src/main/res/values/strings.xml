@@ -580,4 +580,17 @@
     <!-- v0.5 每日回顾 -->
     <string name="notif_recap_title">今日回顾</string>
     <string name="notif_recap_body">今天完成 %1$d/%2$d 个任务（%3$d%%）</string>
+
+    <!-- v0.5 CSV 导出 -->
+    <string name="settings_csv_export">导出任务记录（CSV）</string>
+    <string name="settings_csv_export_sub">全部任务执行记录导出为 CSV 文件</string>
+    <string name="csv_header_date">日期</string>
+    <string name="csv_header_plan">计划</string>
+    <string name="csv_header_task">任务</string>
+    <string name="csv_header_planned_start">计划开始</string>
+    <string name="csv_header_planned_end">计划结束</string>
+    <string name="csv_header_actual_start">实际开始</string>
+    <string name="csv_header_actual_end">实际结束</string>
+    <string name="csv_header_status">状态</string>
+    <string name="csv_header_overrun">超时（分钟）</string>
 </resources>

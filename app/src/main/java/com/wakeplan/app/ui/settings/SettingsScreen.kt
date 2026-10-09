@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Insights
+import androidx.compose.material.icons.outlined.TableView
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FileDownload
@@ -407,6 +408,12 @@ fun SettingsScreen(
 
     var leadMenuExpanded by remember { mutableStateOf(false) }
 
+    // v0.5：CSV 导出 launcher（复用 ExportState 状态机与结果消费）
+    val csvLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv"),
+    ) { uri ->
+        if (uri != null) backupViewModel.exportCsv(uri)
+    }
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
     ) { uri ->
@@ -712,6 +719,17 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_backup_import),
                         subtitle = stringResource(R.string.settings_import_confirm_text),
                         onClick = { showImportConfirmDialog = true },
+                    )
+                    // v0.5：任务执行记录 CSV 导出（SAF，同备份导出状态机）
+                    SettingNavRow(
+                        icon = Icons.Outlined.TableView,
+                        iconTint = SettingIconTint.AMBER,
+                        title = stringResource(R.string.settings_csv_export),
+                        subtitle = stringResource(R.string.settings_csv_export_sub),
+                        onClick = {
+                            val ts = java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date())
+                            csvLauncher.launch("wakeplan-completions-$ts.csv")
+                        },
                         showDivider = false,
                     )
                 }

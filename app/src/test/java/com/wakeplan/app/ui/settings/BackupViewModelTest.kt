@@ -61,7 +61,16 @@ class BackupViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = BackupViewModel(backupManager, context)
+    // v0.5：CSV 导出依赖（relaxed mock；CsvExporter 是纯函数可直接用真实例）
+    private val csvExporter = com.wakeplan.app.data.export.CsvExporter()
+    private val fileWriter: com.wakeplan.app.data.backup.BackupFileWriter = mockk(relaxed = true)
+    private val planRepo: com.wakeplan.app.domain.repository.PlanRepository = mockk(relaxed = true)
+    private val taskRepo: com.wakeplan.app.domain.repository.TaskRepository = mockk(relaxed = true)
+    private val completionRepo: com.wakeplan.app.domain.repository.TaskCompletionRepository = mockk(relaxed = true)
+
+    private fun viewModel() = BackupViewModel(
+        backupManager, csvExporter, fileWriter, planRepo, taskRepo, completionRepo, context,
+    )
 
     @Test
     fun `初始 exportState 和 importState 都是 Idle`() = runTest(testDispatcher) {

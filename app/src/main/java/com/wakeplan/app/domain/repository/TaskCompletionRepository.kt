@@ -31,4 +31,7 @@ interface TaskCompletionRepository {
 
     /** 日期范围一次性查询 — Phase 5.2 统计用 */
     suspend fun getByDateRange(start: LocalDate, end: LocalDate): List<TaskCompletion>
+
+    /** 全量一次性查询 — v0.5 CSV 导出用（与备份导出同假设：数据量 < 1k 行级） */
+    suspend fun getAll(): List<TaskCompletion>
 }
