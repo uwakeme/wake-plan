@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.R
+import com.wakeplan.app.ui.common.TimeFormat
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.ui.common.WpAnimateInContainer
@@ -564,7 +565,7 @@ private fun TimeBlock(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = formatTimeShort(startMinutes),
+            text = TimeFormat.minutesOfDay(startMinutes),
             style = MaterialTheme.typography.titleLarge.copy(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
@@ -574,7 +575,7 @@ private fun TimeBlock(
         )
         DashedVerticalDivider()
         Text(
-            text = formatTimeShort(endMinutes) + if (endMinutes >= 1440) " +1" else "",
+            text = TimeFormat.minutesOfDay(endMinutes) + if (endMinutes >= 1440) " +1" else "",
             style = MaterialTheme.typography.bodySmall.copy(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
@@ -710,13 +711,6 @@ private fun EmptyTaskState() {
             textAlign = TextAlign.Center,
         )
     }
-}
-
-private fun formatTimeShort(minutes: Int): String {
-    val total = ((minutes % 1440) + 1440) % 1440
-    val h = total / 60
-    val m = total % 60
-    return "%02d:%02d".format(h, m)
 }
 
 @Composable

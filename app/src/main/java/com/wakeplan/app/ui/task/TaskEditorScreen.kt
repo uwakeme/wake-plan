@@ -33,13 +33,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,6 +52,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
 import com.wakeplan.app.R
+import com.wakeplan.app.ui.common.WpTimePickerDialog
+import com.wakeplan.app.ui.common.TimeFormat
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.ui.common.WpRadius
 import java.time.DayOfWeek
@@ -115,7 +114,7 @@ fun TaskEditorScreen(
                 label = stringResource(R.string.task_start_time_label) + " " +
                     stringResource(R.string.task_time_to) + " " +
                     stringResource(R.string.task_end_time_label),
-                value = formatTimeRange(startMinutes, endMinutes),
+                value = TimeFormat.rawRange(startMinutes, endMinutes),
                 onClick = { pickerTarget = PickerTarget.START },
             )
 
@@ -176,13 +175,13 @@ fun TaskEditorScreen(
     }
 
     pickerTarget?.let { target ->
-        TimePickerDialog(
+        WpTimePickerDialog(
             title = stringResource(
                 if (target == PickerTarget.START) R.string.task_picker_start_title
                 else R.string.task_picker_end_title,
             ),
             initialMinutes = if (target == PickerTarget.START) startMinutes else endMinutes,
-            isStartPicker = target == PickerTarget.START,
+            stateKey = target,
             onConfirm = { picked ->
                 if (target == PickerTarget.START) {
                     viewModel.setStartMinutes(picked)
@@ -593,55 +592,6 @@ private fun DeleteButton(onClick: () -> Unit) {
 }
 
 @Composable
-private fun TimePickerDialog(
-    title: String,
-    initialMinutes: Int,
-    isStartPicker: Boolean,
-    onConfirm: (Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    // key() 让每次重新进入 picker 时 state 强制重建，避免复用导致字段停留在分钟
-    val state = key(initialMinutes, isStartPicker) {
-        rememberTimePickerState(
-            initialHour = (initialMinutes / 60) % 24,
-            initialMinute = initialMinutes % 60,
-            is24Hour = true,
-        )
-    }
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp,
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
-                TimePicker(state = state)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.common_cancel))
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = {
-                        // Picker 只支持当日 0-23 小时；选的结束 ≤ 开始时
-                        // setEndMinutes 自动 +24h 理解为跨午夜（v0.4.1）
-                        onConfirm(state.hour * 60 + state.minute)
-                    }) {
-                        Text(stringResource(R.string.common_confirm))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun NoteEditorDialog(
     value: String,
     onValueChange: (String) -> Unit,
@@ -705,18 +655,3 @@ private fun dayLabel(day: DayOfWeek): String = stringResource(
         DayOfWeek.SUNDAY -> R.string.weekday_sun
     },
 )
-
-private fun formatHHmm(minutes: Int): String {
-    val safe = minutes.coerceAtLeast(0)
-    val h = safe / 60
-    val m = safe % 60
-    return "%d:%02d".format(h, m)
-}
-
-private fun formatTimeRange(startMinutes: Int, endMinutes: Int): String {
-    val start = formatHHmm(startMinutes)
-    val endH = (endMinutes / 60) % 24
-    val endM = endMinutes % 60
-    val end = "%d:%02d".format(endH, endM)
-    return "$start - $end"
-}

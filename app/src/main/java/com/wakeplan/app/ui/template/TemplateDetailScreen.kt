@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.R
+import com.wakeplan.app.ui.common.TimeFormat
 import com.wakeplan.app.domain.model.PlanTemplate
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.Task
@@ -227,7 +228,7 @@ private fun TaskPreviewRow(task: Task) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = task.title, style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    text = "${formatHHmm(task.startMinutes)} – ${formatHHmm(task.endMinutes)} · ${
+                    text = "${TimeFormat.minutesOfDay(task.startMinutes)} – ${TimeFormat.minutesOfDay(task.endMinutes)} · ${
                         repeatRuleLabel(task.repeatRule)
                     }",
                     style = MaterialTheme.typography.bodySmall,
@@ -260,10 +261,3 @@ private fun repeatRuleLabel(rule: RepeatRule): String = stringResource(
         RepeatRule.CUSTOM -> R.string.repeat_custom
     },
 )
-
-private fun formatHHmm(minutes: Int): String {
-    val total = ((minutes % 1440) + 1440) % 1440
-    val h = total / 60
-    val m = total % 60
-    return "%02d:%02d".format(h, m)
-}

@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.R
+import com.wakeplan.app.ui.common.TimeFormat
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.usecase.TaskConflict
@@ -595,8 +596,8 @@ private fun NowCard(
 
                 val start = currentTask.completion.plannedStart
                 val end = currentTask.completion.plannedEnd
-                val startTime = formatHm(start)
-                val endTime = formatHm(end)
+                val startTime = TimeFormat.dateTime(start)
+                val endTime = TimeFormat.dateTime(end)
                 val totalMinutes = java.time.Duration.between(start, end).toMinutes().coerceAtLeast(1)
                 val elapsedMinutes = if (isInProgress) {
                     java.time.Duration.between(start, now).toMinutes().coerceIn(0, totalMinutes)
@@ -1071,8 +1072,8 @@ private fun TodayTaskCard(
     onComplete: () -> Unit,
     onSkip: () -> Unit,
 ) {
-    val start = formatHm(item.completion.plannedStart)
-    val end = formatHm(item.completion.plannedEnd)
+    val start = TimeFormat.dateTime(item.completion.plannedStart)
+    val end = TimeFormat.dateTime(item.completion.plannedEnd)
     val timeText = "$start – $end"
 
     val status = item.completion.status
@@ -1310,9 +1311,6 @@ private fun EmptyTodayState(
         }
     }
 }
-
-private fun formatHm(dt: LocalDateTime): String =
-    String.format("%02d:%02d", dt.hour, dt.minute)
 
 /** 日期 pattern 走 strings 资源（zh "M月d日" / en "MMM d"），跟随 App 语言 */
 @Composable
