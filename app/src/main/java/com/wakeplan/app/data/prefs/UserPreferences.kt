@@ -49,6 +49,13 @@ class UserPreferences @Inject constructor(
     val databaseSeeded: Flow<Boolean> = dataStore.data
         .map { it[KEY_DATABASE_SEEDED] ?: false }
 
+    /**
+     * 统计记录保留天数（v0.5 阶段六）：0 = 永久（默认），90 / 365 可选。
+     * 只影响 COMPLETED/SKIPPED 的超龄行，进行中/未开始永不动
+     */
+    val completionRetentionDays: Flow<Int> = dataStore.data
+        .map { it[KEY_COMPLETION_RETENTION_DAYS] ?: 0 }
+
     suspend fun setTaskStartingLeadMinutes(minutes: Int) {
         require(minutes in ALLOWED_LEAD_VALUES) { "lead minutes must be in $ALLOWED_LEAD_VALUES" }
         dataStore.edit { it[KEY_TASK_STARTING_LEAD] = minutes }
@@ -78,6 +85,11 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[KEY_DATABASE_SEEDED] = seeded }
     }
 
+    suspend fun setCompletionRetentionDays(days: Int) {
+        require(days in ALLOWED_RETENTION_DAYS) { "retention days must be in $ALLOWED_RETENTION_DAYS" }
+        dataStore.edit { it[KEY_COMPLETION_RETENTION_DAYS] = days }
+    }
+
     companion object {
         const val DEFAULT_LEAD_MINUTES = 5
         val ALLOWED_LEAD_VALUES = setOf(0, 5, 10, 15)
@@ -89,5 +101,9 @@ class UserPreferences @Inject constructor(
         val KEY_PLAN_RECAP_ENABLED = booleanPreferencesKey("plan_recap_enabled")
         val KEY_HAS_SHOWN_ONBOARDING = booleanPreferencesKey("has_shown_onboarding")
         val KEY_DATABASE_SEEDED = booleanPreferencesKey("database_seeded")
+        val KEY_COMPLETION_RETENTION_DAYS = intPreferencesKey("completion_retention_days")
+
+        /** 数据保留选项：0 = 永久（默认） */
+        val ALLOWED_RETENTION_DAYS = setOf(0, 90, 365)
     }
 }

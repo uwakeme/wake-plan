@@ -593,4 +593,11 @@
     <string name="csv_header_actual_end">实际结束</string>
     <string name="csv_header_status">状态</string>
     <string name="csv_header_overrun">超时（分钟）</string>
+
+    <!-- v0.5 数据保留 -->
+    <string name="settings_retention_title">数据保留</string>
+    <string name="retention_forever">永久保留</string>
+    <string name="retention_90_days">保留 90 天</string>
+    <string name="retention_1_year">保留 1 年</string>
+    <string name="retention_dialog_note">超过保留时长的已完成/已跳过记录会被清理；未开始与进行中的任务不受影响。默认永久保留。</string>
 </resources>

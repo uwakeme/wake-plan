@@ -70,6 +70,19 @@ interface TaskCompletionDao {
     suspend fun deleteAll()
 
     /**
+     * 数据保留清理（v0.5）：删 scheduled_date 早于 cutoff 且已终态的行。
+     * PENDING / IN_PROGRESS 永不删（未开始的实例与正在跑的任务不受保留策略影响）
+     */
+    @Query(
+        """
+        DELETE FROM task_completions
+        WHERE scheduled_date < :cutoff
+            AND status IN ('COMPLETED', 'SKIPPED')
+        """
+    )
+    suspend fun deleteTerminalOlderThan(cutoff: LocalDate): Int
+
+    /**
      * 日期范围查询 — Phase 5.2 统计用
      * @return [start, end) 半开区间内所有 completion，按 scheduledDate + plannedStart 升序
      */

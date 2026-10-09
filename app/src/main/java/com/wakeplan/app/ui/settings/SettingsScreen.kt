@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.TableView
+import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FileDownload
@@ -387,6 +388,7 @@ fun SettingsScreen(
     val overdueEnabled by viewModel.taskOverdueEnabled.collectAsStateWithLifecycle(initialValue = true)
     val completedEnabled by viewModel.taskCompletedEnabled.collectAsStateWithLifecycle(initialValue = false)
     val recapEnabled by viewModel.planRecapEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val retentionDays by viewModel.completionRetentionDays.collectAsStateWithLifecycle(initialValue = 0)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -404,6 +406,7 @@ fun SettingsScreen(
     var showPrivacyPolicy by remember { mutableStateOf(false) }
 
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showRetentionDialog by remember { mutableStateOf(false) }
     val currentLocale = viewModel.currentLocale
 
     var leadMenuExpanded by remember { mutableStateOf(false) }
@@ -760,6 +763,20 @@ fun SettingsScreen(
                 }
             }
 
+            item { SectionTitle(stringResource(R.string.settings_retention_title)) }
+            item {
+                SettingsGroupCard {
+                    SettingNavRow(
+                        icon = Icons.Outlined.CleaningServices,
+                        iconTint = SettingIconTint.GREEN,
+                        title = stringResource(R.string.settings_retention_title),
+                        subtitle = retentionLabel(retentionDays),
+                        onClick = { showRetentionDialog = true },
+                        showDivider = false,
+                    )
+                }
+            }
+
             item { SectionTitle(stringResource(R.string.about_section)) }
             item {
                 SettingsGroupCard {
@@ -884,7 +901,18 @@ fun SettingsScreen(
             )
         }
 
-        if (showLanguageDialog) {
+        if (showRetentionDialog) {
+        RetentionDialog(
+            current = retentionDays,
+            onSelect = {
+                viewModel.setCompletionRetentionDays(it)
+                showRetentionDialog = false
+            },
+            onDismiss = { showRetentionDialog = false },
+        )
+    }
+
+    if (showLanguageDialog) {
             LanguageChoiceDialog(
                 current = currentLocale,
                 onSelect = { choice ->
@@ -963,6 +991,56 @@ private fun LanguageChoiceDialog(
     )
 }
 
+
+@Composable
+private fun retentionLabel(days: Int): String = when (days) {
+    90 -> stringResource(R.string.retention_90_days)
+    365 -> stringResource(R.string.retention_1_year)
+    else -> stringResource(R.string.retention_forever)
+}
+
+@Composable
+private fun RetentionDialog(
+    current: Int,
+    onSelect: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val options = listOf(0 to R.string.retention_forever, 90 to R.string.retention_90_days, 365 to R.string.retention_1_year)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_retention_title)) },
+        text = {
+            Column {
+                options.forEach { (days, labelRes) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(days) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.RadioButton(
+                            selected = current == days,
+                            onClick = { onSelect(days) },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(labelRes), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.retention_dialog_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.about_privacy_policy_close)) }
+        },
+    )
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val preferences: UserPreferences,
@@ -984,6 +1062,9 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
     val planRecapEnabled = preferences.planRecapEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    val completionRetentionDays = preferences.completionRetentionDays
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     val versionName: String get() = appVersionProvider.versionName
     val versionCode: Int get() = appVersionProvider.versionCode
@@ -1014,6 +1095,10 @@ class SettingsViewModel @Inject constructor(
     fun setCompletedEnabled(enabled: Boolean) {
         viewModelScope.launch { preferences.setTaskCompletedEnabled(enabled) }
     }
+    fun setCompletionRetentionDays(days: Int) {
+        viewModelScope.launch { preferences.setCompletionRetentionDays(days) }
+    }
+
     // v0.5：开关切换即起停每日回顾调度（Worker 内另有偏好自守）
     fun setRecapEnabled(enabled: Boolean) {
         viewModelScope.launch {

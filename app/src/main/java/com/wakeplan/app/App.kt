@@ -13,6 +13,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
@@ -45,6 +46,7 @@ class App : Application(), Configuration.Provider {
     @Inject lateinit var databaseKeyStore: DatabaseKeyStore
     @Inject lateinit var localeHelper: LocaleHelper
     @Inject lateinit var widgetDataRefresher: com.wakeplan.app.widget.WidgetDataRefresher
+    @Inject lateinit var retentionCleaner: com.wakeplan.app.data.db.CompletionRetentionCleaner
 
     override fun onCreate() {
         super.onCreate()
@@ -69,6 +71,8 @@ class App : Application(), Configuration.Provider {
         localeHelper.restoreOnStartup()
         // 8. v0.4 widget 数据驱动刷新：打卡 / 延期后桌面组件即时更新
         widgetDataRefresher.start(applicationScope)
+        // 9. v0.5 数据保留：冷启按配置清理终态超龄 completion（默认永久不删）
+        applicationScope.launch(Dispatchers.IO) { retentionCleaner.cleanIfConfigured() }
     }
 
     // WorkManager Configuration.Provider — WorkManager.getInstance(context) 时如果未初始化会调这个

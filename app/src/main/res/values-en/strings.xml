@@ -586,4 +586,11 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="csv_header_actual_end">Actual end</string>
     <string name="csv_header_status">Status</string>
     <string name="csv_header_overrun">Overrun (min)</string>
+
+    <!-- v0.5 data retention -->
+    <string name="settings_retention_title">Data retention</string>
+    <string name="retention_forever">Keep forever</string>
+    <string name="retention_90_days">Keep for 90 days</string>
+    <string name="retention_1_year">Keep for 1 year</string>
+    <string name="retention_dialog_note">Completed/skipped records older than the retention window will be cleaned up. Pending and in-progress tasks are never affected. Defaults to keeping everything.</string>
 </resources>
