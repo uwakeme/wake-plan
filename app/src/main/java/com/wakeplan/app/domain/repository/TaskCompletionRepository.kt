@@ -12,11 +12,22 @@ interface TaskCompletionRepository {
 
     fun observeByDate(date: LocalDate): Flow<List<TaskCompletion>>
 
+    /** 闭区间 [start, end] 范围观察 — 跨午夜跨日查询用（含昨天的跨午夜尾巴） */
+    fun observeByDateRangeInclusive(start: LocalDate, end: LocalDate): Flow<List<TaskCompletion>>
+
     fun observeByPlanAndDate(planId: String, date: LocalDate): Flow<List<TaskCompletion>>
 
     suspend fun getById(id: String): TaskCompletion?
 
     suspend fun upsert(completion: TaskCompletion)
+
+    /**
+     * 仅当 (taskId, scheduledDate) 不存在时插入 — 铺当天 PENDING 实例专用，
+     * 不会覆盖已有行（保住真实打卡数据与已挂闹钟的 id）
+     */
+    suspend fun insertIfAbsent(completion: TaskCompletion)
+
+    suspend fun delete(id: String)
 
     /** 日期范围一次性查询 — Phase 5.2 统计用 */
     suspend fun getByDateRange(start: LocalDate, end: LocalDate): List<TaskCompletion>

@@ -11,6 +11,9 @@ import javax.crypto.AEADBadTagException
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** 加密备份导入但调用方没传 passphrase —— UI 收到它应弹密码输入框再重试 */
+class BackupPassphraseRequiredException : IllegalStateException("encrypted file requires passphrase")
+
 /**
  * 备份导入 — Phase 4.3
  *
@@ -75,7 +78,9 @@ class BackupImporter @Inject constructor(
             BackupFile.FORMAT_ENCRYPTED -> {
                 val meta = file.encryption ?: error("encrypted file missing encryption metadata")
                 val data = file.data ?: error("encrypted file missing data field")
-                val pass = passphrase ?: error("encrypted file requires passphrase")
+                // 类型化异常：UI 靠它弹密码框（v0.4.1 前靠 message 字符串 contains 匹配，
+                // 文案一改流程就断）
+                val pass = passphrase ?: throw BackupPassphraseRequiredException()
                 val ciphertext = java.util.Base64.getDecoder().decode(data)
                 val plaintextBytes = BackupCrypto.decrypt(ciphertext, meta, pass)
                 val innerJson = String(plaintextBytes, Charsets.UTF_8)

@@ -34,13 +34,14 @@ import javax.inject.Singleton
  * - cachedPassphrase 是 `@Volatile`
  * - mutex 保护 read-modify-write 临界区（不能用 synchronized — Kotlin 禁止 suspend 在其中）
  *
- * 错误恢复：
- * - 首次启动 App.onCreate 同步 runBlocking 触发（Keystore AES-GCM < 50ms）
- * - 如果 DataStore 损坏 / wrap 数据被外部破坏 → 清空重生成
- *   （代价：旧 DB 无法读，需要 uninstall 重装；v0.2 没真实数据可丢）
+ * 错误恢复（v0.4.1 实装）：
+ * - unwrap 失败（DataStore 损坏 / master key 被系统失效等）不再向上抛——旧版直接
+ *   抛进启动崩溃循环。现在重新生成 passphrase 并删除旧 DB 文件（新 passphrase 打不开
+ *   旧库，留着只会让 Room 抛错）。代价：本地数据丢失，可从备份导入恢复。
  */
 @Singleton
 class DatabaseKeyStore @Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
     private val masterKeyProvider: MasterKeyProvider,
     private val dataStore: DataStore<Preferences>,
 ) {
@@ -63,15 +64,34 @@ class DatabaseKeyStore @Inject constructor(
             cachedPassphrase?.let { return@withLock it }
             val stored = dataStore.data.first()[KEY_WRAPPED_PASSPHRASE]
             val passphrase = if (stored == null) {
-                val fresh = ByteArray(PASSPHRASE_BYTES).also { SecureRandom().nextBytes(it) }
-                val wrapped = wrapWithKey(fresh, masterKey)
-                dataStore.edit { it[KEY_WRAPPED_PASSPHRASE] = wrapped }
-                fresh
+                generateAndStore()
             } else {
-                unwrapWithKey(stored, masterKey)
+                try {
+                    unwrapWithKey(stored, masterKey)
+                } catch (e: Exception) {
+                    // master key 失效 / DataStore 损坏：重生成 + 删旧库，避免崩溃循环
+                    deleteDatabaseFiles()
+                    generateAndStore()
+                }
             }
             cachedPassphrase = passphrase
             passphrase
+        }
+    }
+
+    private suspend fun generateAndStore(): ByteArray {
+        val fresh = ByteArray(PASSPHRASE_BYTES).also { SecureRandom().nextBytes(it) }
+        val wrapped = wrapWithKey(fresh, masterKey)
+        dataStore.edit { it[KEY_WRAPPED_PASSPHRASE] = wrapped }
+        return fresh
+    }
+
+    /** 新 passphrase 打不开旧加密库，连同 wal/shm/journal 一起删，Room 重建空库 */
+    private fun deleteDatabaseFiles() {
+        val dbFile = context.getDatabasePath(com.wakeplan.app.data.db.WakePlanDatabase.DB_NAME)
+        listOf("", "-wal", "-shm", "-journal").forEach { suffix ->
+            val f = java.io.File(dbFile.parentFile, dbFile.name + suffix)
+            if (f.exists()) f.delete()
         }
     }
 

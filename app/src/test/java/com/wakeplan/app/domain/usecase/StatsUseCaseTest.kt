@@ -1,6 +1,8 @@
 package com.wakeplan.app.domain.usecase
 
 import com.wakeplan.app.domain.model.Plan
+import com.wakeplan.app.domain.model.RepeatRule
+import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,12 +13,12 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * StatsUseCase 聚合逻辑 — Phase 5.2.1
+ * StatsUseCase 聚合逻辑 — Phase 5.2.1，v0.4.1 分母改为任务定义推导
  */
 @DisplayName("StatsUseCase")
 class StatsUseCaseTest {
 
-    private val useCase = StatsUseCase()
+    private val useCase = StatsUseCase(TaskWindowCalculator())
     private val today = LocalDate.of(2026, 8, 8)
 
     private fun plan(id: String, title: String = "Plan $id", color: String = "#3B6FB5") = Plan(
@@ -27,6 +29,22 @@ class StatsUseCaseTest {
         isActive = true,
         createdAt = java.time.Instant.parse("2026-01-01T00:00:00Z"),
         updatedAt = java.time.Instant.parse("2026-01-01T00:00:00Z"),
+    )
+
+    private fun task(
+        id: String = "task-1",
+        planId: String = "plan-1",
+        rule: RepeatRule = RepeatRule.DAILY,
+        createdEpochDay: Long = 0L,
+    ) = Task(
+        id = id,
+        planId = planId,
+        title = "Task $id",
+        startMinutes = 9 * 60,
+        endMinutes = 10 * 60,
+        repeatRule = rule,
+        createdEpochDay = createdEpochDay,
+        orderInPlan = 0,
     )
 
     private fun completion(
@@ -53,7 +71,7 @@ class StatsUseCaseTest {
 
     @Test
     fun `空输入 — 全部 0 且 perDay 长度等于 range 的 days`() {
-        val r = useCase.compute(emptyList(), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(0, r.totalCompleted)
         assertEquals(0, r.totalSkipped)
         assertEquals(0, r.totalPending)
@@ -68,22 +86,21 @@ class StatsUseCaseTest {
 
     @Test
     fun `7 天窗口 — perDay 7 项 + startDate 和 endDate 正确`() {
-        val r = useCase.compute(emptyList(), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(today.minusDays(6), r.startDate)
         assertEquals(today, r.endDate)
     }
 
     @Test
     fun `30 天窗口 — perDay 30 项`() {
-        val r = useCase.compute(emptyList(), emptyList(), StatsUseCase.Range.LAST_30_DAYS, today)
+        val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.LAST_30_DAYS, today)
         assertEquals(30, r.perDay.size)
         assertEquals(today.minusDays(29), r.startDate)
     }
 
     @Test
     fun `perDay 补齐 — 范围内没有 completion 的日期 count=0`() {
-        val r = useCase.compute(emptyList(), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
-        // 7 个 bucket 都该是 0
+        val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertTrue(r.perDay.all { it.completedCount == 0 && it.skippedCount == 0 && it.pendingCount == 0 })
     }
 
@@ -95,8 +112,7 @@ class StatsUseCaseTest {
             completion(date = today.minusDays(1), status = TaskStatus.COMPLETED),
             completion(date = today.minusDays(5), status = TaskStatus.SKIPPED),
         )
-        val r = useCase.compute(cs, listOf(plan("plan-1")), StatsUseCase.Range.LAST_7_DAYS, today)
-        // 7 天分布：今天=2 completed, 昨天=1 completed, -5=1 skipped, 其他=0
+        val r = useCase.compute(cs, listOf(plan("plan-1")), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(2, r.perDay[6].completedCount)
         assertEquals(1, r.perDay[5].completedCount)
         assertEquals(1, r.perDay[1].skippedCount)
@@ -111,7 +127,7 @@ class StatsUseCaseTest {
             completion(date = today.minusDays(10), status = TaskStatus.COMPLETED),  // 范围外
             completion(date = today, status = TaskStatus.COMPLETED),  // 范围内
         )
-        val r = useCase.compute(cs, listOf(plan("plan-1")), StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(cs, listOf(plan("plan-1")), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(1, r.totalCompleted)
     }
 
@@ -124,41 +140,38 @@ class StatsUseCaseTest {
             completion(overrun = 3),   // 算逾期
             completion(overrun = 5),   // 算逾期
         )
-        val r = useCase.compute(cs, listOf(plan("plan-1")), StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(cs, listOf(plan("plan-1")), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(3, r.onTimeCount)
         assertEquals(0.6f, r.onTimeRate, 0.001f)
     }
 
     @Test
-    fun `平均延期 — 只算 completed 且 overrun 大于 0 的`() {
+    fun `平均延期 — 只算 completed 且 overrun 大于 0 的（全局与 perDay 同口径）`() {
         val cs = listOf(
             completion(overrun = 0),       // 准时，不算进 avg
             completion(overrun = 5),       // 算
             completion(overrun = 10),      // 算
             completion(overrun = 15),      // 算
         )
-        val r = useCase.compute(cs, listOf(plan("plan-1")), StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(cs, listOf(plan("plan-1")), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         // avg = (5+10+15)/3 = 10
         assertEquals(10, r.avgOverrunMinutes)
+        // perDay 与全局同口径（v0.4.1 统一：只对 overrun>0 求均值）
+        assertEquals(10, r.perDay[6].avgOverrunMinutes)
     }
 
     @Test
-    fun `提前完成 — overrun 为负数 on-time 算 且 avg 取原值`() {
-        // PRD 没明说"提前"算不算准时。先按 on-time 算（负数 ≤ 2 也满足 onTime 阈值）
+    fun `提前完成 — overrun 为负数 on-time 算 且 avg 只算正数不稀释`() {
         val cs = listOf(
             completion(overrun = -5),  // 提前 5 分钟
             completion(overrun = 0),
+            completion(overrun = 10),
         )
-        val r = useCase.compute(cs, listOf(plan("plan-1")), StatsUseCase.Range.LAST_7_DAYS, today)
-        // 两个都 ≤ 2，都算 on-time
+        val r = useCase.compute(cs, listOf(plan("plan-1")), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
+        // 三个都 ≤ 2 的算 on-time：-5 与 0（10 不算）
         assertEquals(2, r.onTimeCount)
-        // avg = (-5 + 0) / 2 = -3 (向下取整 0.5 → -2)
-        // 实际是 -2.5 → roundToInt = -2 或 -3
-        // 我们的实现是 roundToInt 也就是 Math.round
-        // -2.5 roundToInt = -2 (away from zero)
-        // 实际可能因平台实现不同
-        // 这里放宽断言为 ≤ 0
-        assertTrue(r.avgOverrunMinutes <= 0, "expected ≤ 0, got ${r.avgOverrunMinutes}")
+        // avg 只算 overrun>0：唯一正数 10 → 10（v0.4.1 不会被提前/准时拉低）
+        assertEquals(10, r.avgOverrunMinutes)
     }
 
     @Test
@@ -167,7 +180,7 @@ class StatsUseCaseTest {
             completion(status = TaskStatus.PENDING),
             completion(status = TaskStatus.IN_PROGRESS),
         )
-        val r = useCase.compute(cs, listOf(plan("plan-1")), StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(cs, listOf(plan("plan-1")), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(0, r.totalCompleted)
         assertEquals(2, r.totalPending)
     }
@@ -185,7 +198,7 @@ class StatsUseCaseTest {
             completion(planId = "plan-1", status = TaskStatus.COMPLETED),
             completion(planId = "plan-2", status = TaskStatus.COMPLETED),
         )
-        val r = useCase.compute(cs, plans, StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(cs, plans, emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(2, r.perPlan.size)
         assertEquals("plan-1", r.perPlan[0].planId)
         assertEquals(3, r.perPlan[0].completedCount)
@@ -200,7 +213,7 @@ class StatsUseCaseTest {
         val cs = listOf(
             completion(planId = "deleted-plan", status = TaskStatus.COMPLETED),
         )
-        val r = useCase.compute(cs, emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(cs, emptyList(), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(1, r.perPlan.size)
         assertEquals("deleted-plan", r.perPlan[0].planId)
         assertEquals("(已删除计划)", r.perPlan[0].planTitle)
@@ -209,12 +222,11 @@ class StatsUseCaseTest {
 
     @Test
     fun `completionRate — 0 完成返回 0 不是 NaN`() {
-        // 只有 pending / skipped
         val cs = listOf(
             completion(status = TaskStatus.SKIPPED),
             completion(status = TaskStatus.PENDING),
         )
-        val r = useCase.compute(cs, listOf(plan("plan-1")), StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(cs, listOf(plan("plan-1")), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(0f, r.completionRate)
         assertEquals(0f, r.onTimeRate)
     }
@@ -227,10 +239,54 @@ class StatsUseCaseTest {
             completion(status = TaskStatus.SKIPPED),
             completion(status = TaskStatus.PENDING),
         )
-        val r = useCase.compute(cs, listOf(plan("plan-1")), StatsUseCase.Range.LAST_7_DAYS, today)
+        val r = useCase.compute(cs, listOf(plan("plan-1")), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         val todayBucket = r.perDay[6]
         assertEquals(2, todayBucket.completedCount)
         assertEquals(1, todayBucket.skippedCount)
         assertEquals(1, todayBucket.pendingCount)
+    }
+
+    // ---- v0.4.1 分母改为任务定义推导 ----
+
+    @Test
+    fun `分母按任务定义推导 — 没打开 App 的日子不再被稀释成 0 percent`() {
+        // 1 个 DAILY 任务 × 7 天 = expected 7；只完成 3 次（其余天根本没实例）
+        val tasks = listOf(task())
+        val cs = listOf(
+            completion(date = today),
+            completion(date = today.minusDays(1)),
+            completion(date = today.minusDays(2)),
+        )
+        val r = useCase.compute(cs, listOf(plan("plan-1")), tasks, StatsUseCase.Range.LAST_7_DAYS, today)
+        assertEquals(7, r.totalExpected)
+        assertEquals(3, r.totalCompleted)
+        assertEquals(3f / 7f, r.completionRate, 0.0001f)
+        assertEquals(1, r.perDay[0].expectedCount)
+    }
+
+    @Test
+    fun `WEEKDAYS 任务只在工作日计入分母`() {
+        val tasks = listOf(task(rule = RepeatRule.WEEKDAYS))
+        // 2026-08-08 是周六：窗口 [8/2(日) .. 8/8(六)]，工作日 = 8/3,4,5,6,7 共 5 天
+        val r = useCase.compute(emptyList(), listOf(plan("plan-1")), tasks, StatsUseCase.Range.LAST_7_DAYS, today)
+        assertEquals(5, r.totalExpected)
+    }
+
+    @Test
+    fun `创建晚于某日的任务不计入该日分母（createdEpochDay 限制）`() {
+        // 任务 8/7 才创建（epochDay），8/2~8/6 不该出现在分母里
+        val createdEpochDay = LocalDate.of(2026, 8, 7).toEpochDay()
+        val tasks = listOf(task(createdEpochDay = createdEpochDay))
+        val r = useCase.compute(emptyList(), listOf(plan("plan-1")), tasks, StatsUseCase.Range.LAST_7_DAYS, today)
+        // 窗口 [8/2 .. 8/8]，任务只覆盖 8/7、8/8 两天
+        assertEquals(2, r.totalExpected)
+    }
+
+    @Test
+    fun `计划开始日之前任务不计入分母`() {
+        val latePlan = plan("plan-1").copy(startDate = today)  // 今天才开始
+        val tasks = listOf(task())
+        val r = useCase.compute(emptyList(), listOf(latePlan), tasks, StatsUseCase.Range.LAST_7_DAYS, today)
+        assertEquals(1, r.totalExpected)
     }
 }

@@ -4,6 +4,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -52,8 +54,16 @@ class DatabaseKeyStoreTest {
         // 32 字节 (256-bit) AES key
         val rawKey = ByteArray(32) { (it * 7).toByte() }
         testKey = SecretKeySpec(rawKey, "AES")
-        keyStore = DatabaseKeyStore(
-            masterKeyProvider = MasterKeyProvider { testKey },
+        keyStore = newKeyStore(testKey)
+    }
+
+    /** v0.4.1 构造函数加了 Context（unwrap 失败恢复时删旧 DB 文件用）——JVM 下 mock */
+    private fun newKeyStore(key: SecretKey): DatabaseKeyStore {
+        val context = mockk<android.content.Context>()
+        every { context.getDatabasePath(any()) } returns File(tempDir, "wakeplan.db")
+        return DatabaseKeyStore(
+            context = context,
+            masterKeyProvider = MasterKeyProvider { key },
             dataStore = dataStore,
         )
     }
@@ -118,26 +128,25 @@ class DatabaseKeyStoreTest {
         val first = keyStore.getOrCreatePassphrase()
 
         // 模拟重启：新建 keyStore 实例（empty cache），用同一 DataStore + 同一 master key
-        val keyStore2 = DatabaseKeyStore(
-            masterKeyProvider = MasterKeyProvider { testKey },
-            dataStore = dataStore,
-        )
+        val keyStore2 = newKeyStore(testKey)
         val second = keyStore2.getOrCreatePassphrase()
         assertArrayEquals(first, second, "重启后 unwrap 必须得到原 passphrase")
     }
 
     @Test
-    fun `getOrCreatePassphrase 不同 key — unwrap 失败抛异常`() = runTest {
+    fun `v0_4_1 unwrap 失败不再抛异常 — 重生成新 passphrase 并覆盖 DataStore`() = runTest {
         val first = keyStore.getOrCreatePassphrase()
         assertNotNull(first)
 
-        // 模拟：master key 被外部重置（uninstall 之外的场景）
+        // 模拟：master key 被系统失效（如 Keystore 重置）——旧版直接抛进启动崩溃循环，
+        // v0.4.1 恢复路径：重生成 + 删旧 DB 文件（mock 的 tempDir 路径），可从备份导入
         val wrongKey = SecretKeySpec(ByteArray(32) { (it * 17).toByte() }, "AES")
-        val keyStore2 = DatabaseKeyStore(
-            masterKeyProvider = MasterKeyProvider { wrongKey },
-            dataStore = dataStore,
-        )
-        assertThrows<Exception> { keyStore2.getOrCreatePassphrase() }
+        val keyStore2 = newKeyStore(wrongKey)
+        val second = keyStore2.getOrCreatePassphrase()
+        assertNotEquals(first.toList(), second.toList(), "恢复路径应生成全新 passphrase")
+        assertEquals(32, second.size)
+        val stored = dataStore.data.first()[KEY_WRAPPED_PASSPHRASE]
+        assertNotNull(stored, "恢复后 DataStore 必须存新 wrapped 值")
     }
 
     // ---- getCachedOrThrow ----

@@ -15,6 +15,19 @@ interface TaskCompletionDao {
     @Query("SELECT * FROM task_completions WHERE scheduled_date = :date ORDER BY planned_start ASC")
     fun observeByDate(date: LocalDate): Flow<List<TaskCompletionEntity>>
 
+    /**
+     * 闭区间 [start, end] 范围观察 — v0.4.1 跨午夜跨日用：
+     * 查 [昨天, 今天] 再在调用方过滤出"属于今天"的（昨天 23:00–今天 00:30 的尾巴）
+     */
+    @Query(
+        """
+        SELECT * FROM task_completions
+        WHERE scheduled_date >= :start AND scheduled_date <= :end
+        ORDER BY scheduled_date ASC, planned_start ASC
+        """
+    )
+    fun observeByDateRangeInclusive(start: LocalDate, end: LocalDate): Flow<List<TaskCompletionEntity>>
+
     @Query(
         """
         SELECT * FROM task_completions
@@ -37,8 +50,20 @@ interface TaskCompletionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(completion: TaskCompletionEntity)
 
+    /**
+     * 仅当行不存在时插入 — 铺当天 PENDING 实例专用。
+     * 与 REPLACE 的区别：并发补实例 / 已有真实打卡数据时不会删旧行换新 id
+     * （换 id 会让已挂的 AlarmManager PendingIntent 指向不存在的行，提醒静默丢失）。
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIgnore(completion: TaskCompletionEntity)
+
     @Update
     suspend fun update(completion: TaskCompletionEntity)
+
+    /** 删除单个实例 — 任务改 repeatRule 后清理"不再生效日期"上的未开始实例 */
+    @Query("DELETE FROM task_completions WHERE id = :id")
+    suspend fun deleteById(id: String)
 
     /** 全表清空 — Phase 4.3 备份导入用 */
     @Query("DELETE FROM task_completions")

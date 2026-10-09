@@ -47,6 +47,7 @@ class BackupViewModelTest {
         every { (ctx.getString(R.string.backup_err_parse_envelope_full) as String) } returns "密码错误或文件被篡改"
         every { (ctx.getString(R.string.backup_err_decrypt_failed_full) as String) } returns "导入失败"
         every { (ctx.getString(R.string.backup_err_unknown) as String) } returns "未知错误"
+        every { (ctx.getString(R.string.backup_error_generic) as String) } returns "操作失败，请重试"
         ctx
     }
 
@@ -235,14 +236,15 @@ class BackupViewModelTest {
     }
 
     @Test
-    fun `export 抛一般 RuntimeException — message 走格式化的 error mapper`() = runTest(testDispatcher) {
+    fun `export 抛一般 RuntimeException — v0_4_1 显示本地化通用文案不泄漏原始 message`() = runTest(testDispatcher) {
         coEvery { backupManager.exportToUri(any(), any()) } throws RuntimeException("random failure")
         val vm = viewModel()
         vm.export(mockk(relaxed = true))
         advanceUntilIdle()
         val state = vm.exportState.value
         assertTrue(state is BackupViewModel.ExportState.Error)
-        assertEquals("random failure", (state as BackupViewModel.ExportState.Error).message)
+        // 未知异常不把英文技术 message 直接甩给用户，走 backup_error_generic
+        assertEquals("操作失败，请重试", (state as BackupViewModel.ExportState.Error).message)
     }
 
     @Test

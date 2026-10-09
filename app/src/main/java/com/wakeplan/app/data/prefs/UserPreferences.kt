@@ -45,6 +45,10 @@ class UserPreferences @Inject constructor(
     val hasShownOnboarding: Flow<Boolean> = dataStore.data
         .map { it[KEY_HAS_SHOWN_ONBOARDING] ?: false }
 
+    /** 内置模板是否已 seed 过（幂等标记，防止用户删光模板后被反复复活） */
+    val databaseSeeded: Flow<Boolean> = dataStore.data
+        .map { it[KEY_DATABASE_SEEDED] ?: false }
+
     suspend fun setTaskStartingLeadMinutes(minutes: Int) {
         require(minutes in ALLOWED_LEAD_VALUES) { "lead minutes must be in $ALLOWED_LEAD_VALUES" }
         dataStore.edit { it[KEY_TASK_STARTING_LEAD] = minutes }
@@ -70,6 +74,10 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[KEY_HAS_SHOWN_ONBOARDING] = shown }
     }
 
+    suspend fun setDatabaseSeeded(seeded: Boolean) {
+        dataStore.edit { it[KEY_DATABASE_SEEDED] = seeded }
+    }
+
     companion object {
         const val DEFAULT_LEAD_MINUTES = 5
         val ALLOWED_LEAD_VALUES = setOf(0, 5, 10, 15)
@@ -80,5 +88,6 @@ class UserPreferences @Inject constructor(
         val KEY_TASK_COMPLETED_ENABLED = booleanPreferencesKey("task_completed_enabled")
         val KEY_PLAN_RECAP_ENABLED = booleanPreferencesKey("plan_recap_enabled")
         val KEY_HAS_SHOWN_ONBOARDING = booleanPreferencesKey("has_shown_onboarding")
+        val KEY_DATABASE_SEEDED = booleanPreferencesKey("database_seeded")
     }
 }

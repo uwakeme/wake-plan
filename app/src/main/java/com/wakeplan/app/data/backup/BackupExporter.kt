@@ -4,6 +4,7 @@ import com.wakeplan.app.data.db.dao.PlanDao
 import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
 import com.wakeplan.app.data.db.dao.TaskDao
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -23,6 +24,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class BackupExporter @Inject constructor(
+    private val db: com.wakeplan.app.data.db.WakePlanDatabase,
     private val planDao: PlanDao,
     private val taskDao: TaskDao,
     private val taskCompletionDao: TaskCompletionDao,
@@ -41,6 +43,7 @@ class BackupExporter @Inject constructor(
 
     /**
      * 读全表 → envelope → 序列化为 pretty JSON
+     * 4 张表在同一个事务快照里读（v0.4.1 前 4 次独立读，并发写入时导出文件跨状态不一致）
      * @param appVersionName 比如 "0.1.0-alpha"
      * @param appVersionCode 比如 1
      */
@@ -48,10 +51,18 @@ class BackupExporter @Inject constructor(
         appVersionName: String = appVersionProvider.versionName,
         appVersionCode: Int = appVersionProvider.versionCode,
     ): String {
-        val plans = planDao.observeAll().first()
-        val tasks = taskDao.observeAll().first()
-        val completions = readAllCompletions()
-        val templates = planTemplateDao.observeAll().first()
+        val snapshot = db.withTransaction {
+            Snapshot(
+                plans = planDao.observeAll().first(),
+                tasks = taskDao.observeAll().first(),
+                completions = readAllCompletions(),
+                templates = planTemplateDao.observeAll().first(),
+            )
+        }
+        val plans = snapshot.plans
+        val tasks = snapshot.tasks
+        val completions = snapshot.completions
+        val templates = snapshot.templates
 
         val envelope = BackupEnvelope(
             exportedAt = Instant.now(clock),
@@ -75,6 +86,14 @@ class BackupExporter @Inject constructor(
     private suspend fun readAllCompletions(): List<com.wakeplan.app.data.db.entity.TaskCompletionEntity> {
         return taskCompletionDao.getAllSnapshot()
     }
+
+    /** 事务快照的四表数据 */
+    private data class Snapshot(
+        val plans: List<com.wakeplan.app.data.db.entity.PlanEntity>,
+        val tasks: List<com.wakeplan.app.data.db.entity.TaskEntity>,
+        val completions: List<com.wakeplan.app.data.db.entity.TaskCompletionEntity>,
+        val templates: List<com.wakeplan.app.data.db.entity.PlanTemplateEntity>,
+    )
 
     /**
      * 导出为 BackupFile（disk-level envelope）— Phase 4.2

@@ -11,6 +11,7 @@ import com.wakeplan.app.data.db.entity.TaskEntity
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.TaskStatus
 import io.mockk.coEvery
+import androidx.room.withTransaction
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -38,6 +39,15 @@ import java.time.ZoneOffset
 @DisplayName("BackupExporter")
 class BackupExporterTest {
 
+    // withTransaction 静态直通（与 TemplateRepositoryImplTest 同款）
+    private val db: com.wakeplan.app.data.db.WakePlanDatabase = mockk()
+
+    init {
+        io.mockk.mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery { db.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            secondArg<suspend () -> Any?>().invoke()
+        }
+    }
     private val planDao: PlanDao = mockk()
     private val taskDao: TaskDao = mockk()
     private val taskCompletionDao: TaskCompletionDao = mockk()
@@ -50,6 +60,7 @@ class BackupExporterTest {
     }
 
     private fun exporter() = BackupExporter(
+        db = db,
         planDao = planDao,
         taskDao = taskDao,
         taskCompletionDao = taskCompletionDao,
@@ -197,7 +208,7 @@ class BackupExporterTest {
             override val versionCode = 999
         }
         val ex = BackupExporter(
-            planDao, taskDao, taskCompletionDao, planTemplateDao,
+            db, planDao, taskDao, taskCompletionDao, planTemplateDao,
             fixedClock, customProvider,
         )
         val json = ex.export()

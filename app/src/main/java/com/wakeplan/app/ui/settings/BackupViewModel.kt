@@ -36,6 +36,8 @@ class BackupViewModel @Inject constructor(
         data object Running : ImportState
         data class Success(val result: BackupImporter.ImportResult) : ImportState
         data class Error(val message: String) : ImportState
+        /** 加密备份但没传密码——UI 弹密码框后带 passphrase 重试（不再靠 message 字符串匹配） */
+        data object NeedsPassphrase : ImportState
     }
 
     private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
@@ -60,7 +62,7 @@ class BackupViewModel @Inject constructor(
         }
     }
 
-    
+
     fun `import`(uri: Uri, passphrase: CharArray? = null) {
         if (_importState.value is ImportState.Running) return
         _importState.update { ImportState.Running }
@@ -68,6 +70,8 @@ class BackupViewModel @Inject constructor(
             try {
                 val result = backupManager.importFromUri(uri, passphrase)
                 _importState.update { ImportState.Success(result) }
+            } catch (e: com.wakeplan.app.data.backup.BackupPassphraseRequiredException) {
+                _importState.update { ImportState.NeedsPassphrase }
             } catch (e: AEADBadTagException) {
                 _importState.update { ImportState.Error(context.getString(R.string.backup_err_parse_envelope_full)) }
             } catch (e: IllegalStateException) {
@@ -88,7 +92,7 @@ class BackupViewModel @Inject constructor(
     }
 
     fun consumeImportError() {
-        if (_importState.value is ImportState.Error) {
+        if (_importState.value is ImportState.Error || _importState.value is ImportState.NeedsPassphrase) {
             _importState.update { ImportState.Idle }
         }
     }
@@ -113,7 +117,8 @@ class BackupViewModel @Inject constructor(
         e is java.io.IOException ->
             context.getString(R.string.backup_err_write_failed_runtime, e.message ?: context.getString(R.string.backup_err_unknown))
         else ->
-            e.message ?: e::class.simpleName ?: context.getString(R.string.backup_err_unknown)
+            // 未知异常不把技术细节（英文 message / 异常类名）直接甩给用户
+            context.getString(R.string.backup_error_generic)
     }
 
     companion object {

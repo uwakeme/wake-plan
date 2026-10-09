@@ -27,6 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class StatsViewModel @Inject constructor(
     private val planRepo: PlanRepository,
+    private val taskRepo: com.wakeplan.app.domain.repository.TaskRepository,
     private val taskCompletionRepo: TaskCompletionRepository,
     private val statsUseCase: StatsUseCase,
     private val clock: Clock,
@@ -41,25 +42,25 @@ class StatsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(StatsUiState())
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
-    private val today: LocalDate = LocalDate.now(clock)
-
     init {
         recompute(_uiState.value.range)
     }
 
     fun selectRange(range: StatsUseCase.Range) {
         if (range == _uiState.value.range) return
-        _uiState.update { it.copy(range = range) }
+        _uiState.update { it.copy(range = range, isLoading = true) }
         recompute(range)
     }
 
     private fun recompute(range: StatsUseCase.Range) {
         viewModelScope.launch {
+            val today = LocalDate.now(clock)  // 每次重算取当前日期，不固化在构造时
             val start = today.minusDays((range.days - 1).toLong())
             val end = today.plusDays(1)  // 半开区间到明天 00:00（覆盖今天的全天）
             val completions: List<TaskCompletion> = taskCompletionRepo.getByDateRange(start, end)
             val plans: List<Plan> = planRepo.observeAll().first()
-            val result = statsUseCase.compute(completions, plans, range, today)
+            val tasks = taskRepo.observeAll().first()
+            val result = statsUseCase.compute(completions, plans, tasks, range, today)
             _uiState.update { it.copy(result = result, isLoading = false) }
         }
     }

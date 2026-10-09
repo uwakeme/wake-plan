@@ -19,6 +19,9 @@ class TaskCompletionRepositoryImpl @Inject constructor(
     override fun observeByDate(date: LocalDate): Flow<List<TaskCompletion>> =
         completionDao.observeByDate(date).map { list -> list.map { it.toDomain() } }
 
+    override fun observeByDateRangeInclusive(start: LocalDate, end: LocalDate): Flow<List<TaskCompletion>> =
+        completionDao.observeByDateRangeInclusive(start, end).map { list -> list.map { it.toDomain() } }
+
     override fun observeByPlanAndDate(planId: String, date: LocalDate): Flow<List<TaskCompletion>> =
         completionDao.observeByPlanAndDate(planId, date).map { list -> list.map { it.toDomain() } }
 
@@ -27,6 +30,14 @@ class TaskCompletionRepositoryImpl @Inject constructor(
 
     override suspend fun upsert(completion: TaskCompletion) {
         completionDao.insert(completion.toEntity()) // OnConflictStrategy.REPLACE
+    }
+
+    override suspend fun insertIfAbsent(completion: TaskCompletion) {
+        completionDao.insertIgnore(completion.toEntity()) // OnConflictStrategy.IGNORE
+    }
+
+    override suspend fun delete(id: String) {
+        completionDao.deleteById(id)
     }
 
     override suspend fun getByDateRange(start: LocalDate, end: LocalDate): List<TaskCompletion> =

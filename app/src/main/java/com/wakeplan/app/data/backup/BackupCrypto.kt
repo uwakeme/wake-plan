@@ -34,6 +34,9 @@ object BackupCrypto {
     /** OWASP 2023 推荐 PBKDF2-SHA256 ≥ 600k iter */
     const val DEFAULT_ITERATIONS = 600_000
 
+    /** 解密接受的迭代上限——防恶意备份声明超大迭代把 KDF 挂死（DoS） */
+    const val MAX_ITERATIONS = 2_000_000
+
     /** AES-256 key = 32 bytes */
     private const val KEY_LENGTH_BITS = 256
 
@@ -114,10 +117,14 @@ object BackupCrypto {
         require(passphrase.isNotEmpty()) { "passphrase must not be empty" }
         require(metadata.kdf == "PBKDF2-SHA256") { "unsupported kdf: ${metadata.kdf}" }
         require(metadata.cipher == "AES-256-GCM") { "unsupported cipher: ${metadata.cipher}" }
-        require(metadata.iterations >= 1) { "iterations must be >= 1" }
+        // 上限封顶：恶意备份文件可声明天文迭代次数把 KDF 挂死（DoS）
+        require(metadata.iterations in 1..MAX_ITERATIONS) {
+            "iterations out of accepted range: ${metadata.iterations}"
+        }
 
         val salt = Base64.getDecoder().decode(metadata.saltB64)
         val iv = Base64.getDecoder().decode(metadata.ivB64)
+        require(iv.size == GCM_IV_LENGTH_BYTES) { "invalid iv length: ${iv.size}" }
         val key = deriveKey(passphrase, salt, metadata.iterations)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))

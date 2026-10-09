@@ -460,11 +460,13 @@ fun SettingsScreen(
 
     LaunchedEffect(importState) {
         val s = importState
-        if (s is BackupViewModel.ImportState.Error && s.message.contains("requires passphrase")) {
+        // 类型化状态触发密码框（v0.4.1 前靠 message.contains("requires passphrase")）
+        if (s is BackupViewModel.ImportState.NeedsPassphrase) {
             val uri = pendingImportUri
             if (uri != null) {
                 pendingImportEncrypted = true
                 showImportConfirmDialog = true
+                backupViewModel.consumeImportError()
             }
         }
     }
@@ -939,6 +941,8 @@ class SettingsViewModel @Inject constructor(
     private val preferences: UserPreferences,
     private val appVersionProvider: com.wakeplan.app.data.backup.AppVersionProvider,
     private val localeHelper: LocaleHelper,
+    private val scheduleRefresher: com.wakeplan.app.notification.ScheduleRefresher,
+    private val clock: java.time.Clock,
 ) : ViewModel() {
 
     val leadMinutes = preferences.taskStartingLeadMinutes
@@ -962,11 +966,19 @@ class SettingsViewModel @Inject constructor(
         localeHelper.apply(choice)
     }
 
+    // v0.4.1：lead / starting 开关变更后立刻重排闹钟——之前只写 DataStore，
+    // 已挂闹钟按旧 lead 照响，关掉开关也照响（cancelAll 空实现叠加）
     fun setLeadMinutes(minutes: Int) {
-        viewModelScope.launch { preferences.setTaskStartingLeadMinutes(minutes) }
+        viewModelScope.launch {
+            preferences.setTaskStartingLeadMinutes(minutes)
+            scheduleRefresher.refresh(java.time.LocalDate.now(clock))
+        }
     }
     fun setStartingEnabled(enabled: Boolean) {
-        viewModelScope.launch { preferences.setTaskStartingEnabled(enabled) }
+        viewModelScope.launch {
+            preferences.setTaskStartingEnabled(enabled)
+            scheduleRefresher.refresh(java.time.LocalDate.now(clock))
+        }
     }
     fun setOverdueEnabled(enabled: Boolean) {
         viewModelScope.launch { preferences.setTaskOverdueEnabled(enabled) }

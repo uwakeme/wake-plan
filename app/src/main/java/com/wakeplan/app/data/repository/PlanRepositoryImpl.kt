@@ -22,10 +22,8 @@ import javax.inject.Singleton
 @Singleton
 class PlanRepositoryImpl @Inject constructor(
     private val planDao: PlanDao,
+    private val clock: Clock,
 ) : PlanRepository {
-
-    // clock 不在构造函数里，避免 Hilt 注入；Phase 2.5 接 DI Module 后改成可注入便于测试
-    private val clock: Clock = Clock.systemUTC()
 
     override fun observeAll(): Flow<List<Plan>> =
         planDao.observeAll().map { list -> list.map { it.toDomain() } }

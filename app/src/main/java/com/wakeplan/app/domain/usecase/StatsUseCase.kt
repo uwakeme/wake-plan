@@ -1,6 +1,7 @@
 package com.wakeplan.app.domain.usecase
 
 import com.wakeplan.app.domain.model.Plan
+import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import java.time.LocalDate
@@ -8,20 +9,23 @@ import javax.inject.Inject
 import kotlin.math.roundToInt
 
 /**
- * 完成统计 — Phase 5.2.1
+ * 完成统计 — Phase 5.2.1，v0.4.1 分母改为任务定义推导
  *
- * 输入：某时间段内所有 completion + 全量 plan 列表（用于展示分布）
+ * 输入：某时间段内所有 completion + 全量 plan / task 列表
  * 输出：聚合数字 + 按天 / 按计划分布
  *
- * 准时定义（PRD 5.3 + 行业惯例）：完成时间跟 plannedEnd 相差 ≤ 2 分钟
- * 延期 = actualEnd > plannedEnd（正数）
- * 提前 = actualEnd < plannedEnd（负数，计入"完成"但不算准时）
+ * v0.4.1 关键修正——完成率分母：
+ * 旧版用"已实例化 completion 数"当分母，某天没打开 App 就没有实例，
+ * 完成率被稀释成 0%。现在分母 = 当天应生效任务数（按 task 定义 + repeatRule
+ * 推导，且排除计划起始日之前 / 任务创建日之后的天）。已删除的任务/计划不在
+ * 分母里（其历史完成仍在分子，近似口径，已注释标注）。
  *
- * 跟 TaskCompletion.overrunMinutes 的区别：
- * - `overrunMinutes` = actualEnd - plannedEnd（正数向下取整）
- * - 统计里"平均延期" = completed 且 overrunMinutes > 2 的 completion 的 overrunMinutes 平均
+ * 准时定义（PRD 5.3 + 行业惯例）：完成时间跟 plannedEnd 相差 ≤ 2 分钟
+ * 平均延期：completed 且 overrunMinutes > 0 的平均（perDay 与全局同口径）
  */
-class StatsUseCase @Inject constructor() {
+class StatsUseCase @Inject constructor(
+    private val taskWindowCalculator: TaskWindowCalculator,
+) {
 
     enum class Range(val days: Int) {
         LAST_7_DAYS(7),
@@ -36,7 +40,9 @@ class StatsUseCase @Inject constructor() {
         val completedCount: Int,
         val skippedCount: Int,
         val pendingCount: Int,
-        val avgOverrunMinutes: Int,    // 当天已完成任务的平均 overrun（min），无则为 0
+        /** 当天应生效任务数（按定义推导）——完成率的分母 */
+        val expectedCount: Int,
+        val avgOverrunMinutes: Int,    // 当天 completed 且 overrun>0 的平均 overrun（min），无则为 0
     ) {
         val totalCount: Int get() = completedCount + skippedCount + pendingCount
     }
@@ -61,6 +67,8 @@ class StatsUseCase @Inject constructor() {
         val totalCompleted: Int,
         val totalSkipped: Int,
         val totalPending: Int,
+        /** 窗口内每天应生效任务数之和——完成率的分母 */
+        val totalExpected: Int,
         val onTimeCount: Int,
         val avgOverrunMinutes: Int,    // 仅 completed 且 overrun > 0 的平均，0 表示全准时或无完成
         val perDay: List<DayBucket>,   // 按 date 升序，长度 = range.days
@@ -74,23 +82,23 @@ class StatsUseCase @Inject constructor() {
             get() = if (totalCompleted == 0) 0f else onTimeCount.toFloat() / totalCompleted
 
         /**
-         * 完成率（0..1）— completed / (completed + skipped + pending)
-         * 用于顶部大数字
+         * 完成率（0..1）— completed / expected（按任务定义推导的应生效数）。
+         * 分母为 0 返回 0。注意：已删除计划的历史完成仍在分子但不在分母，
+         * 极端情况下比率可能 > 1，UI 层 coerce 到 1。
          */
         val completionRate: Float
-            get() {
-                val total = totalCompleted + totalSkipped + totalPending
-                return if (total == 0) 0f else totalCompleted.toFloat() / total
-            }
+            get() = if (totalExpected == 0) 0f else totalCompleted.toFloat() / totalExpected
     }
 
     /**
      * 计算统计
+     * @param tasks 全量任务定义（推导每天应生效数）
      * @param today 用于"最近 N 天"窗口的今天（注入便于测试）
      */
     fun compute(
         completions: List<TaskCompletion>,
         plans: List<Plan>,
+        tasks: List<Task>,
         range: Range,
         today: LocalDate,
     ): StatsResult {
@@ -103,24 +111,32 @@ class StatsUseCase @Inject constructor() {
         }
         val inRangeByDate: Map<LocalDate, List<TaskCompletion>> = inRange.groupBy { it.scheduledDate }
 
+        val plansById = plans.associateBy { it.id }
+
         // per-day buckets（补齐没有数据的日期，count=0）
         val perDay = (0 until range.days).map { offset ->
             val date = start.plusDays(offset.toLong())
             val dayList = inRangeByDate[date].orEmpty()
             val completed = dayList.filter { it.status == TaskStatus.COMPLETED }
-            val avgOverrun = if (completed.isEmpty()) 0
-            else completed.map { it.overrunMinutes }.average().roundToInt()
+            val avgOverrun = avgOverrunOf(completed)
+            // 分母：当天应生效的任务数（计划已开始且任务已创建）
+            val expected = tasks.count { task ->
+                val plan = plansById[task.planId]
+                plan != null && !plan.startDate.isAfter(date) &&
+                    (task.createdEpochDay == 0L || task.createdEpochDay <= date.toEpochDay()) &&
+                    taskWindowCalculator(task, date) != null
+            }
             DayBucket(
                 date = date,
                 completedCount = dayList.count { it.status == TaskStatus.COMPLETED },
                 skippedCount = dayList.count { it.status == TaskStatus.SKIPPED },
                 pendingCount = dayList.count { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS },
+                expectedCount = expected,
                 avgOverrunMinutes = avgOverrun,
             )
         }
 
-        // per-plan buckets
-        val plansById = plans.associateBy { it.id }
+        // per-plan buckets（plansById 复用上面的）
         val perPlan = inRange
             .filter { it.status == TaskStatus.COMPLETED }
             .groupBy { it.planId }
@@ -137,10 +153,6 @@ class StatsUseCase @Inject constructor() {
 
         val completed = inRange.filter { it.status == TaskStatus.COMPLETED }
         val onTime = completed.count { it.overrunMinutes <= ON_TIME_THRESHOLD_MIN }
-        // 只算 overrun > 0 的（准时的/提前的拉到 0/负数会拉低平均，意义不大）
-        val withOverrun = completed.filter { it.overrunMinutes > 0 }
-        val avgOverrunAll = if (withOverrun.isEmpty()) 0
-        else withOverrun.map { it.overrunMinutes }.average().roundToInt()
 
         return StatsResult(
             range = range,
@@ -149,11 +161,19 @@ class StatsUseCase @Inject constructor() {
             totalCompleted = completed.size,
             totalSkipped = inRange.count { it.status == TaskStatus.SKIPPED },
             totalPending = inRange.count { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS },
+            totalExpected = perDay.sumOf { it.expectedCount },
             onTimeCount = onTime,
-            avgOverrunMinutes = avgOverrunAll,
+            avgOverrunMinutes = avgOverrunOf(completed),
             perDay = perDay,
             perPlan = perPlan,
         )
+    }
+
+    /** 平均延期：只对 overrun > 0 的完成求均值（perDay 与全局同口径），无则为 0 */
+    private fun avgOverrunOf(completed: List<TaskCompletion>): Int {
+        val withOverrun = completed.filter { it.overrunMinutes > 0 }
+        if (withOverrun.isEmpty()) return 0
+        return withOverrun.map { it.overrunMinutes }.average().roundToInt()
     }
 
     companion object {

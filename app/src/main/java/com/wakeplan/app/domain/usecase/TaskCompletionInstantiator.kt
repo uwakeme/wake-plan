@@ -18,7 +18,7 @@ import javax.inject.Inject
  * - task 在 date 不生效 → 不生成（如 WEEKDAYS task 在周末）
  *
  * 注意：本 UseCase 是"无状态"展开（输入是纯快照），每次调用结果一致；
- * UI 层通过 TaskCompletionRepository.upsert 去重（OnConflictStrategy.REPLACE）
+ * 调用方（ScheduleRefresher）先按 taskId 过滤已存在的，再用 insertIfAbsent 兜底并发。
  */
 class TaskCompletionInstantiator @Inject constructor(
     private val taskWindowCalculator: TaskWindowCalculator,

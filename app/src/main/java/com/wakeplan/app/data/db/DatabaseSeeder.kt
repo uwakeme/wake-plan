@@ -2,8 +2,10 @@ package com.wakeplan.app.data.db
 
 import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
+import com.wakeplan.app.data.prefs.UserPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -11,19 +13,23 @@ import javax.inject.Singleton
 /**
  * 数据库初始化 seed
  * - 5.3 决策：3 个内置模板
- * - 仅在 plan_templates 表为空时插入（first install）
+ * - 幂等标记存 DataStore（v0.4.1）：只 seed 一次——老逻辑按"表空"判断，
+ *   用户删光所有模板后每次启动都会被复活
  * - 启动时由 App.onCreate 异步调用
  */
 @Singleton
 class DatabaseSeeder @Inject constructor(
     private val templateDao: PlanTemplateDao,
+    private val preferences: UserPreferences,
 ) {
     fun seedIfEmpty(applicationScope: CoroutineScope) {
         applicationScope.launch(Dispatchers.IO) {
+            if (preferences.databaseSeeded.first()) return@launch
             val templateCount = templateDao.countAll()
             if (templateCount == 0) {
                 BUILT_IN_TEMPLATES.forEach { templateDao.insert(it) }
             }
+            preferences.setDatabaseSeeded(true)
         }
     }
 
