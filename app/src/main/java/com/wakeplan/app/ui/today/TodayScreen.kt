@@ -37,6 +37,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -94,7 +95,9 @@ import java.time.format.DateTimeFormatter
 
 
 @Composable
-fun TodayScreen() {
+fun TodayScreen(
+    onOpenFocus: (String) -> Unit = {},
+) {
     val viewModel: TodayViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val highlightedTaskId by HighlightBus.highlightedTaskId.collectAsStateWithLifecycle()
@@ -168,6 +171,7 @@ fun TodayScreen() {
                     onStartTask = viewModel::onStartTask,
                     onCompleteTask = viewModel::onCompleteTask,
                     onSkipTask = viewModel::onSkipTask,
+                    onOpenFocus = onOpenFocus,
                 )
             }
         }
@@ -194,6 +198,7 @@ private fun TodayContent(
     onStartTask: (String) -> Unit,
     onCompleteTask: (String) -> Unit,
     onSkipTask: (String) -> Unit,
+    onOpenFocus: (String) -> Unit,
 ) {
     val currentTask = state.todayTaskItems.firstOrNull { item ->
         item.completion.status == TaskStatus.IN_PROGRESS
@@ -320,6 +325,7 @@ private fun TodayContent(
                             onStart = { onStartTask(item.completion.id) },
                             onComplete = { onCompleteTask(item.completion.id) },
                             onSkip = { onSkipTask(item.completion.id) },
+                            onOpenFocus = { onOpenFocus(item.completion.id) },
                         )
                     }
                 }
@@ -347,6 +353,7 @@ private fun TodayContent(
                             onStart = { onStartTask(item.completion.id) },
                             onComplete = { onCompleteTask(item.completion.id) },
                             onSkip = { onSkipTask(item.completion.id) },
+                            onOpenFocus = { onOpenFocus(item.completion.id) },
                         )
                     }
                 }
@@ -370,6 +377,7 @@ private fun TodayContent(
                         onStart = { onStartTask(item.completion.id) },
                         onComplete = { onCompleteTask(item.completion.id) },
                         onSkip = { onSkipTask(item.completion.id) },
+                        onOpenFocus = { onOpenFocus(item.completion.id) },
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -1071,6 +1079,7 @@ private fun TodayTaskCard(
     onStart: () -> Unit,
     onComplete: () -> Unit,
     onSkip: () -> Unit,
+    onOpenFocus: () -> Unit,
 ) {
     val start = TimeFormat.dateTime(item.completion.plannedStart)
     val end = TimeFormat.dateTime(item.completion.plannedEnd)
@@ -1178,6 +1187,24 @@ private fun TodayTaskCard(
                     )
                 }
 
+                if (status == TaskStatus.PENDING || status == TaskStatus.IN_PROGRESS) {
+                    // v0.6 专注入口：从这张卡直接进番茄钟
+                    Surface(
+                        onClick = onOpenFocus,
+                        modifier = Modifier.size(36.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.Timer,
+                                contentDescription = stringResource(R.string.today_cd_focus),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(17.dp),
+                            )
+                        }
+                    }
+                }
                 when (status) {
                     TaskStatus.PENDING -> {
                         Surface(

@@ -18,6 +18,9 @@ object NavEventBus {
     sealed interface Event {
         /** 跳到 Today tab（v0.2 widget + 5.7 Tile 都走这个） */
         data object NavToToday : Event
+
+        /** 跳到专注页（v0.6：专注通知点击回来） */
+        data class NavToFocus(val completionId: String) : Event
     }
 
     private val _events = MutableSharedFlow<Event>(

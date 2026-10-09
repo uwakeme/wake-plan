@@ -91,6 +91,11 @@ class MainActivity : ComponentActivity() {
             NavEventBus.emit(NavEventBus.Event.NavToToday)
             intent.removeExtra(com.wakeplan.app.widget.TodayWidgetProvider.EXTRA_NAV_TO_TODAY)
         }
+        // v0.6 专注通知：跳专注页（继续看倒计时/操作）
+        intent.getStringExtra(com.wakeplan.app.focus.FocusTimerService.EXTRA_FOCUS_COMPLETION_ID)?.let { focusId ->
+            NavEventBus.emit(NavEventBus.Event.NavToFocus(focusId))
+            intent.removeExtra(com.wakeplan.app.focus.FocusTimerService.EXTRA_FOCUS_COMPLETION_ID)
+        }
         // 通知 deep link：切到 Today tab + 高亮对应 task。
         // v0.4.1 前只发高亮不发导航——用户停在 Stats/Settings 时点通知毫无可见反应
         val taskId = intent.getStringExtra(NotificationBuilder.EXTRA_TASK_ID) ?: return

@@ -56,6 +56,21 @@ class UserPreferences @Inject constructor(
     val completionRetentionDays: Flow<Int> = dataStore.data
         .map { it[KEY_COMPLETION_RETENTION_DAYS] ?: 0 }
 
+    // ===== 专注计时参数（v0.6 番茄钟）=====
+
+    val focusMinutes: Flow<Int> = dataStore.data
+        .map { it[KEY_FOCUS_MINUTES] ?: FOCUS_MINUTES_DEFAULT }
+
+    val focusShortBreakMinutes: Flow<Int> = dataStore.data
+        .map { it[KEY_FOCUS_SHORT_BREAK] ?: FOCUS_SHORT_BREAK_DEFAULT }
+
+    val focusLongBreakMinutes: Flow<Int> = dataStore.data
+        .map { it[KEY_FOCUS_LONG_BREAK] ?: FOCUS_LONG_BREAK_DEFAULT }
+
+    /** 阶段结束后自动开始下一阶段 */
+    val focusAutoStartNext: Flow<Boolean> = dataStore.data
+        .map { it[KEY_FOCUS_AUTO_NEXT] ?: false }
+
     suspend fun setTaskStartingLeadMinutes(minutes: Int) {
         require(minutes in ALLOWED_LEAD_VALUES) { "lead minutes must be in $ALLOWED_LEAD_VALUES" }
         dataStore.edit { it[KEY_TASK_STARTING_LEAD] = minutes }
@@ -90,6 +105,25 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[KEY_COMPLETION_RETENTION_DAYS] = days }
     }
 
+    suspend fun setFocusMinutes(minutes: Int) {
+        require(minutes in FOCUS_MINUTES_ALLOWED) { "focus minutes must be in $FOCUS_MINUTES_ALLOWED" }
+        dataStore.edit { it[KEY_FOCUS_MINUTES] = minutes }
+    }
+
+    suspend fun setFocusShortBreakMinutes(minutes: Int) {
+        require(minutes in FOCUS_SHORT_BREAK_ALLOWED) { "short break must be in $FOCUS_SHORT_BREAK_ALLOWED" }
+        dataStore.edit { it[KEY_FOCUS_SHORT_BREAK] = minutes }
+    }
+
+    suspend fun setFocusLongBreakMinutes(minutes: Int) {
+        require(minutes in FOCUS_LONG_BREAK_ALLOWED) { "long break must be in $FOCUS_LONG_BREAK_ALLOWED" }
+        dataStore.edit { it[KEY_FOCUS_LONG_BREAK] = minutes }
+    }
+
+    suspend fun setFocusAutoStartNext(enabled: Boolean) {
+        dataStore.edit { it[KEY_FOCUS_AUTO_NEXT] = enabled }
+    }
+
     companion object {
         const val DEFAULT_LEAD_MINUTES = 5
         val ALLOWED_LEAD_VALUES = setOf(0, 5, 10, 15)
@@ -105,5 +139,18 @@ class UserPreferences @Inject constructor(
 
         /** 数据保留选项：0 = 永久（默认） */
         val ALLOWED_RETENTION_DAYS = setOf(0, 90, 365)
+
+        // ===== 专注参数（v0.6；与 FocusConfig 默认值一致）=====
+        val KEY_FOCUS_MINUTES = intPreferencesKey("focus_minutes")
+        val KEY_FOCUS_SHORT_BREAK = intPreferencesKey("focus_short_break_minutes")
+        val KEY_FOCUS_LONG_BREAK = intPreferencesKey("focus_long_break_minutes")
+        val KEY_FOCUS_AUTO_NEXT = booleanPreferencesKey("focus_auto_start_next")
+
+        const val FOCUS_MINUTES_DEFAULT = 25
+        const val FOCUS_SHORT_BREAK_DEFAULT = 5
+        const val FOCUS_LONG_BREAK_DEFAULT = 15
+        val FOCUS_MINUTES_ALLOWED = setOf(15, 25, 45, 60)
+        val FOCUS_SHORT_BREAK_ALLOWED = setOf(3, 5, 10)
+        val FOCUS_LONG_BREAK_ALLOWED = setOf(15, 30)
     }
 }

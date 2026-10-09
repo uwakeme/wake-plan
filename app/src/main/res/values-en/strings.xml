@@ -607,4 +607,12 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="focus_action_skip">Skip phase</string>
     <string name="focus_action_next">Next phase</string>
     <string name="focus_action_abandon">Abandon</string>
+
+    <string name="focus_screen_title">Focus</string>
+    <string name="focus_start">Start focusing</string>
+    <string name="focus_busy_other">Another focus session is running — finish it first</string>
+    <string name="focus_idle_config_summary">%1$d min focus · %2$d min short break · long break every %3$d rounds</string>
+    <string name="focus_round_count">%1$d focus rounds done</string>
+    <string name="focus_waiting_hint">Phase done — tap next to continue</string>
+    <string name="today_cd_focus">Start focus timer</string>
 </resources>

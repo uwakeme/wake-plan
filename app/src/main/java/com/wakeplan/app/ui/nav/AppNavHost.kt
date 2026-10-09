@@ -46,6 +46,7 @@ import com.wakeplan.app.ui.today.TodayScreen
  *   settings                                       → SettingsScreen
  *   settings/templates                             → TemplateListScreen
  *   settings/templates/{templateId}                → TemplateDetailScreen
+ *   focus/{completionId}                            → FocusScreen (v0.6 专注页)
  */
 @Composable
 fun AppNavHost() {
@@ -62,6 +63,11 @@ fun AppNavHost() {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
+                    }
+                }
+                is NavEventBus.Event.NavToFocus -> {
+                    navController.navigate(Route.focus(event.completionId)) {
+                        launchSingleTop = true
                     }
                 }
             }
@@ -125,7 +131,11 @@ private fun AppNavGraph(
         modifier = Modifier.padding(innerPadding),
     ) {
         // Top-level tabs
-        composable(BottomTab.Today.route) { TodayScreen() }
+        composable(BottomTab.Today.route) {
+            TodayScreen(
+                onOpenFocus = { completionId -> navController.navigate(Route.focus(completionId)) },
+            )
+        }
         composable(BottomTab.Plans.route) {
             PlanListScreen(
                 onCreatePlan = { navController.navigate(Route.PlanCreate) },
@@ -199,6 +209,18 @@ private fun AppNavGraph(
             )
         }
 
+        // 专注页（v0.6：Today 任务卡 / 专注通知深链进入）
+        composable(
+            route = Route.FocusPattern,
+            arguments = listOf(
+                navArgument(com.wakeplan.app.ui.focus.FocusViewModel.ARG_COMPLETION_ID) {
+                    type = NavType.StringType
+                },
+            ),
+        ) {
+            com.wakeplan.app.ui.focus.FocusScreen(onExit = { navController.popBackStack() })
+        }
+
         // Settings 子路由
         composable(Route.Templates) {
             TemplateListScreen(
@@ -234,6 +256,9 @@ object Route {
     const val Templates = "settings/templates"
     const val TemplateDetailPattern = "settings/templates/{templateId}"
 
+    const val FocusPattern = "focus/{completionId}"
+
+    fun focus(completionId: String) = "focus/$completionId"
     fun planDetail(planId: String) = "plans/$planId"
     fun planEdit(planId: String) = "plans/$planId/edit"
     fun taskEditorCreate(planId: String) = "plans/$planId/tasks/new"
