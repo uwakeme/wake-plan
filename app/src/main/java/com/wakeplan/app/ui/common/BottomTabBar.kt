@@ -95,7 +95,7 @@ private fun RowScope.BottomTabCell(
     modifier: Modifier = Modifier,
 ) {
     val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.0f else 1f,
+        targetValue = if (selected) 1.05f else 1f,
         animationSpec = tween(durationMillis = 200),
         label = "iconScale"
     )

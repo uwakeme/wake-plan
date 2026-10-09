@@ -33,6 +33,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,15 +64,26 @@ fun TemplateDetailScreen(
     val template by viewModel.template.collectAsStateWithLifecycle()
     val applyState by viewModel.applyState.collectAsStateWithLifecycle()
     val running = applyState is TemplateDetailViewModel.ApplyState.Running
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    val applyFailedMsg = stringResource(R.string.template_apply_failed)
 
     LaunchedEffect(applyState) {
-        if (applyState is TemplateDetailViewModel.ApplyState.Success) {
-            onApplied((applyState as TemplateDetailViewModel.ApplyState.Success).newPlanId)
-            viewModel.consumeApplyResult()
+        when (val s = applyState) {
+            is TemplateDetailViewModel.ApplyState.Success -> {
+                onApplied(s.newPlanId)
+                viewModel.consumeApplyResult()
+            }
+            // v0.4.1：应用失败此前完全静默（Error 无任何 UI 呈现）
+            is TemplateDetailViewModel.ApplyState.Error -> {
+                snackbarHostState.showSnackbar(s.message.ifBlank { applyFailedMsg })
+                viewModel.consumeApplyResult()
+            }
+            else -> Unit
         }
     }
 
     Scaffold(
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(template?.title ?: stringResource(R.string.template_detail_title_fallback)) },

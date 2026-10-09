@@ -63,7 +63,7 @@ class TemplateDetailViewModel @Inject constructor(
                 )
                 _applyState.value = ApplyState.Success(plan.id)
             } catch (t: Throwable) {
-                _applyState.value = ApplyState.Error(t.message ?: "应用模板失败")
+                _applyState.value = ApplyState.Error(t.message ?: "")
             }
         }
     }

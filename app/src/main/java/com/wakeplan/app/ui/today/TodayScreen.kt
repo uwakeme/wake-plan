@@ -96,25 +96,13 @@ import java.time.format.DateTimeFormatter
 fun TodayScreen() {
     val viewModel: TodayViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val highlightedTaskId by HighlightBus.highlightedTaskId.collectAsState()
+    val highlightedTaskId by HighlightBus.highlightedTaskId.collectAsStateWithLifecycle()
     val undoableAction by viewModel.undoableAction.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.ensureTodayCompletions()
-    }
-
-    LaunchedEffect(highlightedTaskId, state.planItems) {
-        val targetId = highlightedTaskId ?: return@LaunchedEffect
-        val targetIndex = state.planItems.indexOfFirst { planItem ->
-            planItem.tasks.any { it.id == targetId }
-        }
-        if (targetIndex >= 0) {
-            listState.animateScrollToItem(targetIndex + 2)
-            delay(5_000L)
-            HighlightBus.clear()
-        }
     }
 
     val startedMsg = stringResource(R.string.today_status_started)
@@ -223,6 +211,47 @@ private fun TodayContent(
         it.completion.status == TaskStatus.IN_PROGRESS
     }
 
+    // 深链滚动：key 列表与下方 LazyColumn 结构一一对应，按 taskId 定位真实列表下标。
+    // v0.4 扁平化后旧逻辑还按 plan 索引 +2 猜位置，基本滚不到位
+    LaunchedEffect(highlightedTaskId, state.todayTaskItems) {
+        val targetId = highlightedTaskId ?: return@LaunchedEffect
+        val keys = mutableListOf<String>("header", "now-card", "timeline")
+        var targetKey: String? = null
+        if (inProgressOrCurrent.isNotEmpty()) {
+            keys += "section-in-progress"
+            inProgressOrCurrent.forEach { item ->
+                val key = "task-ip-${item.completion.id}"
+                if (item.completion.taskId == targetId) targetKey = key
+                keys += key
+            }
+        }
+        if (pendingTasks.isNotEmpty()) {
+            keys += "section-upcoming"
+            pendingTasks.forEach { item ->
+                val key = "task-pending-${item.completion.id}"
+                if (item.completion.taskId == targetId) targetKey = key
+                keys += key
+            }
+        }
+        if (completedTasks.isNotEmpty()) {
+            keys += "section-completed"
+            completedTasks.forEach { item ->
+                val key = "task-done-${item.completion.id}"
+                if (item.completion.taskId == targetId) targetKey = key
+                keys += key
+            }
+        }
+        val index = targetKey?.let(keys::indexOf) ?: -1
+        if (index >= 0) {
+            listState.animateScrollToItem(index)
+            delay(5_000L)
+        }
+        // 目标不在列表里也要清掉，避免高亮 id 滞留在单例里
+        HighlightBus.clear()
+    }
+
+    val plansById = state.planItems.associate { it.plan.id to it.plan }
+
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
@@ -234,7 +263,7 @@ private fun TodayContent(
         ),
     ) {
         item(key = "header") {
-            TodayHeader(date = state.date, isViewingToday = isViewingToday)
+            TodayHeader(date = state.date, now = state.now, isViewingToday = isViewingToday)
         }
 
         item(key = "now-card") {
@@ -274,15 +303,18 @@ private fun TodayContent(
                 SectionHeader(title = stringResource(R.string.today_section_in_progress))
             }
             itemsIndexed(inProgressOrCurrent, key = { _, item -> "task-ip-${item.completion.id}" }) { index, item ->
-                val planConflicts = state.conflicts.filter { c ->
-                    c.taskA.planId == item.plan.id || c.taskB.planId == item.plan.id
+                // 按 task 匹配冲突——之前按 plan 匹配，同计划其他任务的冲突
+                // 也会挂到这张卡上
+                val taskConflicts = state.conflicts.filter { c ->
+                    c.taskA.taskId == item.completion.taskId || c.taskB.taskId == item.completion.taskId
                 }
                 Spacer(Modifier.height(if (index == 0) 12.dp else 0.dp))
                 Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                     WpAnimateInContainer(index = index) {
                         TodayTaskCard(
                             item = item,
-                            conflicts = planConflicts,
+                            conflicts = taskConflicts,
+                            plansById = plansById,
                             highlighted = item.completion.taskId == highlightedTaskId,
                             onStart = { onStartTask(item.completion.id) },
                             onComplete = { onCompleteTask(item.completion.id) },
@@ -300,15 +332,16 @@ private fun TodayContent(
                 SectionHeader(title = stringResource(R.string.today_section_upcoming))
             }
             itemsIndexed(pendingTasks, key = { _, item -> "task-pending-${item.completion.id}" }) { index, item ->
-                val planConflicts = state.conflicts.filter { c ->
-                    c.taskA.planId == item.plan.id || c.taskB.planId == item.plan.id
+                val taskConflicts = state.conflicts.filter { c ->
+                    c.taskA.taskId == item.completion.taskId || c.taskB.taskId == item.completion.taskId
                 }
                 Spacer(Modifier.height(if (index == 0) 12.dp else 0.dp))
                 Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                     WpAnimateInContainer(index = index + inProgressOrCurrent.size) {
                         TodayTaskCard(
                             item = item,
-                            conflicts = planConflicts,
+                            conflicts = taskConflicts,
+                            plansById = plansById,
                             highlighted = item.completion.taskId == highlightedTaskId,
                             onStart = { onStartTask(item.completion.id) },
                             onComplete = { onCompleteTask(item.completion.id) },
@@ -331,6 +364,7 @@ private fun TodayContent(
                     TodayTaskCard(
                         item = item,
                         conflicts = emptyList(),
+                        plansById = plansById,
                         highlighted = false,
                         onStart = { onStartTask(item.completion.id) },
                         onComplete = { onCompleteTask(item.completion.id) },
@@ -344,37 +378,31 @@ private fun TodayContent(
 }
 
 @Composable
-private fun TodayHeader(date: LocalDate, isViewingToday: Boolean) {
-    val dayOfWeek = when (date.dayOfWeek) {
-        DayOfWeek.MONDAY -> "周一"
-        DayOfWeek.TUESDAY -> "周二"
-        DayOfWeek.WEDNESDAY -> "周三"
-        DayOfWeek.THURSDAY -> "周四"
-        DayOfWeek.FRIDAY -> "周五"
-        DayOfWeek.SATURDAY -> "周六"
-        DayOfWeek.SUNDAY -> "周日"
-        else -> ""
-    }
-    val now = LocalDateTime.now()
+private fun TodayHeader(date: LocalDate, now: LocalDateTime, isViewingToday: Boolean) {
+    // java.time 的 SHORT 样式：zh → 周一，en → Mon，跟随 App locale
+    val dayOfWeek = date.dayOfWeek.getDisplayName(
+        java.time.format.TextStyle.SHORT,
+        java.util.Locale.getDefault(),
+    )
     val timeStr = String.format("%02d:%02d", now.hour, now.minute)
-    val dateStr = "$dayOfWeek · ${date.monthValue}月${date.dayOfMonth}日"
+    val dateStr = "$dayOfWeek · ${date.format(dateFmt())}"
     val metaStr = if (isViewingToday) "$dateStr · $timeStr" else dateStr
 
     val greeting = when {
         isViewingToday -> {
-            val hour = LocalDateTime.now().hour
+            val hour = now.hour
             when {
-                hour < 6 -> "夜深了，什么在等你"
-                hour < 12 -> "早上好，什么在等你"
-                hour < 14 -> "中午好，什么在等你"
-                hour < 18 -> "下午好，什么在等你"
-                else -> "晚上好，什么在等你"
+                hour < 6 -> stringResource(R.string.today_greeting_night)
+                hour < 12 -> stringResource(R.string.today_greeting_morning)
+                hour < 14 -> stringResource(R.string.today_greeting_noon)
+                hour < 18 -> stringResource(R.string.today_greeting_afternoon)
+                else -> stringResource(R.string.today_greeting_evening)
             }
         }
-        else -> "${date.monthValue}月${date.dayOfMonth}日，什么在等你"
+        else -> stringResource(R.string.today_greeting_other_date, date.format(dateFmt()))
     }
 
-    val highlightWord = "什么"
+    val highlightWord = stringResource(R.string.today_greeting_word)
 
     Column(
         modifier = Modifier
@@ -516,7 +544,8 @@ private fun NowCard(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = if (isInProgress) "进行中" else "即将开始",
+                        text = if (isInProgress) stringResource(R.string.today_status_in_progress)
+                        else stringResource(R.string.today_status_starting_soon),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.12.sp,
@@ -575,9 +604,11 @@ private fun NowCard(
                 val remainingMinutes = (totalMinutes - elapsedMinutes).coerceAtLeast(0)
                 val progress = if (totalMinutes > 0) elapsedMinutes.toFloat() / totalMinutes else 0f
                 val remainingText = when {
-                    remainingMinutes >= 60 -> "${remainingMinutes / 60}小时${remainingMinutes % 60}分"
-                    remainingMinutes > 0 -> "${remainingMinutes}分钟"
-                    else -> "即将结束"
+                    remainingMinutes >= 60 -> stringResource(
+                        R.string.today_duration_hm, remainingMinutes / 60, remainingMinutes % 60,
+                    )
+                    remainingMinutes > 0 -> stringResource(R.string.today_duration_m, remainingMinutes)
+                    else -> stringResource(R.string.today_remaining_soon)
                 }
 
                 Row(
@@ -592,7 +623,7 @@ private fun NowCard(
                         color = Color.White.copy(alpha = 0.6f),
                     )
                     Text(
-                        text = "剩余 $remainingText",
+                        text = stringResource(R.string.today_remaining_label, remainingText),
                         fontFamily = FontFamily.Monospace,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -701,14 +732,16 @@ private fun NowCard(
                 }
             } else {
                 Text(
-                    text = if (isViewingToday) "接下来是..." else "暂无进行中的任务",
+                    text = if (isViewingToday) stringResource(R.string.today_nowcard_next_up)
+                    else stringResource(R.string.today_nowcard_no_task),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = if (isViewingToday) "享受这段空档，或提前准备下一个任务" else "选择其他日期查看安排",
+                    text = if (isViewingToday) stringResource(R.string.today_nowcard_free_slot)
+                    else stringResource(R.string.today_nowcard_pick_date),
                     fontSize = 15.sp,
                     color = Color.White.copy(alpha = 0.7f),
                 )
@@ -1032,6 +1065,7 @@ private fun minuteOfDay(dt: LocalDateTime, date: LocalDate): Int {
 private fun TodayTaskCard(
     item: TodayTaskItem,
     conflicts: List<TaskConflict>,
+    plansById: Map<String, Plan>,
     highlighted: Boolean,
     onStart: () -> Unit,
     onComplete: () -> Unit,
@@ -1200,7 +1234,9 @@ private fun TodayTaskCard(
         Spacer(Modifier.height(4.dp))
         ConflictBanner(
             conflicts = conflicts,
-            plansById = mapOf(item.plan.id to item.plan),
+            // 全量 plan 映射——之前只装本计划，"与 XX 计划冲突"显示的对方
+            // 计划名永远解析成自己
+            plansById = plansById,
         )
     }
 }
@@ -1278,8 +1314,10 @@ private fun EmptyTodayState(
 private fun formatHm(dt: LocalDateTime): String =
     String.format("%02d:%02d", dt.hour, dt.minute)
 
+/** 日期 pattern 走 strings 资源（zh "M月d日" / en "MMM d"），跟随 App 语言 */
+@Composable
 private fun dateFmt(): DateTimeFormatter =
-    DateTimeFormatter.ofPattern("M月d日")
+    DateTimeFormatter.ofPattern(stringResource(R.string.date_pattern_md))
 
 /**
  * 暗色主题下的 Snackbar：保持与卡片一致的圆角、深色背景、primary 色的 action 文字。

@@ -99,7 +99,7 @@ fun PlanDetailScreen(
     val planColor = remember(currentPlan.colorHex) {
         runCatching { parseHexColor(currentPlan.colorHex) }.getOrElse { Color(0xFFC48520) }
     }
-    val planTypeLabel = remember(currentPlan.title) { derivePlanTypeLabel(currentPlan.title) }
+    val planTypeLabel = derivePlanTypeLabel(currentPlan.title)
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
@@ -729,12 +729,17 @@ private fun repeatRuleLabel(task: Task): String? = when (task.repeatRule) {
     } else null
 }
 
+@Composable
 private fun derivePlanTypeLabel(title: String): String {
     return when {
-        title.contains("健") || title.contains("运动") || title.contains("健身") -> "健身"
-        title.contains("学") || title.contains("读") -> "学习"
-        title.contains("写") || title.contains("创作") -> "写作"
-        title.contains("副业") || title.contains("项目") -> "副业"
+        title.contains("健") || title.contains("运动") || title.contains("健身") ->
+            stringResource(R.string.plan_type_fitness)
+        title.contains("学") || title.contains("读") ->
+            stringResource(R.string.plan_type_study)
+        title.contains("写") || title.contains("创作") ->
+            stringResource(R.string.plan_type_writing)
+        title.contains("副业") || title.contains("项目") ->
+            stringResource(R.string.plan_type_side)
         else -> title.take(2)
     }
 }

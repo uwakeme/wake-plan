@@ -5,46 +5,47 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import androidx.core.content.getSystemService
+import com.wakeplan.app.R
 
 /**
- * 通知渠道 — Phase 3.1
+ * 通知渠道 — Phase 3.1，v0.4.1 名称/描述走 strings（跟随 App 语言）
  *
  * PRD US-10 / AC-10.1：4 个 Channel
- * - `task_starting` (P0, v0.1 启用)：任务即将开始（默认 5 分钟前，可配置 0/5/10/15）
- * - `task_overdue` (P0, v0.1 启用)：任务超时未完成（每 10 分钟一次，最多 3 次）
- * - `task_completed` (P2, v0.1 占位)：任务完成确认（默认关闭，v0.2 启用）
- * - `plan_recap` (P2, v0.1 占位)：每日 21:00 当日完成率小结（默认关闭，v0.2 启用）
+ * - `task_starting` (P0)：任务即将开始（默认 5 分钟前，可配置 0/5/10/15）
+ * - `task_overdue` (P0)：任务超时未完成（WorkManager 周期检查，最多提醒 3 次）
+ * - `task_completed` (P2)：任务完成确认（默认关闭，v0.4 实装）
+ * - `plan_recap` (P2)：每日回顾（v0.5 实装，设置开关暂隐藏）
  *
  * Channel 在 App.onCreate 一次性创建；之后 importance 修改无效（系统保留用户修改）
  */
 enum class Channel(
     val id: String,
-    val displayName: String,
-    val description: String,
+    val nameRes: Int,
+    val descriptionRes: Int,
     val importance: Int,
 ) {
     TASK_STARTING(
         id = "task_starting",
-        displayName = "任务开始提醒",
-        description = "任务即将开始前 X 分钟提醒（默认 5 分钟）",
+        nameRes = R.string.channel_starting_name,
+        descriptionRes = R.string.channel_starting_desc,
         importance = NotificationManager.IMPORTANCE_HIGH,
     ),
     TASK_OVERDUE(
         id = "task_overdue",
-        displayName = "任务超时",
-        description = "任务超时未完成时循环提醒（每 10 分钟，最多 3 次）",
+        nameRes = R.string.channel_overdue_name,
+        descriptionRes = R.string.channel_overdue_desc,
         importance = NotificationManager.IMPORTANCE_DEFAULT,
     ),
     TASK_COMPLETED(
         id = "task_completed",
-        displayName = "任务完成确认",
-        description = "任务完成时推送确认通知（v0.1 关闭，v0.2 启用）",
+        nameRes = R.string.channel_completed_name,
+        descriptionRes = R.string.channel_completed_desc,
         importance = NotificationManager.IMPORTANCE_LOW,
     ),
     PLAN_RECAP(
         id = "plan_recap",
-        displayName = "每日计划回顾",
-        description = "每日 21:00 推送当日完成率小结（v0.1 关闭，v0.2 启用）",
+        nameRes = R.string.channel_recap_name,
+        descriptionRes = R.string.channel_recap_desc,
         importance = NotificationManager.IMPORTANCE_LOW,
     ),
 }
@@ -59,8 +60,12 @@ object NotificationChannels {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService<NotificationManager>() ?: return
         Channel.values().forEach { ch ->
-            val channel = NotificationChannel(ch.id, ch.displayName, ch.importance).apply {
-                description = ch.description
+            val channel = NotificationChannel(
+                ch.id,
+                context.getString(ch.nameRes),
+                ch.importance,
+            ).apply {
+                description = context.getString(ch.descriptionRes)
             }
             manager.createNotificationChannel(channel)
         }

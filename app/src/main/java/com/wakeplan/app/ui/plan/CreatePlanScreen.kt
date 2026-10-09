@@ -32,6 +32,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -70,11 +72,13 @@ fun CreatePlanScreen(
     val isValid by viewModel.isValid.collectAsStateWithLifecycle()
     val isEditMode = viewModel.isEditMode
 
-    val startDateText = remember(startDate) {
-        startDate.format(DateTimeFormatter.ofPattern("M月d日"))
+    val datePattern = stringResource(R.string.date_pattern_md)
+    val startDateText = remember(startDate, datePattern) {
+        startDate.format(DateTimeFormatter.ofPattern(datePattern))
     }
 
     var showColorPicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.savedEvent.collect { onSaved() }
@@ -117,12 +121,20 @@ fun CreatePlanScreen(
             )
 
             SectionLabel(stringResource(R.string.plan_create_start_date))
-            Text(
-                text = stringResource(R.string.plan_create_start_date_default_runtime, startDateText),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            // Phase 1.3 升级为 DatePicker dialog
+            // v0.4.1：开始日期实装 DatePicker（PRD AC-01.1 要求可选日期，此前写死"今天"）
+            Surface(
+                onClick = { showDatePicker = true },
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = stringResource(R.string.plan_create_start_date_default_runtime, startDateText),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                )
+            }
 
             Spacer(Modifier.height(8.dp))
             Button(
@@ -135,6 +147,36 @@ fun CreatePlanScreen(
                     else stringResource(R.string.task_save)
                 )
             }
+        }
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = startDate
+                .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli(),
+        )
+        androidx.compose.material3.DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        // DatePicker 用 UTC 天边界
+                        viewModel.setStartDate(
+                            java.time.Instant.ofEpochMilli(millis)
+                                .atZone(java.time.ZoneOffset.UTC)
+                                .toLocalDate(),
+                        )
+                    }
+                    showDatePicker = false
+                }) { Text(stringResource(R.string.common_save)) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        ) {
+            androidx.compose.material3.DatePicker(state = datePickerState)
         }
     }
 

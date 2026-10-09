@@ -509,4 +509,70 @@
     <string name="settings_import_success_runtime_template">导入成功：%1$d 计划 / %2$d 任务 / %3$d 完成</string>
     <string name="settings_import_failed_runtime_template">导入失败：%1$s</string>
     <string name="backup_passphrase_too_short_template">密码至少 %1$d 位</string>
+
+    <!-- v0.4.1 通知渠道（跟随 App 语言） -->
+    <string name="channel_starting_name">任务开始提醒</string>
+    <string name="channel_starting_desc">任务即将开始前 X 分钟提醒（默认 5 分钟）</string>
+    <string name="channel_overdue_name">任务超时</string>
+    <string name="channel_overdue_desc">任务超时未完成时循环提醒（最多 3 次）</string>
+    <string name="channel_completed_name">任务完成确认</string>
+    <string name="channel_completed_desc">任务完成时推送确认通知（默认关闭）</string>
+    <string name="channel_recap_name">每日计划回顾</string>
+    <string name="channel_recap_desc">每日推送当日完成率小结（v0.5 实装）</string>
+
+    <!-- v0.4.1 通知文案（NotificationTexts 注入纯函数层） -->
+    <string name="notif_starting_lead">%1$d 分钟后开始</string>
+    <string name="notif_starting_imminent">即将开始</string>
+    <string name="notif_overdue_first">%1$s 已超时</string>
+    <string name="notif_overdue_repeat">%1$s 仍超时 (%2$d/3)</string>
+    <string name="notif_overdue_body">计划结束时间 %1$s 已过</string>
+    <string name="notif_completed_title">%1$s 已完成</string>
+    <string name="notif_completed_on_time">完成于 %1$s · 按时完成</string>
+    <string name="notif_completed_overrun">完成于 %1$s · 超时 %2$d 分钟</string>
+    <string name="notif_test_title">测试通知</string>
+    <string name="notif_test_text">通知链路正常。如果没看到这条，请检查通知权限。</string>
+
+    <!-- v0.4.1 Today 屏硬编码文案 i18n -->
+    <string name="today_greeting_night">夜深了，什么在等你</string>
+    <string name="today_greeting_morning">早上好，什么在等你</string>
+    <string name="today_greeting_noon">中午好，什么在等你</string>
+    <string name="today_greeting_afternoon">下午好，什么在等你</string>
+    <string name="today_greeting_evening">晚上好，什么在等你</string>
+    <string name="today_greeting_other_date">%1$s，什么在等你</string>
+    <string name="today_greeting_word">什么</string>
+    <string name="today_status_in_progress">进行中</string>
+    <string name="today_status_starting_soon">即将开始</string>
+    <string name="today_duration_hm">%1$d小时%2$d分</string>
+    <string name="today_duration_m">%1$d分钟</string>
+    <string name="today_remaining_soon">即将结束</string>
+    <string name="today_remaining_label">剩余 %1$s</string>
+    <string name="today_nowcard_next_up">接下来是…</string>
+    <string name="today_nowcard_no_task">暂无进行中的任务</string>
+    <string name="today_nowcard_free_slot">享受这段空档，或提前准备下一个任务</string>
+    <string name="today_nowcard_pick_date">选择其他日期查看安排</string>
+    <string name="date_pattern_md">M月d日</string>
+    <string name="widget_date_pattern">M月d日</string>
+
+    <!-- v0.4.1 Onboarding 硬编码文案 i18n -->
+    <string name="onboarding_skip">跳过</string>
+    <string name="onboarding_feature_plans_title">多计划管理</string>
+    <string name="onboarding_feature_plans_desc">把健身、学习、副业分开管理，互不干扰</string>
+    <string name="onboarding_feature_reminder_title">准时提醒</string>
+    <string name="onboarding_feature_reminder_desc">到点自动提醒，不错过每一个任务</string>
+    <string name="onboarding_feature_notify_title">本地通知</string>
+    <string name="onboarding_feature_notify_desc">任务开始前几分钟和超时时提醒你</string>
+    <string name="onboarding_feature_privacy_title">隐私安全</string>
+    <string name="onboarding_feature_privacy_desc">所有数据本地加密存储，不上传云端</string>
+    <string name="onboarding_feature_ready_title">准备就绪</string>
+    <string name="onboarding_feature_ready_desc">开始创建你的第一个时间计划吧</string>
+    <string name="onboarding_feature_local_title">数据本地存储</string>
+    <string name="onboarding_feature_local_desc">所有数据加密保存在本地，安全可靠</string>
+
+    <!-- v0.4.1 其他补漏 -->
+    <string name="plan_type_fitness">健身</string>
+    <string name="plan_type_study">学习</string>
+    <string name="plan_type_writing">写作</string>
+    <string name="plan_type_side">副业</string>
+    <string name="template_apply_failed">应用模板失败，请重试</string>
+    <string name="backup_error_generic">操作失败，请重试</string>
 </resources>

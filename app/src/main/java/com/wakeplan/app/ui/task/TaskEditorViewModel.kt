@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
-import java.util.UUID
 import javax.inject.Inject
 
 /**
@@ -41,6 +40,8 @@ import javax.inject.Inject
 class TaskEditorViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val taskRepository: TaskRepository,
+    private val scheduleRefresher: com.wakeplan.app.notification.ScheduleRefresher,
+    private val clock: java.time.Clock,
 ) : ViewModel() {
 
     val planId: String = checkNotNull(savedStateHandle.get<String>(PlanDetailViewModel.ARG_PLAN_ID)) {
@@ -113,7 +114,20 @@ class TaskEditorViewModel @Inject constructor(
 
     fun setTitle(value: String) { _title.value = value }
     fun setStartMinutes(value: Int) { _startMinutes.value = value.coerceIn(0, MAX_END_MINUTES) }
-    fun setEndMinutes(value: Int) { _endMinutes.value = value.coerceIn(0, MAX_END_MINUTES) }
+
+    /**
+     * v0.4.1：结束时间 ≤ 开始时间时自动理解为"跨到次日"（+24h）。
+     * 之前 picker 禁止跨午夜选择，编辑已存在的跨午夜任务时确认一次就静默截断成
+     * 当日时间（end ≤ start 保存被拦），数据丢失路径。
+     */
+    fun setEndMinutes(value: Int) {
+        val adjusted = if (value <= _startMinutes.value && value + 24 * 60 <= MAX_END_MINUTES) {
+            value + 24 * 60
+        } else {
+            value
+        }
+        _endMinutes.value = adjusted.coerceIn(0, MAX_END_MINUTES)
+    }
     fun setRepeatRule(value: RepeatRule) {
         _repeatRule.value = value
         if (value != RepeatRule.CUSTOM) _customDays.value = emptySet()
@@ -162,6 +176,8 @@ class TaskEditorViewModel @Inject constructor(
                     )
                 )
             }
+            // 定义变更后重排当天闹钟（update 内已同步/清理受影响的 completion 窗口）
+            scheduleRefresher.refresh(java.time.LocalDate.now(clock))
             _savedEvent.send(Unit)
         }
     }
@@ -170,6 +186,7 @@ class TaskEditorViewModel @Inject constructor(
         val id = taskId ?: return
         viewModelScope.launch {
             taskRepository.delete(id)
+            scheduleRefresher.refresh(java.time.LocalDate.now(clock))
             _savedEvent.send(Unit)
         }
     }
@@ -186,8 +203,5 @@ class TaskEditorViewModel @Inject constructor(
 
         /** 跨午夜上限：endMinutes 最大 48:00 = 2880 分钟（次日凌晨次日） */
         const val MAX_END_MINUTES = 48 * 60
-
-        @Suppress("unused")
-        private fun newId(): String = UUID.randomUUID().toString()
     }
 }

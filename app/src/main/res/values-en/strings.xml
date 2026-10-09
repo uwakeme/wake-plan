@@ -502,4 +502,70 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="stats_metric_focus">Focus</string>
     <string name="stats_metric_streak">Streak</string>
     <string name="stats_streak_days">%1$d days</string>
+
+    <!-- v0.4.1 notification channels (follow app language) -->
+    <string name="channel_starting_name">Task starting reminders</string>
+    <string name="channel_starting_desc">Reminder a few minutes before a task starts (default 5)</string>
+    <string name="channel_overdue_name">Task overdue</string>
+    <string name="channel_overdue_desc">Repeated reminders when a task is overdue (max 3)</string>
+    <string name="channel_completed_name">Completion confirmations</string>
+    <string name="channel_completed_desc">Confirmation notification when a task is completed (off by default)</string>
+    <string name="channel_recap_name">Daily recap</string>
+    <string name="channel_recap_desc">Daily completion-rate summary (coming in v0.5)</string>
+
+    <!-- v0.4.1 notification texts (injected into pure builders) -->
+    <string name="notif_starting_lead">Starts in %1$d min</string>
+    <string name="notif_starting_imminent">Starting now</string>
+    <string name="notif_overdue_first">%1$s is overdue</string>
+    <string name="notif_overdue_repeat">%1$s is still overdue (%2$d/3)</string>
+    <string name="notif_overdue_body">Planned end time %1$s has passed</string>
+    <string name="notif_completed_title">%1$s completed</string>
+    <string name="notif_completed_on_time">Done at %1$s · on time</string>
+    <string name="notif_completed_overrun">Done at %1$s · %2$d min over</string>
+    <string name="notif_test_title">Test notification</string>
+    <string name="notif_test_text">Notifications are working. If you cannot see this, check notification permission.</string>
+
+    <!-- v0.4.1 Today screen i18n -->
+    <string name="today_greeting_night">It\'s late — what awaits you</string>
+    <string name="today_greeting_morning">Good morning — what awaits you</string>
+    <string name="today_greeting_noon">Good noon — what awaits you</string>
+    <string name="today_greeting_afternoon">Good afternoon — what awaits you</string>
+    <string name="today_greeting_evening">Good evening — what awaits you</string>
+    <string name="today_greeting_other_date">%1$s — what awaits you</string>
+    <string name="today_greeting_word">what</string>
+    <string name="today_status_in_progress">In progress</string>
+    <string name="today_status_starting_soon">Starting soon</string>
+    <string name="today_duration_hm">%1$dh %2$dmin</string>
+    <string name="today_duration_m">%1$d min</string>
+    <string name="today_remaining_soon">About to finish</string>
+    <string name="today_remaining_label">%1$s left</string>
+    <string name="today_nowcard_next_up">Up next…</string>
+    <string name="today_nowcard_no_task">No task in progress</string>
+    <string name="today_nowcard_free_slot">Enjoy the gap, or prep for the next task</string>
+    <string name="today_nowcard_pick_date">Pick another date to view its schedule</string>
+    <string name="date_pattern_md">MMM d</string>
+    <string name="widget_date_pattern">MMM d</string>
+
+    <!-- v0.4.1 Onboarding i18n -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_feature_plans_title">Multiple plans</string>
+    <string name="onboarding_feature_plans_desc">Keep fitness, study and side projects separate</string>
+    <string name="onboarding_feature_reminder_title">On-time reminders</string>
+    <string name="onboarding_feature_reminder_desc">Get notified when a task is about to start</string>
+    <string name="onboarding_feature_notify_title">Local notifications</string>
+    <string name="onboarding_feature_notify_desc">Reminders before start time and when overdue</string>
+    <string name="onboarding_feature_privacy_title">Privacy first</string>
+    <string name="onboarding_feature_privacy_desc">Everything stays encrypted on your device — no cloud</string>
+    <string name="onboarding_feature_ready_title">You are set</string>
+    <string name="onboarding_feature_ready_desc">Create your first time plan now</string>
+    <string name="onboarding_feature_local_title">Local storage</string>
+    <string name="onboarding_feature_local_desc">All data is encrypted and stored locally</string>
+
+    <!-- v0.4.1 misc -->
+    <string name="plan_type_fitness">Fitness</string>
+    <string name="plan_type_study">Study</string>
+    <string name="plan_type_writing">Writing</string>
+    <string name="plan_type_side">Side</string>
+    <string name="template_apply_failed">Failed to apply template, please retry</string>
+    <string name="backup_error_generic">Something went wrong, please retry</string>
 </resources>

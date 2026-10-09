@@ -57,7 +57,6 @@ import com.wakeplan.app.ui.theme.WpTextTertiaryDark
 @Composable
 fun OnboardingScreen(
     onFinished: () -> Unit,
-    onRequestNotificationPermission: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var step by remember { mutableStateOf(0) }
@@ -69,9 +68,11 @@ fun OnboardingScreen(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted ->
         notificationGranted = granted
-        if (granted) {
-            onRequestNotificationPermission()
-        }
+    }
+
+    // 引导页支持逐步返回——之前系统返回键直接退出应用
+    androidx.activity.compose.BackHandler(enabled = step > 0) {
+        step--
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "logo_float")
@@ -269,7 +270,7 @@ fun OnboardingScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "跳过",
+                        text = stringResource(R.string.onboarding_skip),
                         fontSize = 14.sp,
                         color = WpTextTertiaryDark,
                     )
@@ -290,13 +291,13 @@ private fun WelcomeFeatures() {
     ) {
         FeatureItem(
             icon = "📋",
-            title = "多计划管理",
-            description = "把健身、学习、副业分开管理，互不干扰",
+            title = stringResource(R.string.onboarding_feature_plans_title),
+            description = stringResource(R.string.onboarding_feature_plans_desc),
         )
         FeatureItem(
             icon = "⏰",
-            title = "准时提醒",
-            description = "到点自动提醒，不错过每一个任务",
+            title = stringResource(R.string.onboarding_feature_reminder_title),
+            description = stringResource(R.string.onboarding_feature_reminder_desc),
         )
     }
 }
@@ -311,13 +312,13 @@ private fun PermissionFeatures(
     ) {
         FeatureItem(
             icon = "🔔",
-            title = "本地通知",
-            description = "任务开始前5分钟和超时时提醒你",
+            title = stringResource(R.string.onboarding_feature_notify_title),
+            description = stringResource(R.string.onboarding_feature_notify_desc),
         )
         FeatureItem(
             icon = "🔒",
-            title = "隐私安全",
-            description = "所有通知本地处理，不上传云端",
+            title = stringResource(R.string.onboarding_feature_privacy_title),
+            description = stringResource(R.string.onboarding_feature_privacy_desc),
         )
         if (!granted) {
             Spacer(Modifier.height(8.dp))
@@ -358,13 +359,13 @@ private fun FinishFeatures() {
     ) {
         FeatureItem(
             icon = "✨",
-            title = "准备就绪",
-            description = "开始创建你的第一个时间计划吧",
+            title = stringResource(R.string.onboarding_feature_ready_title),
+            description = stringResource(R.string.onboarding_feature_ready_desc),
         )
         FeatureItem(
             icon = "📊",
-            title = "数据本地存储",
-            description = "所有数据加密保存在本地，安全可靠",
+            title = stringResource(R.string.onboarding_feature_local_title),
+            description = stringResource(R.string.onboarding_feature_local_desc),
         )
     }
 }

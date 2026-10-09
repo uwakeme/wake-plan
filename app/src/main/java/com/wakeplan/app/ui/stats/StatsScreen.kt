@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -92,8 +93,20 @@ fun StatsScreen() {
         Spacer(Modifier.height(16.dp))
 
         val result = state.result
-        if (result == null) {
-            EmptyStatsState()
+        if (state.isLoading || result == null) {
+            // v0.4.1：切 range / 首次加载给出可见的加载态（之前 isLoading 无人消费）
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 48.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(28.dp),
+                    strokeWidth = 3.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         } else {
             StatsGrid(result)
             Spacer(Modifier.height(16.dp))

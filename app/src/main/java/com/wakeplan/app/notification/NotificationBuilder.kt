@@ -15,13 +15,41 @@ import java.time.format.DateTimeFormatter
  * 通知内容 — 纯 Kotlin，可单测
  *
  * builder 自己（buildStarting/buildOverdue）需要 Context，不参与单测；单测只覆盖
- * NotificationContent 计算逻辑（title / text 拼接），保证文案符合 PRD 描述
+ * NotificationContent 计算逻辑（title / text 拼接），保证文案符合 PRD 描述。
+ *
+ * v0.4.1 文案模板从 strings 资源注入（[NotificationTexts.from]），跟随 App 语言；
+ * 模板用 %1$s/%1$d 位置参数，跟 values/values-en 的 strings.xml 一一对应。
  */
 data class NotificationContent(
     val channelId: String,
     val title: String,
     val text: String,
 )
+
+/** 通知文案模板 — 由持有 Context 的调用方构造后传入纯函数层 */
+data class NotificationTexts(
+    val startingLead: String,      // "%1$d 分钟后开始"
+    val startingImminent: String,  // "即将开始"
+    val overdueFirst: String,      // "%1$s 已超时"
+    val overdueRepeat: String,     // "%1$s 仍超时 (%2$d/3)"
+    val overdueBody: String,       // "计划结束时间 %1$s 已过"
+    val completedTitle: String,    // "%1$s 已完成"
+    val completedOnTime: String,   // "完成于 %1$s · 按时完成"
+    val completedOverrun: String,  // "完成于 %1$s · 超时 %2$d 分钟"
+) {
+    companion object {
+        fun from(context: Context) = NotificationTexts(
+            startingLead = context.getString(R.string.notif_starting_lead),
+            startingImminent = context.getString(R.string.notif_starting_imminent),
+            overdueFirst = context.getString(R.string.notif_overdue_first),
+            overdueRepeat = context.getString(R.string.notif_overdue_repeat),
+            overdueBody = context.getString(R.string.notif_overdue_body),
+            completedTitle = context.getString(R.string.notif_completed_title),
+            completedOnTime = context.getString(R.string.notif_completed_on_time),
+            completedOverrun = context.getString(R.string.notif_completed_overrun),
+        )
+    }
+}
 
 object NotificationContentBuilder {
 
@@ -31,9 +59,14 @@ object NotificationContentBuilder {
         completion: TaskCompletion,
         taskTitle: String,
         leadMinutes: Int,
+        texts: NotificationTexts,
     ): NotificationContent {
         val timeText = "${format(completion.plannedStart)} — ${format(completion.plannedEnd)}"
-        val leadText = if (leadMinutes > 0) "${leadMinutes} 分钟后开始" else "即将开始"
+        val leadText = if (leadMinutes > 0) {
+            String.format(texts.startingLead, leadMinutes)
+        } else {
+            texts.startingImminent
+        }
         return NotificationContent(
             channelId = Channel.TASK_STARTING.id,
             title = taskTitle,
@@ -45,13 +78,17 @@ object NotificationContentBuilder {
         completion: TaskCompletion,
         taskTitle: String,
         overdueCount: Int,
+        texts: NotificationTexts,
     ): NotificationContent {
-        val title = if (overdueCount == 1) "${taskTitle} 已超时" else "${taskTitle} 仍超时 ($overdueCount/3)"
-        val text = "计划结束时间 ${format(completion.plannedEnd)} 已过"
+        val title = if (overdueCount <= 1) {
+            String.format(texts.overdueFirst, taskTitle)
+        } else {
+            String.format(texts.overdueRepeat, taskTitle, overdueCount)
+        }
         return NotificationContent(
             channelId = Channel.TASK_OVERDUE.id,
             title = title,
-            text = text,
+            text = String.format(texts.overdueBody, format(completion.plannedEnd)),
         )
     }
 
@@ -59,13 +96,18 @@ object NotificationContentBuilder {
     fun buildCompleted(
         completion: TaskCompletion,
         taskTitle: String,
+        texts: NotificationTexts,
     ): NotificationContent {
-        val onTimeText = if (completion.overrunMinutes > 0) "超时 ${completion.overrunMinutes} 分钟" else "按时完成"
         val endTime = completion.actualEnd ?: completion.plannedEnd
+        val body = if (completion.overrunMinutes > 0) {
+            String.format(texts.completedOverrun, format(endTime), completion.overrunMinutes)
+        } else {
+            String.format(texts.completedOnTime, format(endTime))
+        }
         return NotificationContent(
             channelId = Channel.TASK_COMPLETED.id,
-            title = "$taskTitle 已完成",
-            text = "完成于 ${format(endTime)} · $onTimeText",
+            title = String.format(texts.completedTitle, taskTitle),
+            text = body,
         )
     }
 
@@ -90,7 +132,9 @@ object NotificationBuilder {
         taskTitle: String,
         leadMinutes: Int,
     ): Notification {
-        val content = NotificationContentBuilder.buildStarting(completion, taskTitle, leadMinutes)
+        val content = NotificationContentBuilder.buildStarting(
+            completion, taskTitle, leadMinutes, NotificationTexts.from(context),
+        )
         return NotificationCompat.Builder(context, content.channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(content.title)
@@ -109,7 +153,9 @@ object NotificationBuilder {
         taskTitle: String,
         overdueCount: Int,
     ): Notification {
-        val content = NotificationContentBuilder.buildOverdue(completion, taskTitle, overdueCount)
+        val content = NotificationContentBuilder.buildOverdue(
+            completion, taskTitle, overdueCount, NotificationTexts.from(context),
+        )
         return NotificationCompat.Builder(context, content.channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(content.title)
@@ -127,7 +173,9 @@ object NotificationBuilder {
         completion: TaskCompletion,
         taskTitle: String,
     ): Notification {
-        val content = NotificationContentBuilder.buildCompleted(completion, taskTitle)
+        val content = NotificationContentBuilder.buildCompleted(
+            completion, taskTitle, NotificationTexts.from(context),
+        )
         return NotificationCompat.Builder(context, content.channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(content.title)
@@ -136,6 +184,23 @@ object NotificationBuilder {
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+    }
+
+    /** v0.4.1：设置页"测试通知"——验证渠道/权限/提醒链路是否活着 */
+    fun buildTest(context: Context): Notification {
+        val content = NotificationContent(
+            channelId = Channel.TASK_STARTING.id,
+            title = context.getString(R.string.notif_test_title),
+            text = context.getString(R.string.notif_test_text),
+        )
+        return NotificationCompat.Builder(context, content.channelId)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(content.title)
+            .setContentText(content.text)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
     }
 

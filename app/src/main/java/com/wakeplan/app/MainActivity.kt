@@ -91,8 +91,10 @@ class MainActivity : ComponentActivity() {
             NavEventBus.emit(NavEventBus.Event.NavToToday)
             intent.removeExtra(com.wakeplan.app.widget.TodayWidgetProvider.EXTRA_NAV_TO_TODAY)
         }
-        // 通知 deep link：跳到对应 task 高亮
+        // 通知 deep link：切到 Today tab + 高亮对应 task。
+        // v0.4.1 前只发高亮不发导航——用户停在 Stats/Settings 时点通知毫无可见反应
         val taskId = intent.getStringExtra(NotificationBuilder.EXTRA_TASK_ID) ?: return
+        NavEventBus.emit(NavEventBus.Event.NavToToday)
         HighlightBus.emit(taskId)
         intent.removeExtra(NotificationBuilder.EXTRA_TASK_ID)
         intent.removeExtra(NotificationBuilder.EXTRA_COMPLETION_ID)
@@ -102,18 +104,28 @@ class MainActivity : ComponentActivity() {
 /**
  * 内容根 + 品牌启动 overlay。
  * overlay 始终盖在最上层（Onboarding / AppNavHost 之上），淡出后从 composition 移除。
+ *
+ * v0.4.1：每进程只播一次——切语言等场景 recreate() 会重建 composition，
+ * 之前 1.4s 品牌动画会重放一遍。
  */
 @Composable
 private fun AppRootWithSplash() {
-    var showBrandedSplash by remember { mutableStateOf(true) }
+    var showBrandedSplash by remember { mutableStateOf(!splashShownThisProcess) }
 
     Box(Modifier.fillMaxSize()) {
         AppRoot()
         if (showBrandedSplash) {
-            BrandedSplash(onFinished = { showBrandedSplash = false })
+            BrandedSplash(onFinished = {
+                splashShownThisProcess = true
+                showBrandedSplash = false
+            })
         }
     }
 }
+
+/** 进程级标记：品牌 splash 播过一次后，本次进程内的 recreate 不再重放 */
+@Volatile
+private var splashShownThisProcess = false
 
 @Composable
 private fun AppRoot() {

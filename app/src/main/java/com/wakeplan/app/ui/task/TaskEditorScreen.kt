@@ -629,10 +629,8 @@ private fun TimePickerDialog(
                     }
                     Spacer(Modifier.width(8.dp))
                     TextButton(onClick = {
-                        // Picker 只支持当日 0-23 小时；结束时间不再自动跨日
-                        // 跨午夜场景暂时禁用：上层 save() 会校验 endMinutes > startMinutes
-                        // 如果用户选了比开始时间小的值，setEndMinutes 会保持原值，
-                        // UI 校验阻止保存。
+                        // Picker 只支持当日 0-23 小时；选的结束 ≤ 开始时
+                        // setEndMinutes 自动 +24h 理解为跨午夜（v0.4.1）
                         onConfirm(state.hour * 60 + state.minute)
                     }) {
                         Text(stringResource(R.string.common_confirm))

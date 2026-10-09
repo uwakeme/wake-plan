@@ -38,6 +38,8 @@ object WpMotion {
  *
  * - 列表项默认用 80ms 错峰（第 0 个 0ms，第 1 个 80ms，第 2 个 160ms...）
  * - 单个 widget 不需要错峰可以用 `WpAnimateInContainer(0)`
+ * - visible 用 rememberSaveable（v0.4.1）：滚动划出再划入不重播 480ms 动画，
+ *   只有初次进入屏幕（或重新导航回来）才播
  */
 @Composable
 fun WpAnimateInContainer(
@@ -46,10 +48,12 @@ fun WpAnimateInContainer(
     durationMs: Int = WpMotion.FADE_IN_UP,
     content: @Composable () -> Unit,
 ) {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(index * delayMs)
-        visible = true
+    var visible by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(visible) {
+        if (!visible) {
+            kotlinx.coroutines.delay(index * delayMs)
+            visible = true
+        }
     }
     AnimatedVisibility(
         visible = visible,

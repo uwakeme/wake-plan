@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -123,11 +124,14 @@ private fun PlansList(
         ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        items(plansWithStats, key = { "active-${it.plan.id}" }) { data ->
+        itemsIndexed(
+            plansWithStats,
+            key = { _, data -> "active-${data.plan.id}" },
+        ) { index, data ->
             PlanCard(
                 data = data,
                 onClick = { onPlanClick(data.plan) },
-                index = plansWithStats.indexOf(data).coerceAtLeast(0),
+                index = index,
             )
         }
 

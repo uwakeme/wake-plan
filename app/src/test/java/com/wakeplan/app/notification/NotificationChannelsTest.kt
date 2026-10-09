@@ -49,15 +49,15 @@ class NotificationChannelsTest {
     }
 
     @Test
-    fun `每个 channel 都有非空 displayName 和 description`() {
+    fun `每个 channel 都有名称与描述资源（v0_4_1 起走 strings 跟随 App 语言）`() {
         Channel.values().forEach { ch ->
-            assertTrue(ch.displayName.isNotBlank(), "${ch.id} displayName 不能空")
-            assertTrue(ch.description.isNotBlank(), "${ch.id} description 不能空")
+            assertTrue(ch.nameRes != 0, "${ch.id} nameRes 不能为 0")
+            assertTrue(ch.descriptionRes != 0, "${ch.id} descriptionRes 不能为 0")
         }
     }
 
     @Test
-    fun `starting 和 overdue 的 displayName 不同`() {
-        assertNotEquals(Channel.TASK_STARTING.displayName, Channel.TASK_OVERDUE.displayName)
+    fun `starting 和 overdue 的名称资源不同`() {
+        assertNotEquals(Channel.TASK_STARTING.nameRes, Channel.TASK_OVERDUE.nameRes)
     }
 }
