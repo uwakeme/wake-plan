@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- v0.6 专注计时前台 Service（specialUse：计时器类应用的标准类型） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
         android:name=".App"
@@ -87,6 +90,16 @@
             <meta-data
                 android:name="android.service.quicksettings.ACTIVE_TILE"
                 android:value="false" />
+        </service>
+
+        <!-- v0.6 专注计时前台 Service：常驻倒计时通知，状态真源在 FocusTimerController -->
+        <service
+            android:name=".focus.FocusTimerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Task focus timer with persistent countdown notification" />
         </service>
 
         <!-- 禁用 WorkManager 自动初始化 — App.onCreate 用 HiltWorkerFactory 手动初始化

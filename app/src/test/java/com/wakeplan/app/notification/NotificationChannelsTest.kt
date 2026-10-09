@@ -17,9 +17,9 @@ import org.junit.jupiter.api.Test
 class NotificationChannelsTest {
 
     @Test
-    fun `4 个 channel id 唯一`() {
+    fun `5 个 channel id 唯一（v0_6 加 focus_timer）`() {
         val ids = Channel.values().map { it.id }
-        assertEquals(4, ids.size)
+        assertEquals(5, ids.size)
         assertEquals(ids.size, ids.toSet().size, "channel id 必须唯一")
     }
 

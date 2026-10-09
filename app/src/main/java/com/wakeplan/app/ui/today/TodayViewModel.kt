@@ -13,7 +13,6 @@ import com.wakeplan.app.domain.usecase.CascadeDelayCalculator
 import com.wakeplan.app.domain.usecase.ConflictDetector
 import com.wakeplan.app.domain.usecase.TaskConflict
 import com.wakeplan.app.domain.model.TaskStatus
-import com.wakeplan.app.notification.CompletionNotifier
 import com.wakeplan.app.notification.ScheduleRefresher
 import com.wakeplan.app.notification.StartingAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,7 +31,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Clock
-import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -96,9 +94,9 @@ class TodayViewModel @Inject constructor(
     private val taskCompletionRepository: TaskCompletionRepository,
     private val cascadeDelayCalculator: CascadeDelayCalculator,
     private val conflictDetector: ConflictDetector,
+    private val completeTaskUseCase: com.wakeplan.app.domain.usecase.CompleteTaskUseCase,
     private val startingAlarmScheduler: StartingAlarmScheduler,
     private val scheduleRefresher: ScheduleRefresher,
-    private val completionNotifier: CompletionNotifier,
     minuteTicker: com.wakeplan.app.domain.time.MinuteTicker,
     private val clock: Clock,
 ) : ViewModel() {
@@ -253,50 +251,11 @@ class TodayViewModel @Inject constructor(
 
     fun onCompleteTask(completionId: String) {
         viewModelScope.launch {
-            val c = taskCompletionRepository.getById(completionId) ?: return@launch
-            if (c.status != TaskStatus.IN_PROGRESS) return@launch
-            val now = LocalDateTime.now(clock)
-            val overrun = Duration.between(c.plannedEnd, now).toMinutes().coerceAtLeast(0L).toInt()
-            val completed = c.copy(
-                status = TaskStatus.COMPLETED,
-                actualEnd = now,
-                overrunMinutes = overrun,
-            )
-            taskCompletionRepository.upsert(completed)
-            // 链式延期落库：晚完成把同计划下游任务推后并持久化（AC-06），
-            // 同时重排下游 starting 闹钟（AC-06.4）
-            persistCascade(c.scheduledDate)
-            // v0.4：task_completed 渠道实装（偏好默认关，开着才推）
-            val taskTitle = taskRepository.getById(c.taskId)?.title.orEmpty()
-            if (taskTitle.isNotEmpty()) {
-                completionNotifier.notifyCompleted(completed, taskTitle)
-            }
-            enqueueUndo(UndoableAction.Complete(completionId, c))
+            // 完成语义（级联落库 + 闹钟重排 + 完成通知）抽到 CompleteTaskUseCase，
+            // v0.6 专注页打卡与这里共用同一条链
+            val result = completeTaskUseCase(completionId) ?: return@launch
+            enqueueUndo(UndoableAction.Complete(completionId, result.previous))
         }
-    }
-
-    /**
-     * 把当天链式延期结果写回 DB（此前只算在内存里：界面一刷就弹回原时间，
-     * 闹钟与统计也永远按原时间）。计算器幂等，重复调用安全。
-     */
-    private suspend fun persistCascade(date: LocalDate) {
-        val completions = taskCompletionRepository.observeByDate(date).first()
-        if (completions.isEmpty()) return
-        val tasks = taskRepository.observeAll().first()
-        val adjusted = cascadeDelayCalculator(completions, tasks, date, LocalDateTime.now(clock))
-        val originalById = completions.associateBy { it.id }
-        var changed = false
-        adjusted.forEach { adj ->
-            val orig = originalById[adj.id] ?: return@forEach
-            if (orig.plannedStart != adj.plannedStart ||
-                orig.plannedEnd != adj.plannedEnd ||
-                orig.affectedTasks != adj.affectedTasks
-            ) {
-                taskCompletionRepository.upsert(adj)
-                changed = true
-            }
-        }
-        if (changed) scheduleRefresher.refresh(date)
     }
 
     fun onSkipTask(completionId: String) {

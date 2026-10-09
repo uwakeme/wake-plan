@@ -593,4 +593,18 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="retention_90_days">Keep for 90 days</string>
     <string name="retention_1_year">Keep for 1 year</string>
     <string name="retention_dialog_note">Completed/skipped records older than the retention window will be cleaned up. Pending and in-progress tasks are never affected. Defaults to keeping everything.</string>
+
+    <!-- v0.6 focus timer -->
+    <string name="channel_focus_name">Focus timer</string>
+    <string name="channel_focus_desc">Silent persistent countdown while focusing</string>
+    <string name="focus_notif_title">Focus timer</string>
+    <string name="focus_notif_running">%1$s · %2$s left</string>
+    <string name="focus_notif_waiting">%1$s done — tap for the next phase</string>
+    <string name="focus_phase_focus">Focus</string>
+    <string name="focus_phase_short_break">Short break</string>
+    <string name="focus_phase_long_break">Long break</string>
+    <string name="focus_action_complete">Complete task</string>
+    <string name="focus_action_skip">Skip phase</string>
+    <string name="focus_action_next">Next phase</string>
+    <string name="focus_action_abandon">Abandon</string>
 </resources>

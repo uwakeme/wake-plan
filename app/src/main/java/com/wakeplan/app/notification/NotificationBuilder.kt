@@ -145,6 +145,12 @@ object NotificationBuilder {
     private const val DEEP_LINK_REQUEST_BASE = 1001
     private const val RECAP_NAV_REQUEST_CODE = 1101
 
+    /** mm:ss（前台 Service 倒计时通知 / 专注页共用；负数按 0 处理） */
+    fun formatRemaining(remaining: java.time.Duration): String {
+        val totalSeconds = remaining.seconds.coerceAtLeast(0)
+        return "%02d:%02d".format(totalSeconds / 60, totalSeconds % 60)
+    }
+
     fun buildStarting(
         context: Context,
         completion: TaskCompletion,
