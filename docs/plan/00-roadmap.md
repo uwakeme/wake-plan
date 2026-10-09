@@ -353,3 +353,5 @@ Room DAO / DataStore
 
 **验收**：263 个 JVM 单测全过（v0.4.0 为 256），lint 0 error，assembleDebug + assembleDebugAndroidTest 干净，schema 4.json 生成并入库。
 
+v0.4.1 之后搁置与排期事项见 `docs/plan/17-v0.4.1-followups.md`（v0.5 存量+新增 / v0.6 番茄钟+schema v5 / P2 小项 / 技术债 / 发布待办）。
+
