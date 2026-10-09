@@ -16,8 +16,12 @@ import javax.inject.Singleton
 /**
  * Overdue WorkManager 调度 — Phase 3.2
  *
- * 每 10 分钟跑一次 OverdueCheckWorker
- * KEEP 策略：已有同名 work 就不重建
+ * 每 15 分钟跑一次 OverdueCheckWorker——WorkManager 周期任务 15 分钟是硬下限，
+ * v0.4.1 前声明 10 分钟实际也 ≥15 分钟且 lint 报警；提醒节奏语义（10 分钟一档、
+ * 最多 3 次）由 OverdueCheckWorker 按超时时长推导，与检查周期解耦。
+ *
+ * UPDATE 策略：老版本装过 10 分钟 spec 的设备升级时用新周期重建
+ * （KEEP 会永远保留旧的 10 分钟 spec）。
  *
  * WorkManager 初始化在 App.onCreate 里用 HiltWorkerFactory
  */
@@ -29,7 +33,7 @@ class OverdueWorkScheduler @Inject constructor(
 
     fun start() {
         val request = PeriodicWorkRequestBuilder<OverdueCheckWorker>(
-            repeatInterval = 10, repeatIntervalTimeUnit = TimeUnit.MINUTES,
+            repeatInterval = 15, repeatIntervalTimeUnit = TimeUnit.MINUTES,
         ).setConstraints(
             Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
@@ -37,7 +41,7 @@ class OverdueWorkScheduler @Inject constructor(
         ).build()
         workManager.enqueueUniquePeriodicWork(
             UNIQUE_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.UPDATE,
             request,
         )
     }

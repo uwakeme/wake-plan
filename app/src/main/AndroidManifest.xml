@@ -4,8 +4,9 @@
 
     <!-- 必要权限：v0.1 骨架先列出来，Phase 3 通知 / Phase 4 备份会真正用到 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 只声明 SCHEDULE_EXACT_ALARM（用户可撤回，scheduler 有 inexact 降级分支）；
+         USE_EXACT_ALARM 是自动授予但 Play 政策仅限闹钟/日历类核心应用，v0.4.1 移除 -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -23,10 +24,13 @@
         android:theme="@style/Theme.WakePlan"
         tools:targetApi="35">
 
+        <!-- singleTop：通知 / widget 的 PendingIntent 走 onNewIntent 复用实例，
+             不销毁重建（v0.4.1 前没设，CLEAR_TOP 会把导航栈整个打掉） -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.WakePlan.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -35,19 +39,15 @@
         </activity>
 
         <!-- 任务 starting 闹钟接收器 — Phase 3.2
-             exported=true 是因为 AlarmManager PendingIntent 需要 system 进程能 broadcast
-             （不是给其他 app 用的，Android 12+ 仍需要显式 exported flag） -->
+             PendingIntent 用显式 Intent（组件名匹配），exported=false 即可，
+             三方 app 无法伪造 ACTION_TASK_STARTING 触发伪造通知 -->
         <receiver
             android:name=".notification.StartingAlarmReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.wakeplan.app.ACTION_TASK_STARTING" />
-            </intent-filter>
-        </receiver>
+            android:exported="false" />
 
-        <!-- 系统重启 / 时间变更后重排 starting 闹钟 — v0.4
-             AlarmManager 闹钟不跨重启；BOOT_COMPLETED / TIME_SET / TIMEZONE_CHANGED
-             都是受保护广播（仅系统可发），exported=false 防三方伪造，系统投递不受影响 -->
+        <!-- 系统重启 / 时间变更 / App 更新后重排 starting 闹钟 — v0.4
+             AlarmManager 闹钟不跨重启与自更新；以下都是受保护广播（仅系统可发），
+             exported=false 防三方伪造，系统投递不受影响 -->
         <receiver
             android:name=".notification.BootReceiver"
             android:exported="false">
@@ -55,6 +55,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 

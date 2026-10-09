@@ -1,35 +1,43 @@
 package com.wakeplan.app.notification
 
+import androidx.room.withTransaction
+import com.wakeplan.app.data.db.WakePlanDatabase
 import com.wakeplan.app.data.prefs.UserPreferences
 import com.wakeplan.app.domain.repository.PlanRepository
 import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.domain.usecase.ScheduleManager
 import com.wakeplan.app.domain.usecase.TaskCompletionInstantiator
-import com.wakeplan.app.domain.usecase.TaskWindowCalculator
 import java.time.Clock
-import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
-import kotlin.math.abs
 
 /**
- * 当天调度刷新 — v0.4 从 TodayViewModel.ensureTodayCompletions 抽出
+ * 当天调度刷新 — v0.4 从 TodayViewModel.ensureTodayCompletions 抽出，v0.4.1 收敛职责
  *
- * 「补当天 PENDING 实例 + 同步任务窗口漂移 + 重排 starting 闹钟」一条链，两个入口共用：
- * - TodayViewModel：打开 App / 切回当天
- * - BootReceiver：系统重启 / 时间或时区变更后，AlarmManager 闹钟不存活，要静默重排
+ * 只做两件事（事务内补实例 + 重排闹钟）：
+ * 1. 给当天缺 PENDING 实例的任务补建（insertIfAbsent，不覆盖已有行）
+ * 2. 按当前偏好重排 starting 闹钟（scheduleAll 内部先全量取消再挂）
+ *
+ * 「任务定义变更后的窗口同步」不在这里做（v0.4 的时长漂移同步已移到
+ * TaskRepositoryImpl.update）——刷新可能由链式延期落库触发，若每次都把窗口
+ * 重置回任务定义，会把持久化的延期结果抹掉。
+ *
+ * 入口：
+ * - TodayViewModel：打开 App / 跨天翻日 / 完成任务后
+ * - BootReceiver：系统重启 / 时间或时区变更 / App 更新后
+ * - SettingsViewModel：通知偏好（lead / 开关）变更后
  */
 @Singleton
 class ScheduleRefresher @Inject constructor(
+    private val db: WakePlanDatabase,
     private val planRepository: PlanRepository,
     private val taskRepository: TaskRepository,
     private val taskCompletionRepository: TaskCompletionRepository,
     private val taskCompletionInstantiator: TaskCompletionInstantiator,
-    private val taskWindowCalculator: TaskWindowCalculator,
     private val scheduleManager: ScheduleManager,
     private val startingAlarmScheduler: StartingAlarmScheduler,
     private val userPreferences: UserPreferences,
@@ -40,47 +48,33 @@ class ScheduleRefresher @Inject constructor(
      * 刷新 [date]（一般是今天）的 completion 与 starting 闹钟
      */
     suspend fun refresh(date: LocalDate = LocalDate.now(clock)) {
-        val plans = planRepository.observeAll().first()
-        val tasks = taskRepository.observeAll().first()
-        val existing = taskCompletionRepository.observeByDate(date).first()
-        val existingTaskIds = existing.map { it.taskId }.toSet()
-        val existingByTaskId = existing.associateBy { it.taskId }
+        // 事务内补实例：BootReceiver 与 TodayViewModel 并发 refresh 时
+        // 不会对同一 (task_id, scheduled_date) 双插换 id（换 id 会让已挂闹钟失效）
+        db.withTransaction {
+            val plans = planRepository.observeAll().first()
+            val tasks = taskRepository.observeAll().first()
+            val existingTaskIds = taskCompletionRepository.observeByDate(date).first()
+                .map { it.taskId }.toSet()
 
-        // 归档计划不铺当天实例、不参与调度（v0.4）
-        plans.filter { it.isActive && !it.archived }.forEach { plan ->
-            val planTasks = tasks.filter { it.planId == plan.id }
-            val pending = taskCompletionInstantiator(
-                plan = plan,
-                tasks = planTasks,
-                date = date,
-            ).filter { it.taskId !in existingTaskIds }
-            pending.forEach { taskCompletionRepository.upsert(it) }
-
-            // 同步已存在 completion 的时间窗口（修复 picker bug 留下的跨日数据）
-            // 不限制 PENDING：COMPLETED/IN_PROGRESS 也修（只改 planned 时间，不动 status/actualStart/actualEnd）
-            planTasks.forEach { task ->
-                val old = existingByTaskId[task.id] ?: return@forEach
-                val window = taskWindowCalculator(task, date) ?: return@forEach
-                val plannedDuration = Duration.between(window.plannedStart, window.plannedEnd).toMinutes()
-                val storedDuration = Duration.between(old.plannedStart, old.plannedEnd).toMinutes()
-                val drift = abs(plannedDuration - storedDuration)
-                if (drift > 5) {
-                    taskCompletionRepository.upsert(
-                        old.copy(
-                            plannedStart = window.plannedStart,
-                            plannedEnd = window.plannedEnd,
-                        )
-                    )
-                }
+            // 归档计划不铺当天实例、不参与调度（v0.4）
+            plans.filter { it.isActive && !it.archived }.forEach { plan ->
+                taskCompletionInstantiator(
+                    plan = plan,
+                    tasks = tasks.filter { it.planId == plan.id },
+                    date = date,
+                )
+                    .filter { it.taskId !in existingTaskIds }
+                    .forEach { taskCompletionRepository.insertIfAbsent(it) }
             }
         }
+
         val todaysCompletions = taskCompletionRepository.observeByDate(date).first()
         val now = LocalDateTime.now(clock)
         val leadMinutes = userPreferences.taskStartingLeadMinutes.first()
         val startingEnabled = userPreferences.taskStartingEnabled.first()
         val plan = scheduleManager(
             completions = todaysCompletions,
-            tasks = tasks,
+            tasks = taskRepository.observeAll().first(),
             now = now,
             leadMinutes = leadMinutes,
             startingEnabled = startingEnabled,

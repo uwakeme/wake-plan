@@ -13,6 +13,7 @@ import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -78,7 +79,14 @@ class PlanListViewModelTest {
         updatedAt = Instant.parse("2026-08-20T00:00:00Z"),
     )
 
-    private fun viewModel() = PlanListViewModel(planRepo, taskRepo, taskCompletionRepo)
+    private val minuteTicker: com.wakeplan.app.domain.time.MinuteTicker = mockk {
+        every { now } returns flowOf(java.time.LocalDateTime.of(2026, 9, 11, 12, 0))
+    }
+
+    private fun viewModel() = PlanListViewModel(
+        planRepo, taskRepo, taskCompletionRepo, minuteTicker,
+        java.time.Clock.fixed(java.time.Instant.parse("2026-09-11T04:00:00Z"), java.time.ZoneOffset.UTC),
+    )
 
     @Test
     fun `plansWithStats 只含未归档，archivedPlans 只含已归档`() = runTest(testDispatcher) {

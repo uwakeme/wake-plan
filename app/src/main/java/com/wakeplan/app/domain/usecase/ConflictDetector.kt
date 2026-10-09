@@ -7,18 +7,17 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 
 /**
- * 任务时段冲突检测 — Phase 2.3
+ * 任务时段冲突检测 — Phase 2.3，v0.4.1 支持跨午夜跨日
  *
  * 用途：TodayScreen 当前活跃卡片标红 / 24h 时间线冲突高亮
  *
  * 规则：
- * - 半开区间 [start, end)：a.end == b.start 不算重叠（跟 DAO findOverlapping 保持一致）
+ * - 半开区间 [start, end)：a.end == b.start 不算重叠
  * - 跨 plan：合并所有 plan 的任务，统一查冲突
  * - SKIPPED 不参与（用户主动跳过，不警告）
  * - COMPLETED / IN_PROGRESS / PENDING 都参与（已经完成的撞了也要标红告诉用户"刚才撞了"）
- *
- * 段冲突：使用 TimeSegmentDao.findOverlapping（已在 SegmentEditorScreen 用过），
- *        本 UseCase 不重复造轮。
+ * - 跨日边界：按"时间窗与 [date, date+1) 相交"筛选候选——昨天 23:00–今天 00:30 的
+ *   跨午夜尾巴与今天 00:00–01:00 的任务也判重叠（v0.4.1 前只比 scheduledDate，永远漏掉）
  */
 data class TaskConflict(
     val taskA: TaskCompletion,
@@ -42,8 +41,13 @@ class ConflictDetector @Inject constructor() {
         completions: List<TaskCompletion>,
         date: LocalDate,
     ): List<TaskConflict> {
+        val dayStart = date.atStartOfDay()
+        val dayEnd = dayStart.plusDays(1)
         val candidates = completions
-            .filter { it.scheduledDate == date && it.status != TaskStatus.SKIPPED }
+            .filter {
+                it.status != TaskStatus.SKIPPED &&
+                    it.plannedEnd.isAfter(dayStart) && it.plannedStart.isBefore(dayEnd)
+            }
             .sortedBy { it.plannedStart }
 
         if (candidates.size < 2) return emptyList()

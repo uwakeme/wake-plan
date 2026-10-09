@@ -19,6 +19,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import androidx.room.withTransaction
 import io.mockk.slot
 import java.time.Clock
 import java.time.Instant
@@ -58,12 +59,22 @@ class ScheduleRefresherTest {
     /** 模拟 DB：upsert 会写进去，observeByDate 读的是同一份（真实 refresh 是"先铺再重读"） */
     private val completionStore = MutableStateFlow<List<TaskCompletion>>(emptyList())
 
+    // withTransaction 静态直通（与 TemplateRepositoryImplTest 同款）
+    private val db: com.wakeplan.app.data.db.WakePlanDatabase = mockk()
+
+    init {
+        io.mockk.mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery { db.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            secondArg<suspend () -> Any?>().invoke()
+        }
+    }
+
     private fun refresher() = ScheduleRefresher(
+        db = db,
         planRepository = planRepository,
         taskRepository = taskRepository,
         taskCompletionRepository = taskCompletionRepository,
         taskCompletionInstantiator = TaskCompletionInstantiator(TaskWindowCalculator()),
-        taskWindowCalculator = TaskWindowCalculator(),
         scheduleManager = ScheduleManager(),
         startingAlarmScheduler = startingAlarmScheduler,
         userPreferences = userPreferences,
@@ -112,7 +123,14 @@ class ScheduleRefresherTest {
         completionStore.value = completions
         every { taskCompletionRepository.observeByDate(date) } returns completionStore
         coEvery { taskCompletionRepository.upsert(any()) } coAnswers {
-            completionStore.value = completionStore.value + firstArg<TaskCompletion>()
+            completionStore.value = completionStore.value.filterNot { it.taskId == firstArg<TaskCompletion>().taskId && it.scheduledDate == firstArg<TaskCompletion>().scheduledDate } + firstArg<TaskCompletion>()
+            Unit
+        }
+        coEvery { taskCompletionRepository.insertIfAbsent(any()) } coAnswers {
+            val newOne = firstArg<TaskCompletion>()
+            if (completionStore.value.none { it.taskId == newOne.taskId && it.scheduledDate == newOne.scheduledDate }) {
+                completionStore.value = completionStore.value + newOne
+            }
             Unit
         }
     }
@@ -126,7 +144,7 @@ class ScheduleRefresherTest {
         refresher().refresh(date)
 
         coVerify(exactly = 1) {
-            taskCompletionRepository.upsert(match {
+            taskCompletionRepository.insertIfAbsent(match {
                 it.taskId == "task-1" && it.planId == "plan-1" &&
                     it.status == TaskStatus.PENDING &&
                     it.plannedStart == date.atTime(6, 0) &&
@@ -143,7 +161,7 @@ class ScheduleRefresherTest {
 
         refresher().refresh(date)
 
-        coVerify(exactly = 0) { taskCompletionRepository.upsert(any()) }
+        coVerify(exactly = 0) { taskCompletionRepository.insertIfAbsent(any()) }
     }
 
     @Test
@@ -154,7 +172,7 @@ class ScheduleRefresherTest {
 
         refresher().refresh(date)
 
-        coVerify(exactly = 0) { taskCompletionRepository.upsert(any()) }
+        coVerify(exactly = 0) { taskCompletionRepository.insertIfAbsent(any()) }
         coVerify(exactly = 1) {
             startingAlarmScheduler.scheduleAll(match { it.startingTriggers.isEmpty() })
         }
@@ -169,27 +187,23 @@ class ScheduleRefresherTest {
 
         refresher().refresh(date)
 
-        coVerify(exactly = 0) { taskCompletionRepository.upsert(any()) }
+        coVerify(exactly = 0) { taskCompletionRepository.insertIfAbsent(any()) }
     }
 
     @Test
-    fun `已有 completion 窗口漂移超过 5 分钟 — 同步为新窗口`() = runTest {
+    fun `v0_4_1 refresh 不重写已有窗口 — 漂移同步移到 TaskRepository_update`() = runTest {
         val p = plan("plan-1")
-        // 任务改成 6:00-7:00（时长 60），旧 completion 是 6:00-6:30（时长 30），漂移 30 分钟
+        // 任务定义 6:00-7:00（时长 60），旧 completion 6:00-6:30（时长 30）。
+        // refresh 不再同步窗口——否则会把链式延期落库的位移抹掉；
+        // 同步职责在 TaskRepositoryImpl.update（任务定义变更时才执行）
         val t = task("task-1", "plan-1", startMinutes = 360, endMinutes = 420)
         val existing = completion("comp-1", "task-1", "plan-1")
         stubData(plans = listOf(p), tasks = listOf(t), completions = listOf(existing))
 
         refresher().refresh(date)
 
-        coVerify(exactly = 1) {
-            taskCompletionRepository.upsert(match {
-                it.id == "comp-1" &&
-                    it.plannedStart == date.atTime(6, 0) &&
-                    it.plannedEnd == date.atTime(7, 0) &&
-                    it.status == TaskStatus.PENDING
-            })
-        }
+        coVerify(exactly = 0) { taskCompletionRepository.upsert(any()) }
+        coVerify(exactly = 0) { taskCompletionRepository.insertIfAbsent(any()) }
     }
 
     @Test

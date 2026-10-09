@@ -18,8 +18,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -39,6 +40,8 @@ class PlanDetailViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
     private val completionRepository: TaskCompletionRepository,
     private val conflictDetector: ConflictDetector,
+    minuteTicker: com.wakeplan.app.domain.time.MinuteTicker,
+    private val clock: java.time.Clock,
 ) : ViewModel() {
 
     val planId: String = checkNotNull(savedStateHandle.get<String>(ARG_PLAN_ID)) {
@@ -53,28 +56,41 @@ class PlanDetailViewModel @Inject constructor(
 
     /**
      * 今天本计划任务参与的时间冲突（taskId → 首个冲突）— v0.4 内联冲突标注
-     * 跨 plan 检测（拿全天 completion 合并算），只保留涉及本计划的
+     * 跨 plan 检测（拿全天 completion 合并算），只保留涉及本计划的。
+     * v0.4.1：数据源含昨天跨午夜尾巴 + 日期随时间翻页（之前构造时固化 LocalDate.now()）
      */
-    val todayConflicts: StateFlow<Map<String, TaskConflict>> = combine(
-        taskRepository.observeByPlan(planId),
-        completionRepository.observeByDate(LocalDate.now()),
-    ) { planTasks, todayCompletions ->
-        if (planTasks.isEmpty()) return@combine emptyMap()
-        val planTaskIds = planTasks.map { it.id }.toSet()
-        val result = linkedMapOf<String, TaskConflict>()
-        conflictDetector(todayCompletions, LocalDate.now()).forEach { c ->
-            if (c.taskA.taskId in planTaskIds) result.putIfAbsent(c.taskA.taskId, c)
-            if (c.taskB.taskId in planTaskIds) result.putIfAbsent(c.taskB.taskId, c)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val todayConflicts: StateFlow<Map<String, TaskConflict>> = minuteTicker.now
+        .map { it.toLocalDate() }
+        .distinctUntilChanged()
+        .flatMapLatest { today ->
+            combine(
+                taskRepository.observeByPlan(planId),
+                completionRepository.observeByDateRangeInclusive(today.minusDays(1), today),
+            ) { planTasks, rangeCompletions ->
+                val todayStart = today.atStartOfDay()
+                val todayCompletions = rangeCompletions.filter {
+                    it.scheduledDate == today || it.plannedEnd.isAfter(todayStart)
+                }
+                if (planTasks.isEmpty()) return@combine emptyMap<String, TaskConflict>()
+                val planTaskIds = planTasks.map { it.id }.toSet()
+                val result = linkedMapOf<String, TaskConflict>()
+                conflictDetector(todayCompletions, today).forEach { c ->
+                    if (c.taskA.taskId in planTaskIds) result.putIfAbsent(c.taskA.taskId, c)
+                    if (c.taskB.taskId in planTaskIds) result.putIfAbsent(c.taskB.taskId, c)
+                }
+                result
+            }
         }
-        result
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     private val _stats = MutableStateFlow(PlanDetailStats())
     val stats: StateFlow<PlanDetailStats> = _stats.asStateFlow()
 
     init {
         viewModelScope.launch {
-            val today = LocalDate.now()
+            // 每次发射时取当前日期（跨午夜后周/总统计跟着走）
+            val today = LocalDate.now(clock)
             val weekStart = today.with(DayOfWeek.MONDAY)
 
             completionRepository.observeByPlanAndDate(planId, today).collect { todayCompletions ->

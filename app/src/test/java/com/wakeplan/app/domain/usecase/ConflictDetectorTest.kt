@@ -172,10 +172,30 @@ class ConflictDetectorTest {
 
         @Test
         fun `不同日期 — 不参与冲突检查`() {
+            // b 是明天同时段的实例（时间窗落在明天，与今天不相交）
             val a = completion("c-A", "t-A", start = date.atTime(9, 0), end = date.atTime(10, 0), scheduledDate = date)
-            val b = completion("c-B", "t-B", start = date.atTime(9, 30), end = date.atTime(10, 30), scheduledDate = otherDate)
+            val b = completion("c-B", "t-B", start = otherDate.atTime(9, 30), end = otherDate.atTime(10, 30), scheduledDate = otherDate)
             val conflicts = detector(listOf(a, b), date)
             assertTrue(conflicts.isEmpty())
+        }
+
+        @Test
+        fun `昨天跨午夜尾巴与今天凌晨任务 — 判冲突（v0_4_1 修正）`() {
+            // 昨天 23:00–今天 00:30 的跨午夜任务（scheduledDate=昨天）
+            // 今天 00:00–01:00 的任务
+            // v0.4.1 前按 scheduledDate == date 过滤，这对冲突永远查不出来
+            val yesterday = date.minusDays(1)
+            val a = completion(
+                "c-A", "t-A",
+                start = yesterday.atTime(23, 0), end = date.atTime(0, 30),
+                scheduledDate = yesterday,
+            )
+            val b = completion("c-B", "t-B", start = date.atTime(0, 0), end = date.atTime(1, 0))
+            val conflicts = detector(listOf(a, b), date)
+            assertEquals(1, conflicts.size)
+            assertEquals(date.atTime(0, 0), conflicts.single().overlapStart)
+            assertEquals(date.atTime(0, 30), conflicts.single().overlapEnd)
+            assertEquals(30, conflicts.single().overlapMinutes)
         }
     }
 

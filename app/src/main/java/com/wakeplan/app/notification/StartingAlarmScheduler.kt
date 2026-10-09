@@ -26,9 +26,13 @@ class StartingAlarmScheduler @Inject constructor(
 ) {
     private val alarmManager: AlarmManager? = context.getSystemService()
 
+    /** 本进程内通过 scheduleAll 挂过的 requestCode 集合——cancelAll 用它精确反注册 */
+    private val scheduledRequestCodes: MutableSet<Int> =
+        java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
+
     /**
      * 调度所有 starting trigger
-     * 已有 pending alarm 通过 cancelAllStartingAlarms 清理
+     * 先全量取消本进程挂过的闹钟再挂新的——偏好关闭 / 计划变化后旧闹钟不会残留
      */
     fun scheduleAll(plan: SchedulePlan) {
         val mgr = alarmManager ?: return
@@ -54,22 +58,39 @@ class StartingAlarmScheduler @Inject constructor(
                 // Android 12+ 偶尔 throw（用户授权 race condition）— 降级
                 mgr.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi)
             }
+            scheduledRequestCodes.add(requestCodeFor(trigger.completionId))
         }
     }
 
     /** 取消某个 completion 的 starting alarm（用户点了"开始" / "跳过" / 任务已 COMPLETED） */
     fun cancelStartingAlarm(completionId: String) {
-        val mgr = alarmManager ?: return
-        val pi = buildPendingIntent(StartingTrigger(completionId, java.time.LocalDateTime.now()))
-        mgr.cancel(pi)
+        cancelPendingIntent(requestCodeFor(completionId))
+        scheduledRequestCodes.remove(requestCodeFor(completionId))
     }
 
-    /** 全量取消（重新 schedule 前调用） */
+    /**
+     * 全量取消（重新 schedule / 用户关闭 starting 偏好时调用）。
+     * v0.4.1 实装：之前是空实现，关闭提醒开关后已挂闹钟照响。
+     * 进程重启后本集合为空，残留闹钟由 Receiver 的 PENDING 状态守卫静默吞掉。
+     */
     fun cancelAllStartingAlarms() {
+        scheduledRequestCodes.forEach { cancelPendingIntent(it) }
+        scheduledRequestCodes.clear()
+    }
+
+    /** 按 requestCode 取消闹钟——extras 不参与 Intent 匹配，action+component 相同即可 */
+    private fun cancelPendingIntent(requestCode: Int) {
         val mgr = alarmManager ?: return
-        // 用同一个 requestCode = 0 取消"上一次批量 schedule 时挂的"——但我们没有
-        // 简单做法：靠 OS 重启后 PendingIntent 失效，运行时只能按 completionId 取消
-        // 这里不实现 — 调度策略保证 scheduleAll 内部幂等（同一个 completionId 会被覆盖）
+        val intent = Intent(context, StartingAlarmReceiver::class.java).apply {
+            action = ACTION_TASK_STARTING
+        }
+        val pi = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+        )
+        if (pi != null) mgr.cancel(pi)
     }
 
     private fun buildPendingIntent(trigger: StartingTrigger): PendingIntent {

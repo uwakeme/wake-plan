@@ -41,7 +41,9 @@ import org.junit.jupiter.api.Test
 class PlanDetailViewModelConflictTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val today = LocalDate.now()
+    // 与注入 VM 的固定 clock / minuteTicker 对齐（v0.4.1 前用 LocalDate.now()，
+    // VM 构造快照恰好也是 now 才碰巧通过）
+    private val today = LocalDate.of(2026, 9, 11)
 
     private val planRepo: PlanRepository = mockk(relaxed = true)
     private val taskRepo: TaskRepository = mockk(relaxed = true)
@@ -71,12 +73,18 @@ class PlanDetailViewModelConflictTest {
             status = TaskStatus.PENDING,
         )
 
+    private val minuteTicker: com.wakeplan.app.domain.time.MinuteTicker = mockk {
+        every { now } returns flowOf(java.time.LocalDateTime.of(2026, 9, 11, 12, 0))
+    }
+
     private fun viewModel() = PlanDetailViewModel(
         savedStateHandle = SavedStateHandle(mapOf(PlanDetailViewModel.ARG_PLAN_ID to "p1")),
         planRepository = planRepo,
         taskRepository = taskRepo,
         completionRepository = completionRepo,
         conflictDetector = ConflictDetector(),
+        minuteTicker = minuteTicker,
+        clock = java.time.Clock.fixed(java.time.Instant.parse("2026-09-11T04:00:00Z"), java.time.ZoneOffset.UTC),
     )
 
     @Test
@@ -84,7 +92,7 @@ class PlanDetailViewModelConflictTest {
         every { taskRepo.observeByPlan("p1") } returns flowOf(
             listOf(task("a", start = 9 * 60, end = 9 * 60 + 30), task("b", start = 9 * 60 + 15, end = 10 * 60))
         )
-        every { completionRepo.observeByDate(any()) } returns flowOf(
+        every { completionRepo.observeByDateRangeInclusive(any(), any()) } returns flowOf(
             listOf(
                 completion("ca", "a", "p1", "09:00", "09:30"),
                 completion("cb", "b", "p1", "09:15", "10:00"),
@@ -109,7 +117,7 @@ class PlanDetailViewModelConflictTest {
             listOf(task("a", start = 8 * 60, end = 9 * 60))
         )
         // 其他计划两个任务重叠，且与"a"不重叠
-        every { completionRepo.observeByDate(any()) } returns flowOf(
+        every { completionRepo.observeByDateRangeInclusive(any(), any()) } returns flowOf(
             listOf(
                 completion("ca", "a", "p1", "08:00", "09:00"),
                 completion("cx", "x", "p2", "12:00", "13:00"),

@@ -12,6 +12,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -35,28 +37,35 @@ class PlanListViewModel @Inject constructor(
     private val planRepository: PlanRepository,
     private val taskRepository: TaskRepository,
     private val taskCompletionRepository: TaskCompletionRepository,
+    minuteTicker: com.wakeplan.app.domain.time.MinuteTicker,
+    private val clock: java.time.Clock,
 ) : ViewModel() {
 
     /**
      * 计划 + 统计聚合（喂给 PlanCard）
      *
-     * 三流合并：
-     *   - plans：所有 plan
-     *   - tasks：所有 task（按 planId 聚合用）
-     *   - completions：今日所有 TaskCompletion
+     * 日期流每分钟采样翻页（v0.4.1）——之前 observeByDate(LocalDate.now())
+     * 在 VM 构造时固化，跨午夜后"今日统计"一直按昨天算
      */
-    private val allWithStats: StateFlow<List<PlanCardData>> = combine(
-        planRepository.observeAll(),
-        taskRepository.observeAll(),
-        taskCompletionRepository.observeByDate(LocalDate.now()),
-    ) { plans: List<Plan>, tasks, completions: List<TaskCompletion> ->
-        val tasksById = tasks.associateBy { it.id }
-        plans.map { plan -> plan.toCardData(tasks, tasksById, completions) }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = emptyList(),
-    )
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val allWithStats: StateFlow<List<PlanCardData>> = minuteTicker.now
+        .map { it.toLocalDate() }
+        .distinctUntilChanged()
+        .flatMapLatest { today ->
+            combine(
+                planRepository.observeAll(),
+                taskRepository.observeAll(),
+                taskCompletionRepository.observeByDate(today),
+            ) { plans: List<Plan>, tasks, completions: List<TaskCompletion> ->
+                val tasksById = tasks.associateBy { it.id }
+                plans.map { plan -> plan.toCardData(tasks, tasksById, completions) }
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
 
     /** 活跃计划（不含归档） */
     val plansWithStats: StateFlow<List<PlanCardData>> = allWithStats

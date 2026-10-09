@@ -66,7 +66,6 @@ class TodayWidgetProvider : AppWidgetProvider() {
     }
     companion object {
         const val EXTRA_NAV_TO_TODAY = "com.wakeplan.app.NAV_TO_TODAY"
-        val DATE_FMT = DateTimeFormatter.ofPattern("M月d日")
         val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm")
     }
 }
@@ -90,17 +89,22 @@ internal suspend fun buildTodayWidgetViews(context: Context): RemoteViews {
     views.setOnClickPendingIntent(R.id.widget_title, pending)
     views.setOnClickPendingIntent(R.id.widget_next_task, pending)
 
-    // 拉数据
+    // 拉数据：含昨天的跨午夜尾巴（plannedEnd 落在今天 00:00 之后）
     val entry = EntryPointAccessors.fromApplication(context, TodayWidgetProvider.WidgetEntryPoint::class.java)
     val today = LocalDate.now()
-    val completions = entry.taskCompletionRepository().observeByDate(today).first()
+    val todayStart = today.atStartOfDay()
+    val completions = entry.taskCompletionRepository()
+        .observeByDateRangeInclusive(today.minusDays(1), today).first()
+        .filter { it.scheduledDate == today || it.plannedEnd.isAfter(todayStart) }
     val plans = entry.planRepository().observeAll().first().filter { it.isActive && !it.archived }
     val taskCount = completions.count { it.status != TaskStatus.SKIPPED }
     val now = LocalDateTime.now()
     val progressPct = ((now.hour * 60 + now.minute) * 100) / (24 * 60)
 
-    // 标题：今日 + 日期
-    val dateStr = today.format(TodayWidgetProvider.DATE_FMT)
+    // 标题：今日 + 日期（pattern 走 strings，跟随 App 语言）
+    val dateStr = today.format(
+        DateTimeFormatter.ofPattern(context.getString(R.string.widget_date_pattern)),
+    )
     views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_title) + " " + dateStr)
 
     // 进度
@@ -117,9 +121,10 @@ internal suspend fun buildTodayWidgetViews(context: Context): RemoteViews {
         else context.getString(R.string.widget_task_count_n, taskCount),
     )
 
-    // 下一个 PENDING 任务（按 plannedStart 升序）
+    // 下一任务：还没开始的 PENDING（plannedStart 在未来）；
+    // 之前把已过期 PENDING / 进行中的任务也标成"下一任务 HH:mm"，显示过去的时间
     val nextTask = completions
-        .filter { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS }
+        .filter { it.status == TaskStatus.PENDING && it.plannedStart.isAfter(now) }
         .minByOrNull { it.plannedStart }
     if (nextTask != null) {
         val taskId = nextTask.taskId
