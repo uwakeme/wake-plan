@@ -1,36 +1,34 @@
 package com.wakeplan.app.data.db
 
-import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Room Migration 测试 — Phase 6.2 v0.3
+ * Room Migration 测试 — v0.4.1 重写
  *
- * 用 androidx.room.testing.MigrationTestHelper：
- * - 用 v1 schema 启动 DB（拿 WakePlanDatabase_Impl + v1 schema JSON）
- * - 插 v1 数据
- * - 跑 MIGRATION_1_2 升到 v2
- * - 验证：
- *   1) v2 schema 里 plans 表有 archived 列
- *   2) v1 数据完整保留
- *   3) archived 默认 = 0
+ * 覆盖全链路 v1 → v4：
+ * - MIGRATION_1_2：plans 加 archived
+ * - MIGRATION_2_3：砍 time_segments、重建扁平 tasks、清 task_completions（既定决策）
+ * - MIGRATION_3_4：tasks 加 created_epoch_day（ONCE 只创建日生效）
  *
- * **重要**：因为生产用 SQLCipher，这里手动用 SupportOpenHelperFactory(passphrase) 验证真实路径
- * （FrameworkSQLiteOpenHelperFactory 只能验证 Room 框架层 migration；SQLCipher 路径要单独跑）
+ * schema JSON 通过 androidTest assets（build.gradle.kts sourceSets 挂 $projectDir/schemas）
+ * 供 MigrationTestHelper 读取；runMigrationsAndValidate 返回的 db 直接断言，
+ * 不做二次 open（避免明文/密文 factory 混用）。
+ *
+ * 背景：v0.3.1 删除 MIGRATION_1_2 后本文件引用悬空符号无法编译；v0.4.1 恢复
+ * 1→2 迁移并补齐 2→3、3→4，DatabaseModule 接 addMigrations、拆 destructive fallback。
  */
 @RunWith(AndroidJUnit4::class)
 class WakePlanDatabaseMigrationTest {
 
     private val TEST_DB_NAME = "wakeplan-migration-test.db"
-    private val TEST_PASSPHRASE = "test-passphrase-for-migration".toByteArray()
 
     @get:Rule
     val helper = MigrationTestHelper(
@@ -39,85 +37,89 @@ class WakePlanDatabaseMigrationTest {
     )
 
     @Test
-    fun v1_to_v2_preserves_data_and_adds_archived_column() {
-        // 1. 用 v1 schema 创建 DB
+    fun migrate_1_to_4_preserves_plans_rebuilds_flat_tasks() {
         helper.createDatabase(TEST_DB_NAME, 1).apply {
-            // 2. 插入 v1 数据（无 archived 字段）
             execSQL(
                 """
                 INSERT INTO plans (id, title, color_hex, start_date, is_active, created_at, updated_at)
                 VALUES ('plan-1', '健身', '#C48520', '2026-08-10', 1, 1723296000000, 1723296000000)
                 """.trimIndent(),
             )
+            // v1 三层模型数据：segment + 挂 segment 的 task + completion
             execSQL(
                 """
-                INSERT INTO plans (id, title, color_hex, start_date, is_active, created_at, updated_at)
-                VALUES ('plan-2', '学习', '#3B6FB5', '2026-08-10', 1, 1723296000000, 1723296000000)
+                INSERT INTO time_segments (id, plan_id, title, start_minutes, end_minutes, repeat_rule, custom_days)
+                VALUES ('seg-1', 'plan-1', '早晨', 360, 420, 'DAILY', '')
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO tasks (id, segment_id, title, planned_duration_minutes, auto_extend, is_locked, order_in_segment)
+                VALUES ('task-1', 'seg-1', '晨跑', 30, 1, 0, 0)
                 """.trimIndent(),
             )
             close()
         }
 
-        // 3. 跑 v1→v2 migration
-        helper.runMigrationsAndValidate(TEST_DB_NAME, 2, true, WakePlanDatabase.MIGRATION_1_2)
+        val db = helper.runMigrationsAndValidate(
+            TEST_DB_NAME, 4, true,
+            WakePlanDatabase.MIGRATION_1_2,
+            WakePlanDatabase.MIGRATION_2_3,
+            WakePlanDatabase.MIGRATION_3_4,
+        )
 
-        // 4. 验证 v1 数据完整保留
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val db = Room.databaseBuilder(context, WakePlanDatabase::class.java, TEST_DB_NAME)
-            .addMigrations(WakePlanDatabase.MIGRATION_1_2)
-            .openHelperFactory(SupportOpenHelperFactory(TEST_PASSPHRASE))
-            .build()
-
-        val cursor = db.openHelper.readableDatabase.query("SELECT id, title, archived FROM plans ORDER BY id")
-        val rows = mutableListOf<Triple<String, String, Long>>()
-        cursor.use { c ->
-            while (c.moveToNext()) {
-                rows.add(Triple(c.getString(0), c.getString(1), c.getLong(2)))
-            }
+        // plans 全保留 + archived 默认 0
+        db.query("SELECT id, title, archived FROM plans").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("plan-1", c.getString(0))
+            assertEquals("健身", c.getString(1))
+            assertEquals(0L, c.getLong(2))
+            assertFalse(c.moveToNext())
         }
-
-        // v1 数据全部保留 + archived 默认 0
-        assertEquals("应保留 2 条 plan", 2, rows.size)
-        assertEquals("plan-1 保留", Triple("plan-1", "健身", 0L), rows[0])
-        assertEquals("plan-2 保留", Triple("plan-2", "学习", 0L), rows[1])
-
-        db.close()
+        // 扁平化决策：旧 tasks（segment 维度）清空、time_segments 消失、completion 清空
+        db.query("SELECT COUNT(*) FROM tasks").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+        }
+        db.query("SELECT COUNT(*) FROM task_completions").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+        }
+        db.query(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='time_segments'",
+        ).use { c ->
+            assertFalse("time_segments 表应已删除", c.moveToFirst())
+        }
     }
 
     @Test
-    fun v2_schema_has_archived_column() {
-        // 1. 用 v1 schema 创建 DB（空）
-        helper.createDatabase(TEST_DB_NAME, 1).apply { close() }
-
-        // 2. 跑 migration
-        helper.runMigrationsAndValidate(TEST_DB_NAME, 2, true, WakePlanDatabase.MIGRATION_1_2)
-
-        // 3. 验证 schema 有 archived 列
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val db = Room.databaseBuilder(context, WakePlanDatabase::class.java, TEST_DB_NAME)
-            .addMigrations(WakePlanDatabase.MIGRATION_1_2)
-            .openHelperFactory(SupportOpenHelperFactory(TEST_PASSPHRASE))
-            .build()
-
-        val cursor = db.openHelper.readableDatabase.query("PRAGMA table_info(plans)")
-        val columns = mutableListOf<String>()
-        cursor.use { c ->
-            while (c.moveToNext()) {
-                columns.add(c.getString(1))  // column name
-            }
+    fun migrate_3_to_4_adds_created_epoch_day_defaulting_zero() {
+        helper.createDatabase(TEST_DB_NAME + "-v3", 3).apply {
+            execSQL(
+                """
+                INSERT INTO plans (id, title, color_hex, start_date, is_active, created_at, updated_at, archived)
+                VALUES ('plan-9', '学习', '#3B6FB5', '2026-09-01', 1, 1725148800000, 1725148800000, 0)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO tasks (id, plan_id, title, start_minutes, end_minutes, repeat_rule, custom_days, is_locked, order_in_plan)
+                VALUES ('task-9', 'plan-9', '阅读', 540, 600, 'ONCE', '', 0, 0)
+                """.trimIndent(),
+            )
+            close()
         }
 
-        assertTrue(
-            "plans 表必须有 archived 列；实际有：$columns",
-            columns.contains("archived"),
-        )
-        assertEquals(
-            "plans 表列数 8（含 archived）",
-            listOf("id", "title", "color_hex", "start_date", "is_active",
-                "created_at", "updated_at", "archived"),
-            columns,
+        val db = helper.runMigrationsAndValidate(
+            TEST_DB_NAME + "-v3", 4, true,
+            WakePlanDatabase.MIGRATION_3_4,
         )
 
-        db.close()
+        // 旧行 created_epoch_day 默认 0（ONCE 兼容旧行为：每天生效）
+        db.query("SELECT id, created_epoch_day FROM tasks").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("task-9", c.getString(0))
+            assertEquals(0L, c.getLong(1))
+        }
     }
 }

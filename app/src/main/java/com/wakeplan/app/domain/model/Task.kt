@@ -27,6 +27,12 @@ data class Task(
     /** true = 钉死，链式延期到此停止 */
     val isLocked: Boolean = false,
 
+    /**
+     * 建任务那天的 epochDay。ONCE 任务只在这一天生效（PRD AC-02.2）；
+     * 0 = schema v3 旧行（迁移默认值），ONCE 语义退化为每天（保持旧行为兼容）
+     */
+    val createdEpochDay: Long = 0L,
+
     @get:JvmName("getOrderInPlan")
     val orderInPlan: Int,
     val note: String? = null,

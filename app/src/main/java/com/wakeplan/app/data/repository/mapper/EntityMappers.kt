@@ -6,7 +6,6 @@ import com.wakeplan.app.data.db.entity.TaskCompletionEntity
 import com.wakeplan.app.data.db.entity.TaskEntity
 import com.wakeplan.app.domain.model.Plan
 import com.wakeplan.app.domain.model.PlanTemplate
-import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TaskCompletion
 
@@ -46,6 +45,7 @@ fun TaskEntity.toDomain(): Task = Task(
     repeatRule = repeatRule,
     customDays = customDays,
     isLocked = isLocked,
+    createdEpochDay = createdEpochDay,
     orderInPlan = orderInPlan,
     note = note,
 )
@@ -59,20 +59,9 @@ fun Task.toEntity(): TaskEntity = TaskEntity(
     repeatRule = repeatRule,
     customDays = customDays,
     isLocked = isLocked,
+    createdEpochDay = createdEpochDay,
     orderInPlan = orderInPlan,
     note = note,
-)
-
-/**
- * v0.3 砍段后，Task 字段不再带 repeatRule 推断逻辑
- * 这里显式按 RepeatRule.CUSTOM 决定 customDays 是否保留
- */
-private fun Task.normalizedCustomDays(): Set<java.time.DayOfWeek> =
-    if (repeatRule == RepeatRule.CUSTOM) customDays else emptySet()
-
-@Suppress("unused")
-private fun Task.entityWithNormalizedCustomDays(): TaskEntity = toEntity().copy(
-    customDays = normalizedCustomDays(),
 )
 
 fun PlanTemplateEntity.toDomain(): PlanTemplate = PlanTemplate(

@@ -26,10 +26,10 @@ import javax.inject.Singleton
  * - SupportOpenHelperFactory 拿 passphrase 打开加密 DB
  * - App.onCreate 同步 bootstrap（runBlocking < 100ms，OK on cold start）
  *
- * **数据迁移**：
- * - v0.3 schema v3：time_segments 表删除，tasks 字段重定义。
- *   v0.2 → v0.3 alpha 用户数据清零，fallbackToDestructiveMigration 兜底。
- *   真实 release 前再写 proper Migration。
+ * **数据迁移（v0.4.1 起）**：
+ * - 升级迁移全部显式声明（见 [WakePlanDatabase.ALL_MIGRATIONS]），缺路径直接抛错，
+ *   不再 fallbackToDestructiveMigration 静默清库
+ * - 仅降级（debug 装旧版本）允许破坏性重建
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -50,8 +50,9 @@ object DatabaseModule {
             WakePlanDatabase.DB_NAME,
         )
             .openHelperFactory(factory)
-            // v0.3 alpha：缺 Migration 时 dropAndRecreate 清表重建
-            .fallbackToDestructiveMigration()
+            .addMigrations(*WakePlanDatabase.ALL_MIGRATIONS)
+            // debug 降级安装时允许清库；升级永远走显式 Migration
+            .fallbackToDestructiveMigrationOnDowngrade()
             .build()
     }
 

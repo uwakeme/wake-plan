@@ -14,7 +14,7 @@ import javax.inject.Inject
  * 跨午夜：endMinutes > 1440 表示延续到次日（例 startMinutes=23*60, endMinutes=25*60
  *   → plannedStart=当天 23:00, plannedEnd=次日 01:00；LocalDateTime.plusMinutes 自动跨日）
  *
- * v0.1 ONCE 段按 DAILY 行为处理：每天都生成 PENDING。
+ * v0.4.1 起 ONCE 按 PRD AC-02.2 处理：只在 createdEpochDay 当天生效（旧行退化为 DAILY）。
  */
 data class PlannedWindow(
     val plannedStart: LocalDateTime,
@@ -36,7 +36,9 @@ class TaskWindowCalculator @Inject constructor() {
 
     private fun isActiveOn(task: Task, date: LocalDate): Boolean =
         when (task.repeatRule) {
-            RepeatRule.ONCE -> true
+            // ONCE 只在建任务那天生效；createdEpochDay=0 是 schema v3 迁移旧行，
+            // 找不回原始创建日，保持旧版"每天"行为兜底（v0.4.1 前建的 ONCE 任务不受影响）
+            RepeatRule.ONCE -> task.createdEpochDay == 0L || task.createdEpochDay == date.toEpochDay()
             RepeatRule.WEEKDAYS -> date.dayOfWeek in WEEKDAYS
             RepeatRule.DAILY -> true
             RepeatRule.CUSTOM -> task.customDays.isNotEmpty() && date.dayOfWeek in task.customDays

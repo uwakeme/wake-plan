@@ -31,17 +31,36 @@ class TaskWindowCalculatorTest {
     @DisplayName("RepeatRule.ONCE")
     inner class OnceRule {
         @Test
-        fun `ONCE task v0_1 临时按 DAILY 行为 — 任意日期都生效`() {
+        fun `ONCE 只在 createdEpochDay 当天生效 — 其他日期不生成实例（v0_4_1 修正）`() {
+            val createdDay = monday.toEpochDay()
             val task = taskOf(
                 id = "t-1",
                 startMinutes = 9 * 60,
                 endMinutes = 10 * 60,
                 repeatRule = RepeatRule.ONCE,
+                createdEpochDay = createdDay,
             )
             val window = calculator(task, monday)
             assertNotNull(window)
             assertEquals(monday.atTime(9, 0), window!!.plannedStart)
             assertEquals(monday.atTime(10, 0), window.plannedEnd)
+            // 第二天/上周都不再生成（快速录入的临时任务不复活）
+            assertNull(calculator(task, monday.plusDays(1)))
+            assertNull(calculator(task, monday.minusDays(7)))
+        }
+
+        @Test
+        fun `ONCE 旧数据兼容 — createdEpochDay=0 的迁移行退化为每天生效`() {
+            val task = taskOf(
+                id = "t-legacy",
+                startMinutes = 9 * 60,
+                endMinutes = 10 * 60,
+                repeatRule = RepeatRule.ONCE,
+                createdEpochDay = 0L,
+            )
+            listOf(monday, saturday).forEach { date ->
+                assertNotNull(calculator(task, date), "旧行 $date 应保持每天生效")
+            }
         }
     }
 
@@ -196,6 +215,7 @@ class TaskWindowCalculatorTest {
         customDays: Set<DayOfWeek> = emptySet(),
         isLocked: Boolean = false,
         order: Int = 0,
+        createdEpochDay: Long = 0L,
     ): Task = Task(
         id = id,
         planId = "plan-1",
@@ -205,6 +225,7 @@ class TaskWindowCalculatorTest {
         repeatRule = repeatRule,
         customDays = customDays,
         isLocked = isLocked,
+        createdEpochDay = createdEpochDay,
         orderInPlan = order,
     )
 }

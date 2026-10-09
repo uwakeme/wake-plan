@@ -41,6 +41,13 @@ data class TaskEntity(
     @ColumnInfo(name = "repeat_rule") val repeatRule: RepeatRule,
     @ColumnInfo(name = "custom_days") val customDays: Set<DayOfWeek> = emptySet(),
     @ColumnInfo(name = "is_locked") val isLocked: Boolean = false,
+
+    /**
+     * 建任务那天的 epochDay（schema v4）。ONCE 任务只在这一天生效；
+     * 0 = v3 旧行（迁移默认值），ONCE 退化为每天（兼容旧数据）
+     */
+    @ColumnInfo(name = "created_epoch_day", defaultValue = "0") val createdEpochDay: Long = 0L,
+
     @ColumnInfo(name = "order_in_plan") val orderInPlan: Int,
     val note: String? = null,
 )
