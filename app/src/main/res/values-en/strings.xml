@@ -495,8 +495,9 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="plan_detail_cd_more">More options</string>
     <string name="plan_detail_edit">Edit</string>
     <string name="plan_edit_title">Edit plan</string>
-    <string name="stats_range_week">This week</string>
-    <string name="stats_range_month">This month</string>
+    <string name="stats_range_week">Last 7 days</string>
+    <string name="stats_range_month">Last 30 days</string>
+    <string name="stats_range_this_month">This month</string>
     <string name="stats_metric_total_duration">Total time</string>
     <string name="stats_metric_tasks_done">Tasks done</string>
     <string name="stats_metric_focus">Focus</string>

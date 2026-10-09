@@ -55,7 +55,8 @@ class StatsViewModel @Inject constructor(
     private fun recompute(range: StatsUseCase.Range) {
         viewModelScope.launch {
             val today = LocalDate.now(clock)  // 每次重算取当前日期，不固化在构造时
-            val start = today.minusDays((range.days - 1).toLong())
+            val window = range.window(today)
+            val start = window.start
             val end = today.plusDays(1)  // 半开区间到明天 00:00（覆盖今天的全天）
             val completions: List<TaskCompletion> = taskCompletionRepo.getByDateRange(start, end)
             val plans: List<Plan> = planRepo.observeAll().first()

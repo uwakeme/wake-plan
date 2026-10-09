@@ -289,4 +289,49 @@ class StatsUseCaseTest {
         val r = useCase.compute(emptyList(), listOf(latePlan), tasks, StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(1, r.totalExpected)
     }
+
+    // ---- v0.5 THIS_MONTH 自然月窗口 ----
+
+    @Test
+    fun `THIS_MONTH 窗口从月首到今天 — 8 月 8 日窗口 8 天`() {
+        val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.THIS_MONTH, today)
+        assertEquals(LocalDate.of(2026, 8, 1), r.startDate)
+        assertEquals(today, r.endDate)
+        assertEquals(8, r.perDay.size)
+    }
+
+    @Test
+    fun `THIS_MONTH 月中 — 15 日窗口 15 天，月首之前的 completion 不算`() {
+        val mid = LocalDate.of(2026, 8, 15)
+        val cs = listOf(
+            completion(date = LocalDate.of(2026, 7, 31)),  // 上月，窗口外
+            completion(date = LocalDate.of(2026, 8, 1)),
+            completion(date = mid),
+        )
+        val r = useCase.compute(cs, listOf(plan("plan-1")), emptyList(), StatsUseCase.Range.THIS_MONTH, mid)
+        assertEquals(15, r.perDay.size)
+        assertEquals(2, r.totalCompleted)
+    }
+
+    @Test
+    fun `THIS_MONTH 月末 31 天月 — perDay 长度 31`() {
+        val end = LocalDate.of(2026, 8, 31)  // 8 月 31 天
+        val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.THIS_MONTH, end)
+        assertEquals(31, r.perDay.size)
+    }
+
+    @Test
+    fun `THIS_MONTH 月 1 日 — 窗口仅 1 天`() {
+        val first = LocalDate.of(2026, 8, 1)
+        val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.THIS_MONTH, first)
+        assertEquals(1, r.perDay.size)
+        assertEquals(first, r.startDate)
+    }
+
+    @Test
+    fun `window 口径一致性 — LAST_30_DAYS 仍是滚动 30 天`() {
+        val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.LAST_30_DAYS, today)
+        assertEquals(today.minusDays(29), r.startDate)
+        assertEquals(30, r.perDay.size)
+    }
 }

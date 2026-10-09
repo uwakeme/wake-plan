@@ -157,6 +157,12 @@ private fun RangeToggle(
                 onClick = { onChange(StatsUseCase.Range.LAST_30_DAYS) },
                 modifier = Modifier.weight(1f),
             )
+            RangeButton(
+                label = stringResource(R.string.stats_range_this_month),
+                selected = current == StatsUseCase.Range.THIS_MONTH,
+                onClick = { onChange(StatsUseCase.Range.THIS_MONTH) },
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }

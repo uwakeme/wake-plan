@@ -264,8 +264,9 @@
     <string name="stats_title">统计</string>
     <string name="stats_range_7d">近 7 天</string>
     <string name="stats_range_30d">近 30 天</string>
-    <string name="stats_range_week">本周</string>
-    <string name="stats_range_month">本月</string>
+    <string name="stats_range_week">近7天</string>
+    <string name="stats_range_month">近30天</string>
+    <string name="stats_range_this_month">本月</string>
     <string name="stats_metric_completed">已完成</string>
     <string name="stats_metric_on_time_rate">准时率</string>
     <string name="stats_metric_avg_overrun">平均延期</string>

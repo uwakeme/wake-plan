@@ -27,9 +27,27 @@ class StatsUseCase @Inject constructor(
     private val taskWindowCalculator: TaskWindowCalculator,
 ) {
 
-    enum class Range(val days: Int) {
-        LAST_7_DAYS(7),
-        LAST_30_DAYS(30),
+    /**
+     * 统计窗口 — v0.5 加 THIS_MONTH（自然月），模型从"近 N 天"改为窗口推导
+     */
+    enum class Range {
+        LAST_7_DAYS,
+        LAST_30_DAYS,
+        THIS_MONTH,
+        ;
+
+        /** 含首尾的统计窗口（围绕 today） */
+        fun window(today: LocalDate): ClosedRange<LocalDate> = when (this) {
+            LAST_7_DAYS -> today.minusDays(6)..today
+            LAST_30_DAYS -> today.minusDays(29)..today
+            THIS_MONTH -> today.withDayOfMonth(1)..today
+        }
+
+        /** 窗口天数（含首尾） */
+        fun daysInWindow(today: LocalDate): Int {
+            val w = window(today)
+            return java.time.temporal.ChronoUnit.DAYS.between(w.start, w.endInclusive).toInt() + 1
+        }
     }
 
     /**
@@ -71,7 +89,7 @@ class StatsUseCase @Inject constructor(
         val totalExpected: Int,
         val onTimeCount: Int,
         val avgOverrunMinutes: Int,    // 仅 completed 且 overrun > 0 的平均，0 表示全准时或无完成
-        val perDay: List<DayBucket>,   // 按 date 升序，长度 = range.days
+        val perDay: List<DayBucket>,   // 按 date 升序，长度 = 窗口天数
         val perPlan: List<PlanBucket>, // 按 completedCount 降序
     ) {
         /**
@@ -102,8 +120,10 @@ class StatsUseCase @Inject constructor(
         range: Range,
         today: LocalDate,
     ): StatsResult {
-        val start = today.minusDays((range.days - 1).toLong())
-        val end = today
+        val window = range.window(today)
+        val start = window.start
+        val end = window.endInclusive
+        val windowDays = range.daysInWindow(today)
 
         val inRange = completions.filter { c ->
             val d = c.scheduledDate
@@ -114,7 +134,7 @@ class StatsUseCase @Inject constructor(
         val plansById = plans.associateBy { it.id }
 
         // per-day buckets（补齐没有数据的日期，count=0）
-        val perDay = (0 until range.days).map { offset ->
+        val perDay = (0 until windowDays).map { offset ->
             val date = start.plusDays(offset.toLong())
             dayBucket(inRangeByDate[date].orEmpty(), plansById, tasks, date)
         }
