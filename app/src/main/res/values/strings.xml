@@ -622,4 +622,16 @@
     <string name="focus_round_count">已完成 %1$d 轮专注</string>
     <string name="focus_waiting_hint">本阶段结束，点"下一阶段"继续</string>
     <string name="today_cd_focus">进入专注</string>
+
+    <!-- v0.6 统计 + 设置 -->
+    <string name="stats_metric_focus_minutes">专注时长</string>
+    <string name="stats_focus_minutes">%1$d 分钟</string>
+    <string name="settings_section_focus">专注计时</string>
+    <string name="settings_focus_duration">专注时长</string>
+    <string name="settings_focus_duration_sub">每个专注轮的时长</string>
+    <string name="settings_focus_minutes_value">%1$d 分钟</string>
+    <string name="settings_focus_short_break">短休息</string>
+    <string name="settings_focus_long_break">长休息</string>
+    <string name="settings_focus_auto_next">自动开始下一阶段</string>
+    <string name="settings_focus_auto_next_sub">专注/休息结束时自动进入下一阶段</string>
 </resources>

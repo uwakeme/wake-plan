@@ -32,12 +32,16 @@ class CompletionRetentionCleanerTest {
         coEvery { deleteTerminalOlderThan(any()) } returns 3
     }
     private val preferences: UserPreferences = mockk()
+    private val focusDao: com.wakeplan.app.data.db.dao.FocusSessionDao = mockk(relaxed = true) {
+        coEvery { deleteEndedBefore(any()) } returns 0
+    }
 
     private fun cleaner(retentionDays: Int) = CompletionRetentionCleaner(
         preferences = mockk {
             every { completionRetentionDays } returns flowOf(retentionDays)
         },
         completionDao = dao,
+        focusSessionDao = focusDao,
         clock = clock,
     )
 
@@ -62,7 +66,7 @@ class CompletionRetentionCleanerTest {
 
     @Test
     fun `cutoffFor 纯函数 — 跨年正确（2025-10-09 + 365 天 = 2026-10-09，区间无闰日）`() {
-        val cleaner = CompletionRetentionCleaner(preferences, dao, clock)
+        val cleaner = CompletionRetentionCleaner(preferences, dao, focusDao, clock)
         assertEquals(LocalDate.of(2025, 10, 9), cleaner.cutoffFor(365))
     }
 }

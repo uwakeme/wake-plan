@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.StarOutline
 import com.wakeplan.app.R
@@ -236,6 +237,19 @@ private fun StatsGrid(result: StatsUseCase.StatsResult) {
                 value = stringResource(R.string.stats_streak_days, streakDays),
                 label = stringResource(R.string.stats_metric_streak),
                 color = PlanSideProjectDark,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            // v0.6：窗口内实际专注时长（番茄钟）
+            StatCard(
+                icon = Icons.Outlined.Timer,
+                value = stringResource(R.string.stats_focus_minutes, result.totalFocusMinutes),
+                label = stringResource(R.string.stats_metric_focus_minutes),
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
             )
         }

@@ -51,6 +51,17 @@ class StatsUseCase @Inject constructor(
     }
 
     /**
+     * 专注轮的按天归档输入（v0.6）——VM 把 FocusSession 按时区折算成天后传入，
+     * UseCase 保持纯函数不依赖时区
+     */
+    data class FocusEntry(
+        val date: LocalDate,
+        val planId: String,
+        /** 实际专注分钟（FINISHED 与 ABANDONED 都计入——放弃也专注了） */
+        val minutes: Int,
+    )
+
+    /**
      * 每天统计
      */
     data class DayBucket(
@@ -61,6 +72,8 @@ class StatsUseCase @Inject constructor(
         /** 当天应生效任务数（按定义推导）——完成率的分母 */
         val expectedCount: Int,
         val avgOverrunMinutes: Int,    // 当天 completed 且 overrun>0 的平均 overrun（min），无则为 0
+        /** 当天实际专注分钟（v0.6） */
+        val focusMinutes: Int = 0,
     ) {
         val totalCount: Int get() = completedCount + skippedCount + pendingCount
     }
@@ -73,6 +86,8 @@ class StatsUseCase @Inject constructor(
         val planTitle: String,
         val colorHex: String,
         val completedCount: Int,
+        /** 该计划窗口内实际专注分钟（v0.6） */
+        val focusMinutes: Int = 0,
     )
 
     /**
@@ -87,6 +102,8 @@ class StatsUseCase @Inject constructor(
         val totalPending: Int,
         /** 窗口内每天应生效任务数之和——完成率的分母 */
         val totalExpected: Int,
+        /** 窗口内实际专注分钟之和（v0.6） */
+        val totalFocusMinutes: Int = 0,
         val onTimeCount: Int,
         val avgOverrunMinutes: Int,    // 仅 completed 且 overrun > 0 的平均，0 表示全准时或无完成
         val perDay: List<DayBucket>,   // 按 date 升序，长度 = 窗口天数
@@ -119,6 +136,7 @@ class StatsUseCase @Inject constructor(
         tasks: List<Task>,
         range: Range,
         today: LocalDate,
+        focusSessions: List<FocusEntry> = emptyList(),
     ): StatsResult {
         val window = range.window(today)
         val start = window.start
@@ -134,10 +152,21 @@ class StatsUseCase @Inject constructor(
         val plansById = plans.associateBy { it.id }
 
         // per-day buckets（补齐没有数据的日期，count=0）
+        val focusByDate: Map<LocalDate, Int> = focusSessions
+            .filter { !it.date.isBefore(start) && !it.date.isAfter(end) }
+            .groupBy { it.date }
+            .mapValues { (_, list) -> list.sumOf { it.minutes } }
+
         val perDay = (0 until windowDays).map { offset ->
             val date = start.plusDays(offset.toLong())
             dayBucket(inRangeByDate[date].orEmpty(), plansById, tasks, date)
+                .copy(focusMinutes = focusByDate[date] ?: 0)
         }
+
+        val focusByPlan: Map<String, Int> = focusSessions
+            .filter { !it.date.isBefore(start) && !it.date.isAfter(end) }
+            .groupBy { it.planId }
+            .mapValues { (_, list) -> list.sumOf { it.minutes } }
 
         // per-plan buckets（plansById 复用上面的）
         val perPlan = inRange
@@ -150,6 +179,7 @@ class StatsUseCase @Inject constructor(
                     planTitle = plan?.title ?: "(已删除计划)",
                     colorHex = plan?.colorHex ?: "#999999",
                     completedCount = list.size,
+                    focusMinutes = focusByPlan[planId] ?: 0,
                 )
             }
             .sortedByDescending { it.completedCount }
@@ -165,6 +195,7 @@ class StatsUseCase @Inject constructor(
             totalSkipped = inRange.count { it.status == TaskStatus.SKIPPED },
             totalPending = inRange.count { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS },
             totalExpected = perDay.sumOf { it.expectedCount },
+            totalFocusMinutes = focusByDate.values.sum(),
             onTimeCount = onTime,
             avgOverrunMinutes = avgOverrunOf(completed),
             perDay = perDay,

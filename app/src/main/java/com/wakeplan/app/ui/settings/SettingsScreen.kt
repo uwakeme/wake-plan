@@ -26,6 +26,10 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.TableView
 import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Pause
+import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FileDownload
@@ -389,6 +393,11 @@ fun SettingsScreen(
     val completedEnabled by viewModel.taskCompletedEnabled.collectAsStateWithLifecycle(initialValue = false)
     val recapEnabled by viewModel.planRecapEnabled.collectAsStateWithLifecycle(initialValue = false)
     val retentionDays by viewModel.completionRetentionDays.collectAsStateWithLifecycle(initialValue = 0)
+    val focusMinutes by viewModel.focusMinutes.collectAsStateWithLifecycle(initialValue = UserPreferences.FOCUS_MINUTES_DEFAULT)
+    val focusShortBreak by viewModel.focusShortBreak.collectAsStateWithLifecycle(initialValue = UserPreferences.FOCUS_SHORT_BREAK_DEFAULT)
+    val focusLongBreak by viewModel.focusLongBreak.collectAsStateWithLifecycle(initialValue = UserPreferences.FOCUS_LONG_BREAK_DEFAULT)
+    val focusAutoStart by viewModel.focusAutoStart.collectAsStateWithLifecycle(initialValue = false)
+    var focusMenu by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -763,6 +772,176 @@ fun SettingsScreen(
                 }
             }
 
+            item { SectionTitle(stringResource(R.string.settings_section_focus)) }
+            item {
+                SettingsGroupCard {
+                    // 专注时长
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { focusMenu = "focus" }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SettingIcon(icon = Icons.Outlined.Timer, tint = SettingIconTint.AMBER)
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 12.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_focus_duration),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_focus_duration_sub),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        Box {
+                            TextButton(onClick = { focusMenu = "focus" }) {
+                                Text(
+                                    text = stringResource(R.string.settings_focus_minutes_value, focusMinutes),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = focusMenu == "focus",
+                                onDismissRequest = { focusMenu = null },
+                            ) {
+                                UserPreferences.FOCUS_MINUTES_ALLOWED.sorted().forEach { v ->
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.settings_focus_minutes_value, v)) },
+                                        onClick = {
+                                            viewModel.setFocusMinutes(v)
+                                            focusMenu = null
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 64.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    // 短休
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { focusMenu = "short" }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SettingIcon(icon = Icons.Outlined.Pause, tint = SettingIconTint.GREEN)
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 12.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_focus_short_break),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        Box {
+                            TextButton(onClick = { focusMenu = "short" }) {
+                                Text(
+                                    text = stringResource(R.string.settings_focus_minutes_value, focusShortBreak),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = focusMenu == "short",
+                                onDismissRequest = { focusMenu = null },
+                            ) {
+                                UserPreferences.FOCUS_SHORT_BREAK_ALLOWED.sorted().forEach { v ->
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.settings_focus_minutes_value, v)) },
+                                        onClick = {
+                                            viewModel.setFocusShortBreak(v)
+                                            focusMenu = null
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 64.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    // 长休
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { focusMenu = "long" }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SettingIcon(icon = Icons.Outlined.Bedtime, tint = SettingIconTint.PURPLE)
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 12.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_focus_long_break),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        Box {
+                            TextButton(onClick = { focusMenu = "long" }) {
+                                Text(
+                                    text = stringResource(R.string.settings_focus_minutes_value, focusLongBreak),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = focusMenu == "long",
+                                onDismissRequest = { focusMenu = null },
+                            ) {
+                                UserPreferences.FOCUS_LONG_BREAK_ALLOWED.sorted().forEach { v ->
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.settings_focus_minutes_value, v)) },
+                                        onClick = {
+                                            viewModel.setFocusLongBreak(v)
+                                            focusMenu = null
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    // 自动下一阶段
+                    SettingToggleRow(
+                        icon = Icons.Outlined.Autorenew,
+                        iconTint = SettingIconTint.AMBER,
+                        title = stringResource(R.string.settings_focus_auto_next),
+                        subtitle = stringResource(R.string.settings_focus_auto_next_sub),
+                        checked = focusAutoStart,
+                        onChange = { viewModel.setFocusAutoStart(it) },
+                        showDivider = false,
+                    )
+                }
+            }
+
             item { SectionTitle(stringResource(R.string.settings_retention_title)) }
             item {
                 SettingsGroupCard {
@@ -1066,6 +1245,16 @@ class SettingsViewModel @Inject constructor(
     val completionRetentionDays = preferences.completionRetentionDays
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
+    // v0.6 专注参数
+    val focusMinutes = preferences.focusMinutes
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserPreferences.FOCUS_MINUTES_DEFAULT)
+    val focusShortBreak = preferences.focusShortBreakMinutes
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserPreferences.FOCUS_SHORT_BREAK_DEFAULT)
+    val focusLongBreak = preferences.focusLongBreakMinutes
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserPreferences.FOCUS_LONG_BREAK_DEFAULT)
+    val focusAutoStart = preferences.focusAutoStartNext
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     val versionName: String get() = appVersionProvider.versionName
     val versionCode: Int get() = appVersionProvider.versionCode
 
@@ -1097,6 +1286,22 @@ class SettingsViewModel @Inject constructor(
     }
     fun setCompletionRetentionDays(days: Int) {
         viewModelScope.launch { preferences.setCompletionRetentionDays(days) }
+    }
+
+    fun setFocusMinutes(minutes: Int) {
+        viewModelScope.launch { preferences.setFocusMinutes(minutes) }
+    }
+
+    fun setFocusShortBreak(minutes: Int) {
+        viewModelScope.launch { preferences.setFocusShortBreakMinutes(minutes) }
+    }
+
+    fun setFocusLongBreak(minutes: Int) {
+        viewModelScope.launch { preferences.setFocusLongBreakMinutes(minutes) }
+    }
+
+    fun setFocusAutoStart(enabled: Boolean) {
+        viewModelScope.launch { preferences.setFocusAutoStartNext(enabled) }
     }
 
     // v0.5：开关切换即起停每日回顾调度（Worker 内另有偏好自守）

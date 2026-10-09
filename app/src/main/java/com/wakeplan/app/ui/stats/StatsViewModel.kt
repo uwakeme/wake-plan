@@ -29,6 +29,7 @@ class StatsViewModel @Inject constructor(
     private val planRepo: PlanRepository,
     private val taskRepo: com.wakeplan.app.domain.repository.TaskRepository,
     private val taskCompletionRepo: TaskCompletionRepository,
+    private val focusSessionRepo: com.wakeplan.app.domain.repository.FocusSessionRepository,
     private val statsUseCase: StatsUseCase,
     private val clock: Clock,
 ) : ViewModel() {
@@ -61,7 +62,18 @@ class StatsViewModel @Inject constructor(
             val completions: List<TaskCompletion> = taskCompletionRepo.getByDateRange(start, end)
             val plans: List<Plan> = planRepo.observeAll().first()
             val tasks = taskRepo.observeAll().first()
-            val result = statsUseCase.compute(completions, plans, tasks, range, today)
+            // 专注轮按"开始时刻的本地日期"归档（v0.6）
+            val zone = clock.zone
+            val focusSessions = focusSessionRepo
+                .getByStartedAtRange(start.atStartOfDay(zone).toInstant(), end.plusDays(1).atStartOfDay(zone).toInstant())
+                .map { fs ->
+                    StatsUseCase.FocusEntry(
+                        date = java.time.LocalDate.ofInstant(fs.startedAt, zone),
+                        planId = fs.planId,
+                        minutes = fs.actualMinutes,
+                    )
+                }
+            val result = statsUseCase.compute(completions, plans, tasks, range, today, focusSessions)
             _uiState.update { it.copy(result = result, isLoading = false) }
         }
     }

@@ -328,8 +328,41 @@ class StatsUseCaseTest {
         assertEquals(first, r.startDate)
     }
 
+    // ---- v0.6 专注分钟 ----
+
     @Test
-    fun `window 口径一致性 — LAST_30_DAYS 仍是滚动 30 天`() {
+    fun `专注分钟按天与计划归档 — FINISHED 与 ABANDONED 都计入`() {
+        val entries = listOf(
+            StatsUseCase.FocusEntry(date = today, planId = "plan-1", minutes = 25),
+            StatsUseCase.FocusEntry(date = today, planId = "plan-1", minutes = 10),   // 放弃的轮
+            StatsUseCase.FocusEntry(date = today.minusDays(1), planId = "plan-2", minutes = 30),
+            StatsUseCase.FocusEntry(date = today.plusDays(1), planId = "plan-1", minutes = 99),  // 窗口外
+        )
+        val r = useCase.compute(
+            emptyList(), listOf(plan("plan-1"), plan("plan-2")), emptyList(),
+            StatsUseCase.Range.LAST_7_DAYS, today, entries,
+        )
+        assertEquals(65, r.totalFocusMinutes)                       // 25+10+30
+        assertEquals(35, r.perDay[6].focusMinutes)                  // 今天
+        assertEquals(30, r.perDay[5].focusMinutes)                  // 昨天
+        val p1 = r.perPlan.firstOrNull { it.planId == "plan-1" }
+        // plan-1 无 completed completion → 不进 perPlan（专注只在已有桶上加，不造桶）
+        org.junit.jupiter.api.Assertions.assertNull(p1)
+    }
+
+    @Test
+    fun `无专注数据 — 全部为 0（默认参数向后兼容）`() {
+        val r = useCase.compute(
+            listOf(completion(status = TaskStatus.COMPLETED)),
+            listOf(plan("plan-1")), emptyList(),
+            StatsUseCase.Range.LAST_7_DAYS, today,
+        )
+        assertEquals(0, r.totalFocusMinutes)
+        assertTrue(r.perDay.all { it.focusMinutes == 0 })
+    }
+
+    @Test
+    fun `窗口口径一致性 — LAST_30_DAYS 仍是滚动 30 天`() {
         val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.LAST_30_DAYS, today)
         assertEquals(today.minusDays(29), r.startDate)
         assertEquals(30, r.perDay.size)

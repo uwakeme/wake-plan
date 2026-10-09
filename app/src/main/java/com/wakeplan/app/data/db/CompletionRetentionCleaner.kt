@@ -1,5 +1,6 @@
 package com.wakeplan.app.data.db
 
+import com.wakeplan.app.data.db.dao.FocusSessionDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
 import com.wakeplan.app.data.prefs.UserPreferences
 import java.time.Clock
@@ -19,13 +20,20 @@ import kotlinx.coroutines.flow.first
 class CompletionRetentionCleaner @Inject constructor(
     private val preferences: UserPreferences,
     private val completionDao: TaskCompletionDao,
+    private val focusSessionDao: FocusSessionDao,
     private val clock: Clock,
 ) {
     /** 读配置并清理；返回删除行数（0 = 未配置或无可删） */
     suspend fun cleanIfConfigured(): Int {
         val days = preferences.completionRetentionDays.first()
         if (days <= 0) return 0
-        return completionDao.deleteTerminalOlderThan(cutoffFor(days))
+        val cutoff = cutoffFor(days)
+        val removedCompletions = completionDao.deleteTerminalOlderThan(cutoff)
+        // v0.6：专注记录同步清理（结束时间早于 cutoff 当天 00:00）
+        val removedFocus = focusSessionDao.deleteEndedBefore(
+            cutoff.atStartOfDay(clock.zone).toInstant(),
+        )
+        return removedCompletions + removedFocus
     }
 
     /** 截止日 = 今天 - N 天（纯函数便于单测） */
