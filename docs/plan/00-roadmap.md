@@ -355,3 +355,19 @@ Room DAO / DataStore
 
 v0.4.1 之后搁置与排期事项见 `docs/plan/17-v0.4.1-followups.md`（v0.5 存量+新增 / v0.6 番茄钟+schema v5 / P2 小项 / 技术债 / 发布待办）；**v0.5~v0.6 实施计划见 `docs/plan/18-v0.5-v0.6-feature-plan.md`**（2026-10-09 拍板：v0.5 六阶段——整备 / 每日回顾 / 按月统计 / CSV / 撤销队列 / 数据保留默认永久；v0.6 番茄钟骨架——focus_sessions schema v5 + 复合索引搭车）。
 
+### v0.5 执行结果（2026-10-09 更新）
+
+18 号计划 v0.5 六阶段全部完成并推 main（versionCode 8）：
+
+| 阶段 | 内容 | commit |
+|---|---|---|
+| 一 整备 | TimePickerDialog / TimeFormat 去重 | 见 log |
+| 二 每日回顾 | RecapWorker + 21:00 对齐调度 + 设置开关 + dayBucket 抽取 | 见 log |
+| 三 按月统计 | Range 窗口推导 + THIS_MONTH + 文案对齐 | 见 log |
+| 四 CSV 导出 | CsvExporter + SAF 入口 + getAll | 见 log |
+| 五 撤销队列 | 单槽 → FIFO 深 5 | 见 log |
+| 六 数据保留 | 偏好 + deleteTerminalOlderThan + Cleaner + 设置 UI | 见 log |
+
+- **验收**：291 个 JVM 单测全过（v0.4.1 为 264），lint 0 error，assembleDebug 干净
+- v0.6（番茄钟 schema v5）待 v0.5 内测反馈后按 18 号文档骨架展开
+
