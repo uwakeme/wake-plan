@@ -371,3 +371,18 @@ v0.4.1 之后搁置与排期事项见 `docs/plan/17-v0.4.1-followups.md`（v0.5 
 - **验收**：291 个 JVM 单测全过（v0.4.1 为 264），lint 0 error，assembleDebug 干净
 - v0.6（番茄钟 schema v5）待 v0.5 内测反馈后按 18 号文档骨架展开
 
+### v0.6 执行结果（2026-10-09 更新）
+
+18 号文档 §7 骨架四阶段全部落地并推 main（versionCode 9，schema v5）：
+
+| 阶段 | 内容 |
+|---|---|
+| 一 schema v5 | focus_sessions 表（completion_id 不建 FK 防 REPLACE 误删）+ task_completions 复合索引搭车 + MIGRATION_4_5 + androidTest |
+| 二 专注核心 | CompleteTaskUseCase（完成语义共用）+ FocusTimerController（阶段状态机/记账/互斥）+ FocusTimerService（specialUse 前台常驻倒计时通知） |
+| 三 专注页 | FocusScreen（空闲/计时两态、倒计时环、轮次点）+ Today 卡片 ⏱ 入口 + NavToFocus 深链 |
+| 四 统计与设置 | FocusEntry 进 StatsUseCase（按天/按计划）+ 保留清理覆盖 focus + 专注参数设置区 |
+
+- **验收**：296 个 JVM 单测全过（v0.5.0 为 291），lint 0 error，assembleDebug 干净，
+  迁移 androidTest 3/3（API 36 模拟器），装机冒烟通过
+- 已知边界：focus_sessions 暂不进备份；进程被杀场次不恢复（见 INTERNAL_TEST）
+
