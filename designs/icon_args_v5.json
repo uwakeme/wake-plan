@@ -1,0 +1,22 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v5_pins_colored_hours.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean minimalist clock face where the 12 hour tick positions around the perimeter are rendered as small glowing dots in plan colors rather than all amber: at 1 o'clock position pink #EC4899 dot, at 5 o'clock position sky blue #3B82F6 dot, at 9 o'clock position mint green #10B981 dot, the rest of the hour positions as smaller amber #F5A524 dots. Each colored dot has a tiny plan pill shape extending slightly outward from the clock perimeter in the same hue, like a tag stuck to the clock at that hour. Clock center has warm amber hour and minute hands pointing roughly to 10:10. Soft inner glow on the clock face. Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v5_pins_progress_ring.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean clock face with warm amber #F5A524 hour and minute hands pointing to roughly 10:10, hour tick marks as small amber dots at 12, 3, 6, 9. Around the clock face, a soft amber progress arc traces from 12 o'clock position sweeping clockwise about 70 percent of the full circle, suggesting time elapsed in the day. Three small glowing plan pills are placed just inside or on this progress arc at distinct positions: pink #EC4899 pill, sky blue #3B82F6 pill, mint green #10B981 pill, each pill acting like a marker on the day's timeline. Soft inner glow on the clock face. Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v5_pins_morning_cluster.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean clock face with warm amber #F5A524 hour hand pointing to 8 and minute hand pointing to 10, hour tick marks as small amber dots at all 12 positions. Around the clock face, three small glowing plan pills are clustered on the right side suggesting morning schedule: top-right pink #EC4899 pill near 2 o'clock, middle-right sky blue #3B82F6 pill near 4 o'clock, lower-right mint green #10B981 pill near 5 o'clock, each with a subtle dotted trail toward the clock center. Clock face has soft inner glow. Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

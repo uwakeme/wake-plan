@@ -1,0 +1,16 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_minimal.png",
+      "prompt": "App icon for a time management and multi-plan planning Android application called Wake Plan, minimal flat design style, clean simple shapes, solid colors, no shadows, no gradients, no 3D, Android adaptive icon shape, Material Design language, centered composition with safe area margins, foreground shows a stylized white calendar card with three horizontal plan rows: top row has a small checkmark indicating completed plan, middle row has a small checkmark indicating completed plan, bottom row is the active focused plan with a subtle accent dot on the left edge, all set on a deep teal #0F766E rounded square background, modern productivity app aesthetic, high quality, professional, production ready, clean design, pure white background outside the icon, solid white, no patterns, no effects, front-facing view, straight on, no perspective, no tilt, no 3D angle, no rotation, no text, no labels, no watermarks, icon only, isolated, nothing else in frame"
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_glyph.png",
+      "prompt": "App icon for a time management and multi-plan planning Android application called Wake Plan, glyph monochrome symbol style, single color foreground mark, symbolic minimal icon, Android adaptive icon shape, Material Design language, centered composition with safe area margins, foreground mark is a white stylized W monogram cleverly formed by two overlapping clock arc strokes suggesting the letter W while reading as a clock face, sitting on a deep indigo #312E81 rounded square background, clean geometric construction, modern productivity app aesthetic, high quality, professional, production ready, clean design, pure white background outside the icon, solid white, no patterns, no effects, front-facing view, straight on, no perspective, no tilt, no 3D angle, no rotation, no text, no labels, no watermarks, icon only, isolated, nothing else in frame"
+    }
+  ]
+}

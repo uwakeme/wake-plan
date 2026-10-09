@@ -1,0 +1,22 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v8_single_ring_clean.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a SINGLE circular ring (not two concentric rings) divided into discrete arc segments, where each arc segment represents exactly one time slot occupied by exactly one plan, no overlapping slots. The segments go clockwise from 12 o'clock in this alternating order: mint green #10B981 (plan A slot), pink #EC4899 (plan B slot), mint green #10B981 (plan A slot again, later in day), pink #EC4899 (plan B slot again, later in day), and continue with two more green and one more pink for a total of seven to eight segments total. Each segment is clearly separated by a thin dark navy gap so they do not blur together. Segments have soft volumetric depth. Clock hands at center point to roughly 10:10 in warm amber #F5A524. The single-ring design conveys that each time slot belongs to exactly one plan, no conflicts. Style: clean modern dark theme, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v8_single_ring_varied.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a SINGLE circular ring (not two concentric rings) divided into discrete arc segments with varying widths to represent different time slot durations, where each arc segment represents exactly one time slot occupied by exactly one plan, no overlapping slots. The segments alternate between mint green #10B981 and pink #EC4899 in this order clockwise from 12 o'clock: green (short), green (medium), pink (long), green (short), pink (medium), green (medium), pink (short). Each segment is clearly separated by a thin dark navy gap. The varying widths visually communicate that each plan slot has its own duration. Clock hands at center point to roughly 10:10 in warm amber #F5A524. Single-ring design conveys each time slot belongs to exactly one plan, no conflicts. Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v8_single_ring_rhythm.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a SINGLE circular ring (not two concentric rings) divided into discrete arc segments that alternate between plan colors and small rest periods in a plan-rest-plan-rest rhythm. Going clockwise from 12 o'clock: mint green #10B981 (plan slot), short muted amber #5C4A2E gap (rest), pink #EC4899 (plan slot), short muted amber gap (rest), mint green #10B981 (plan slot), short muted amber gap (rest), pink #EC4899 (plan slot). Each colored segment is clearly separated by a visible dark gap, no overlap. The rhythm of plan-rest-plan-rest visually communicates that plans are scheduled in dedicated time slots with breaks between them. Clock hands at center point to roughly 10:10 in warm amber #F5A524. Style: clean modern dark theme, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

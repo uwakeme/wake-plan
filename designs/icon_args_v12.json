@@ -1,0 +1,22 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v12_thick_clean.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape. A single substantial thick circular ring centered, divided into nine equal-width arc segments, where each arc segment is a SINGLE thick curved bar of solid color, NOT a thin line, NOT a double outline. Each segment must be one continuous colored curved bar of medium thickness, sitting flush with the dark navy background, no inner darker face. Use THREE soft pastel palette colors: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7. Going clockwise from 12 o'clock, the segments cycle: pink, blue, mint, pink, blue, mint, pink, blue, mint (three full cycles). Each segment is clearly separated by a thin dark navy gap. No glow, no shadow, no bevel, no 3D, completely flat 2D. Clock hands at center point to roughly 10:10 in warm amber #F5A524, flat no glow. Style: clean modern flat design, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v12_thick_grouped.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape. A single substantial thick circular ring centered, divided into six equal-width arc segments, where each arc segment is a SINGLE thick curved bar of solid color, NOT a thin line, NOT a double outline. Each segment must be one continuous colored curved bar of medium thickness. Use THREE soft pastel palette colors: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7. Going clockwise from 12 o'clock, segments are: pink, pink, blue, blue, mint, mint (two adjacent segments share each color). Each segment is clearly separated by a thin dark navy gap. No glow, no shadow, no bevel, no 3D, completely flat 2D. Clock hands at center point to roughly 10:10 in warm amber #F5A524, flat no glow. Style: clean modern flat design, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v12_pie_slices.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape. Centered composition: a pie-chart-like circular shape divided into nine pie slices (wedges) of equal angle, where each slice is a triangular sector from the outer perimeter extending inward. Each slice is a SOLID flat color fill. Use THREE soft pastel palette colors: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7. Going clockwise from 12 o'clock, slices cycle: pink, blue, mint, pink, blue, mint, pink, blue, mint. Each slice is separated from adjacent slices by a thin dark navy gap. The slices form a complete pie shape filling about 80 percent of the icon area, with the center of the pie left as dark navy negative space. No glow, no shadow, no bevel, no 3D. A small warm amber #F5A524 clock face with hour and minute hands at 10:10 sits in the center negative space, flat. Style: clean modern flat design, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

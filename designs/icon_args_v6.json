@@ -1,0 +1,22 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v6_colored_hours_compact.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean circular clock face with 12 hour tick dots around the perimeter, all dots fully inside the icon safe area with no clipping at edges. The 12 hour dots: most are small amber #F5A524 dots, but three dots at the 2 o'clock, 6 o'clock and 10 o'clock positions are larger colored dots with a glow halo in plan colors: pink #EC4899, sky blue #3B82F6, mint green #10B981. Center of the clock has warm amber hour and minute hands pointing to roughly 10:10. Soft inner glow on the clock face gives subtle volumetric depth. The clock face takes about 70 percent of the icon area, leaving comfortable dark navy margin between the dots and the icon edge. Style: clean modern dark theme, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v6_colored_hours_glow.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean circular clock face with 12 hour tick marks at the perimeter rendered as small dots, three of which (at 2 o'clock, 6 o'clock, 10 o'clock positions) glow brightly in plan colors with soft halos: pink #EC4899, sky blue #3B82F6, mint green #10B981, the other nine are smaller amber #F5A524 dots without halos. Around the three colored dots, very subtle plan color tints bleed softly into the inner clock face area, creating a slight color wash effect without overpowering the design. Center has warm amber hour and minute hands at 10:10. Clock face fits inside safe area with breathing room. Style: clean modern dark theme, soft volumetric glow, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v6_colored_hours_segments.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean circular clock face with hour positions at 12, 3, 6, 9 marked as larger colored dots that are plan tags, hour positions at 2, 4, 8, 10 marked as smaller amber #F5A524 dots, and hour positions at 1, 5, 7, 11 marked as even smaller faint amber dots. The four quadrant dots are: 12 o'clock pink #EC4899 with glow, 3 o'clock sky blue #3B82F6 with glow, 6 o'clock mint green #10B981 with glow, 9 o'clock warm amber #F5A524. Center has warm amber hour and minute hands at 10:10. Soft inner glow on the clock face. Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

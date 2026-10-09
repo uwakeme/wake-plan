@@ -1,0 +1,22 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v10_soft_three_varied.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. CRITICAL: exactly ONE single circular ring (no concentric rings, no double rings, no offset duplicates), centered. The ring is divided into discrete arc segments of varying widths to represent different time slot durations, where each arc segment represents exactly one time slot occupied by exactly one plan, no overlapping slots. Use THREE soft pastel palette colors alternating: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7 (all desaturated, harmonious, no harsh contrast). Clockwise from 12 o'clock, the segments alternate through the three colors in this order: mint, pink, blue, mint, blue, pink, mint, with varying widths. Each segment is clearly separated by a thin dark navy gap. Clock hands at center point to roughly 10:10 in warm amber #F5A524. Overall feel should be soft and harmonious, NOT high-contrast neon. Style: clean modern dark theme, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v10_soft_three_clean.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. CRITICAL: exactly ONE single circular ring (no concentric rings, no double rings, no offset duplicates), centered. The ring is divided into nine equal-width discrete arc segments, where each arc segment represents exactly one time slot occupied by exactly one plan, no overlapping slots. Use THREE soft pastel palette colors cycling: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7. Clockwise from 12 o'clock, the segments cycle: mint, pink, blue, mint, pink, blue, mint, pink, blue (three full cycles). Each segment is clearly separated by a thin dark navy gap. Clock hands at center point to roughly 10:10 in warm amber #F5A524. Style: clean modern dark theme, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v10_soft_three_grouped.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. CRITICAL: exactly ONE single circular ring (no concentric rings, no double rings, no offset duplicates), centered. The ring is divided into six equal-width discrete arc segments grouped by plan, where each arc segment represents exactly one time slot occupied by exactly one plan, no overlapping slots. Use THREE soft pastel palette colors: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7. Clockwise from 12 o'clock, the segments are: two pink segments adjacent (one plan occupies two morning slots), two blue segments adjacent (one plan occupies two midday slots), two mint segments adjacent (one plan occupies two evening slots). Each segment is clearly separated by a thin dark navy gap. The grouping visually shows that each plan gets multiple slots across the day without overlap. Clock hands at center point to roughly 10:10 in warm amber #F5A524. Style: clean modern dark theme, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

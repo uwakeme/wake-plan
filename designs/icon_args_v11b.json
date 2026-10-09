@@ -1,0 +1,10 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v11b_flat_three_varied.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape. CRITICAL: exactly ONE single thin circular ring outline (no inner ring, no outer ring, no concentric rings, no double rings, no offset duplicates, no beveled segments), centered. The ring outline is divided into discrete arc segments of varying widths placed directly on the dark navy background. Use THREE soft pastel palette colors: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7. CRITICAL: each segment must be a thin curved sliver sitting flush with the dark navy background, NO depth, NO shadow, NO gradient, NO 3D extrusion, NO inner darker face. Segments are SOLID pastel color fills on the flat background, no volumetric appearance. Each segment is clearly separated by a thin dark navy gap. Clockwise from 12 o'clock, segments alternate through three colors: mint, blue, mint, pink, mint, blue, pink, with varying widths suggesting different time durations. Clock hands at center point to roughly 10:10 in warm amber #F5A524, hands flat with no glow. Style: clean modern flat 2D design, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

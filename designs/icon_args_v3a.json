@@ -1,0 +1,16 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v3_arc.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a large circular day-time arc occupying the upper portion of the icon, drawn as a thick glowing ring with the lower half empty (like the sun arc above the horizon). Inside the ring, three to four multi-color plan segments are stacked like a layered timeline, each segment a soft glowing pill: pink #EC4899, sky blue #3B82F6, mint green #10B981, all with subtle inner glow. At the left starting edge of the arc, a warm amber #F5A524 sunrise glow radiates outward suggesting a wake-up start of the day. A small amber dot at the right end of the arc marks current time progress. Style: clean modern dark theme, soft volumetric glow, premium productivity app aesthetic, NOT flat, NOT skeuomorphic. High quality, professional, production ready. Pure white background outside the icon, no patterns, no effects. Front-facing view, straight on, no perspective, no tilt. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v3_pins.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean minimalist clock face as the foundation, hour markers at 12, 3, 6, 9 positions as small dots in warm amber #F5A524, with amber hour and minute hands pointing to roughly 10:10. On the right side outside the clock, three to four small glowing plan pills float like schedule pins: pink #EC4899, sky blue #3B82F6, mint green #10B981, each with a subtle connecting dot or thin line back to a corresponding hour position on the clock suggesting plans scheduled at different times. Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic, NOT flat, NOT skeuomorphic. High quality, professional, production ready. Pure white background outside the icon, no patterns, no effects. Front-facing view, straight on, no perspective, no tilt. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

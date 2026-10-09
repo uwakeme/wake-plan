@@ -1,0 +1,22 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v7_segments_alternating.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean circular clock face with the perimeter divided into short colored arc segments representing plan time slots. Going clockwise from 12 o'clock, the segments alternate in this order: mint green #10B981, pink #EC4899, mint green #10B981, pink #EC4899 (four colored segments total, evenly spaced, each segment occupies a small slice of the perimeter roughly the size of one hour position), with the rest of the perimeter being muted amber #F5A524 segments or thin gaps. The alternating green-pink-green-pink order symbolizes that plans can interleave in time, not run strictly sequentially. Clock center has warm amber hour and minute hands pointing to roughly 10:10. Soft inner glow on clock face. All elements fully inside icon safe area. Style: clean modern dark theme, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v7_segments_gantt_ring.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean circular clock face whose perimeter is rendered as a continuous thin ring divided into proportional arc segments, like a Gantt chart wrapped on a circle. The arc segments alternate colors to show that plans can interleave: starting from 12 o'clock clockwise, the segments are mint green #10B981 (short), pink #EC4899 (medium), mint green #10B981 (long), pink #EC4899 (short), and the rest of the ring is muted amber #F5A524 thin segments or subtle gaps. The varying lengths of green and pink segments visually communicate different plan durations within the same day. Clock center has warm amber hour and minute hands at 10:10. Soft inner glow. All elements fully inside safe area. Style: clean modern dark theme, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v7_segments_dual_ring.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: two concentric rings forming a layered timeline. The OUTER ring is divided into short colored arc segments alternating to show plan interleaving: mint green #10B981, pink #EC4899, mint green #10B981, pink #EC4899 (four segments evenly spaced clockwise). The INNER ring is a single continuous amber #F5A524 progress arc covering about 70 percent of the circle, starting from 12 o'clock sweeping clockwise, suggesting elapsed time today. The two rings are separated by a small dark navy gap. At the center of the rings, a small warm amber clock face with hour and minute hands pointing to 10:10. Soft volumetric depth. All elements fully inside safe area. Style: clean modern dark theme, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v2_current.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 (NOT black, slight blue tint), rounded square with soft inner glow. Centered composition: a single glowing hero card in the foreground that looks like a 'current moment' plan card, with rounded corners, subtle warm amber #F5A524 glow emanating from the top edge suggesting a wake-up sunrise. Inside the card, a stylized clock face showing time with hour and minute hands in warm amber gold #F5A524, and three small color pills stacked vertically on the right side of the clock representing three plans: pink #EC4899, sky blue #3B82F6, mint green #10B981. Below the clock, three subtle progress segments at different fill levels. Style: clean modern dark theme, soft volumetric depth, subtle gradients, premium productivity app aesthetic, NOT flat design, NOT skeuomorphic. High quality, professional, production ready. Pure white background outside the icon, no patterns, no effects. Front-facing view, straight on, no perspective, no tilt. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v2_stack.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 (NOT black, slight blue tint), rounded square with soft inner glow. Centered composition: three rounded rectangle plan cards stacked with subtle vertical offset (fanned stack, like cards spread on a table), each card in a distinct plan color as a soft glow fill rather than solid: top card pink #EC4899 glow, middle card sky blue #3B82F6 glow, bottom card mint green #10B981 glow. On the topmost card, a clean clock face symbol in warm amber #F5A524 sits as the focal element, suggesting 'time on top of plans'. Each card has a subtle progress bar at the bottom showing different completion states (filled, half-filled, empty). Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic, NOT flat design, NOT skeuomorphic. High quality, professional, production ready. Pure white background outside the icon, no patterns, no effects. Front-facing view, straight on, no perspective, no tilt. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

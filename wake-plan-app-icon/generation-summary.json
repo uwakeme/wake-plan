@@ -1,0 +1,24 @@
+{
+  "skill": "solo-graphic-generation",
+  "skillVersion": "2026.08.06.21.24.57",
+  "requestedSize": "1:1 方图 1024×1024",
+  "actualImageSize": "square_hd (1024x1024)",
+  "userConfirmed": true,
+  "assetCount": 2,
+  "assets": [
+    {
+      "filename": "wake-plan-app-icon.jpg",
+      "title": "Wake Plan 应用图标 · 流体交织版",
+      "intendedSize": "1024x1024",
+      "status": "success",
+      "nodeId": "image-001"
+    },
+    {
+      "filename": "wake-plan-app-icon-time-ring.jpg",
+      "title": "Wake Plan 应用图标 · 时间环版",
+      "intendedSize": "1024x1024",
+      "status": "success",
+      "nodeId": "image-002"
+    }
+  ]
+}

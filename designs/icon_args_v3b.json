@@ -1,0 +1,10 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v3_daystack.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: three small day-cards stacked with slight vertical offset (top card slightly tilted right, middle straight, bottom slightly tilted left, like a fanned hand of cards). Each card is a rounded rectangle in dark navy with a subtle inner glow border in a distinct color: top card border pink #EC4899, middle card border sky blue #3B82F6, bottom card border mint green #10B981. On the topmost card, a clean clock face with warm amber #F5A524 hour and minute hands. Each card shows a subtle progress bar at the bottom with different fill levels: top filled 80%, middle filled 50%, bottom empty 0%. Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic, NOT flat, NOT skeuomorphic. High quality, professional, production ready. Pure white background outside the icon, no patterns, no effects. Front-facing view, straight on, no perspective, no tilt. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

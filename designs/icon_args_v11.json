@@ -1,0 +1,22 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v11_flat_three_varied.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape. CRITICAL: exactly ONE single circular ring (no concentric rings, no double rings, no offset duplicates), centered. The ring is divided into discrete arc segments of varying widths. Use THREE soft pastel palette colors: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7. CRITICAL: NO glow, NO halo, NO inner glow, NO outer glow, NO volumetric depth, NO luminance bleed. Segments are SOLID pastel color fills only, with flat appearance. Each segment is clearly separated by a thin dark navy gap. Clockwise from 12 o'clock, segments alternate: mint, pink, blue, mint, blue, pink, mint, with varying widths suggesting different time durations. Clock hands at center point to roughly 10:10 in warm amber #F5A524, hands are flat with no glow. Style: clean modern flat design, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v11_flat_three_clean.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape. CRITICAL: exactly ONE single circular ring (no concentric rings, no double rings, no offset duplicates), centered. The ring is divided into nine equal-width discrete arc segments. Use THREE soft pastel palette colors: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7. CRITICAL: NO glow, NO halo, NO inner glow, NO outer glow, NO volumetric depth, NO luminance bleed. Segments are SOLID pastel color fills only, completely flat. Each segment is clearly separated by a thin dark navy gap. Clockwise from 12 o'clock, segments cycle through pink, blue, mint three times. Clock hands at center point to roughly 10:10 in warm amber #F5A524, hands flat with no glow. Style: clean modern flat design, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v11_flat_three_grouped.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape. CRITICAL: exactly ONE single circular ring (no concentric rings, no double rings, no offset duplicates), centered. The ring is divided into six equal-width discrete arc segments grouped by plan. Use THREE soft pastel palette colors: powder pink #F9A8D4, powder blue #93C5FD, soft mint #6EE7B7. CRITICAL: NO glow, NO halo, NO inner glow, NO outer glow, NO volumetric depth, NO luminance bleed. Segments are SOLID pastel color fills only, completely flat. Clockwise from 12 o'clock, segments are: two pink adjacent, two blue adjacent, two mint adjacent, suggesting each plan occupies multiple slots across the day without overlap. Each segment is clearly separated by a thin dark navy gap. Clock hands at center point to roughly 10:10 in warm amber #F5A524, flat no glow. Style: clean modern flat design, premium productivity app aesthetic. High quality, professional, production ready. Pure white background outside the icon. Front-facing view, straight on. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}

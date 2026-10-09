@@ -1,0 +1,16 @@
+{
+  "requests": [
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v4_pins_refined.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: a clean minimalist clock face with hour tick marks at 12, 3, 6, 9 positions as small amber #F5A524 dots, with simple amber hour hand pointing roughly to 9 and minute hand pointing to 3 (a 9:15 reading). Around the clock face, three small glowing plan pills positioned at the 1 o'clock, 4 o'clock and 7 o'clock positions (all fully inside the icon safe area, not cut off), each pill a different color: top-right pink #EC4899, middle-right sky blue #3B82F6, bottom-left mint green #10B981, each pill with a subtle connecting dotted trail back toward the clock center suggesting plans scheduled at different times. Clock face has soft inner glow, no clutter, no overlapping elements. Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic, NOT flat, NOT skeuomorphic. High quality, professional, production ready. Pure white background outside the icon, no patterns, no effects. Front-facing view, straight on, no perspective, no tilt. No text, no labels, no watermarks, icon only, isolated."
+    },
+    {
+      "aspect_ratio": "1:1",
+      "resolution": "2K",
+      "output_file": "wake_plan_icon_v4_stack_refined.png",
+      "prompt": "App icon for an Android multi-plan time management app called Wake Plan. Design language: deep dark navy background color #0B1426 with rounded square shape and soft inner glow. Centered composition: three equal-sized small day-cards stacked tightly with subtle vertical offset and very slight tilt (top card slightly tilted right by 3 degrees, middle card straight, bottom card slightly tilted left by 3 degrees), each card a rounded rectangle in dark navy with a soft glow border in a distinct color: top card border pink #EC4899, middle card border sky blue #3B82F6, bottom card border mint green #10B981. On the topmost card, a small clean clock face with warm amber #F5A524 hour and minute hands at 10:10. Each card shows a subtle progress bar at the bottom with different fill levels: top filled 85%, middle filled 50%, bottom empty 0%. Each card has a small dot or icon in the upper-left of the card to suggest a plan tag. Cards are arranged so all three are clearly visible with comfortable margin from icon edge. Style: clean modern dark theme, soft volumetric depth, premium productivity app aesthetic, NOT flat, NOT skeuomorphic. High quality, professional, production ready. Pure white background outside the icon, no patterns, no effects. Front-facing view, straight on, no perspective, no tilt. No text, no labels, no watermarks, icon only, isolated."
+    }
+  ]
+}
