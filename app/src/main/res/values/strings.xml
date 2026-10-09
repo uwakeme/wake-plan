@@ -344,7 +344,7 @@
     <string name="settings_notifications_completed">任务完成确认</string>
     <string name="settings_notifications_completed_sub">v0.1 占位，v0.2 启用</string>
     <string name="settings_notifications_recap">每日计划回顾</string>
-    <string name="settings_notifications_recap_sub">每日 21:00 推送（v0.1 占位）</string>
+    <string name="settings_notifications_recap_sub">每日 21:00 推送当日完成率小结</string>
     <string name="settings_test_notification">发测试通知</string>
     <string name="settings_lead_time_title">提前提醒</string>
     <string name="settings_lead_time_sub">任务开始前多少分钟推送通知</string>
@@ -575,4 +575,8 @@
     <string name="plan_type_side">副业</string>
     <string name="template_apply_failed">应用模板失败，请重试</string>
     <string name="backup_error_generic">操作失败，请重试</string>
+
+    <!-- v0.5 每日回顾 -->
+    <string name="notif_recap_title">今日回顾</string>
+    <string name="notif_recap_body">今天完成 %1$d/%2$d 个任务（%3$d%%）</string>
 </resources>

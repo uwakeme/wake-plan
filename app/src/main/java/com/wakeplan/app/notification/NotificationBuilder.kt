@@ -36,6 +36,8 @@ data class NotificationTexts(
     val completedTitle: String,    // "%1$s 已完成"
     val completedOnTime: String,   // "完成于 %1$s · 按时完成"
     val completedOverrun: String,  // "完成于 %1$s · 超时 %2$d 分钟"
+    val recapTitle: String,        // "今日回顾"
+    val recapBody: String,         // "完成 %1$d/%2$d（%3$d%%）"
 ) {
     companion object {
         fun from(context: Context) = NotificationTexts(
@@ -47,6 +49,8 @@ data class NotificationTexts(
             completedTitle = context.getString(R.string.notif_completed_title),
             completedOnTime = context.getString(R.string.notif_completed_on_time),
             completedOverrun = context.getString(R.string.notif_completed_overrun),
+            recapTitle = context.getString(R.string.notif_recap_title),
+            recapBody = context.getString(R.string.notif_recap_body),
         )
     }
 }
@@ -111,6 +115,20 @@ object NotificationContentBuilder {
         )
     }
 
+    /** v0.5：每日回顾——当日完成率小结（expected 为按任务定义推导的分母） */
+    fun buildRecap(
+        completedCount: Int,
+        expectedCount: Int,
+        texts: NotificationTexts,
+    ): NotificationContent {
+        val pct = if (expectedCount <= 0) 0 else (completedCount * 100) / expectedCount
+        return NotificationContent(
+            channelId = Channel.PLAN_RECAP.id,
+            title = texts.recapTitle,
+            text = String.format(texts.recapBody, completedCount, expectedCount, pct),
+        )
+    }
+
     private fun format(dt: LocalDateTime): String = dt.format(TIME_FMT)
 }
 
@@ -125,6 +143,7 @@ object NotificationBuilder {
     const val EXTRA_TASK_ID = "extra_task_id"
     const val EXTRA_COMPLETION_ID = "extra_completion_id"
     private const val DEEP_LINK_REQUEST_BASE = 1001
+    private const val RECAP_NAV_REQUEST_CODE = 1101
 
     fun buildStarting(
         context: Context,
@@ -202,6 +221,36 @@ object NotificationBuilder {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
+    }
+
+    /** v0.5：每日回顾（低优先级），点击进 Today */
+    fun buildRecap(context: Context, completedCount: Int, expectedCount: Int): Notification {
+        val content = NotificationContentBuilder.buildRecap(
+            completedCount, expectedCount, NotificationTexts.from(context),
+        )
+        return NotificationCompat.Builder(context, content.channelId)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(content.title)
+            .setContentText(content.text)
+            .setContentIntent(buildTodayIntent(context))
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+    }
+
+    /** 回顾通知没有具体 task 可定位，只跳 Today tab（复用 widget 的导航 extra） */
+    private fun buildTodayIntent(context: Context): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(com.wakeplan.app.widget.TodayWidgetProvider.EXTRA_NAV_TO_TODAY, true)
+        }
+        return PendingIntent.getActivity(
+            context,
+            RECAP_NAV_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     private fun buildContentIntent(context: Context, completion: TaskCompletion): PendingIntent {

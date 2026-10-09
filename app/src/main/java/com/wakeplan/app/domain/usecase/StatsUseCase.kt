@@ -116,24 +116,7 @@ class StatsUseCase @Inject constructor(
         // per-day buckets（补齐没有数据的日期，count=0）
         val perDay = (0 until range.days).map { offset ->
             val date = start.plusDays(offset.toLong())
-            val dayList = inRangeByDate[date].orEmpty()
-            val completed = dayList.filter { it.status == TaskStatus.COMPLETED }
-            val avgOverrun = avgOverrunOf(completed)
-            // 分母：当天应生效的任务数（计划已开始且任务已创建）
-            val expected = tasks.count { task ->
-                val plan = plansById[task.planId]
-                plan != null && !plan.startDate.isAfter(date) &&
-                    (task.createdEpochDay == 0L || task.createdEpochDay <= date.toEpochDay()) &&
-                    taskWindowCalculator(task, date) != null
-            }
-            DayBucket(
-                date = date,
-                completedCount = dayList.count { it.status == TaskStatus.COMPLETED },
-                skippedCount = dayList.count { it.status == TaskStatus.SKIPPED },
-                pendingCount = dayList.count { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS },
-                expectedCount = expected,
-                avgOverrunMinutes = avgOverrun,
-            )
+            dayBucket(inRangeByDate[date].orEmpty(), plansById, tasks, date)
         }
 
         // per-plan buckets（plansById 复用上面的）
@@ -174,6 +157,44 @@ class StatsUseCase @Inject constructor(
         val withOverrun = completed.filter { it.overrunMinutes > 0 }
         if (withOverrun.isEmpty()) return 0
         return withOverrun.map { it.overrunMinutes }.average().roundToInt()
+    }
+
+    /**
+     * 单日小结（v0.5：RecapWorker 每日回顾复用；compute 的 perDay 同源）。
+     * @param completions 传该日实例即可（内部不再按日期过滤）
+     */
+    fun dayBucket(
+        completions: List<TaskCompletion>,
+        plans: List<Plan>,
+        tasks: List<Task>,
+        date: LocalDate,
+    ): DayBucket {
+        val plansById = plans.associateBy { it.id }
+        return dayBucket(completions, plansById, tasks, date)
+    }
+
+    private fun dayBucket(
+        dayList: List<TaskCompletion>,
+        plansById: Map<String, Plan>,
+        tasks: List<Task>,
+        date: LocalDate,
+    ): DayBucket {
+        val completed = dayList.filter { it.status == TaskStatus.COMPLETED }
+        // 分母：当天应生效的任务数（计划已开始且任务已创建）
+        val expected = tasks.count { task ->
+            val plan = plansById[task.planId]
+            plan != null && !plan.startDate.isAfter(date) &&
+                (task.createdEpochDay == 0L || task.createdEpochDay <= date.toEpochDay()) &&
+                taskWindowCalculator(task, date) != null
+        }
+        return DayBucket(
+            date = date,
+            completedCount = completed.size,
+            skippedCount = dayList.count { it.status == TaskStatus.SKIPPED },
+            pendingCount = dayList.count { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS },
+            expectedCount = expected,
+            avgOverrunMinutes = avgOverrunOf(completed),
+        )
     }
 
     companion object {

@@ -41,6 +41,7 @@ class App : Application(), Configuration.Provider {
     @Inject lateinit var databaseSeeder: DatabaseSeeder
     @Inject lateinit var workManagerConfigProvider: WorkManagerConfigProvider
     @Inject lateinit var overdueWorkScheduler: OverdueWorkScheduler
+    @Inject lateinit var recapScheduler: com.wakeplan.app.notification.RecapScheduler
     @Inject lateinit var databaseKeyStore: DatabaseKeyStore
     @Inject lateinit var localeHelper: LocaleHelper
     @Inject lateinit var widgetDataRefresher: com.wakeplan.app.widget.WidgetDataRefresher
@@ -59,8 +60,10 @@ class App : Application(), Configuration.Provider {
         databaseSeeder.seedIfEmpty(applicationScope)
         // 5. 创建 4 个通知渠道（Android 8+；幂等；用户对 importance 的修改会被系统保留）
         NotificationChannels.createAll(this)
-        // 6. 启动 10min 周期 overdue 检查（KEEP 策略：已有同名 work 就不重建）
+        // 6. 启动 15min 周期 overdue 检查（UPDATE 策略）
         overdueWorkScheduler.start()
+        // 6.5 v0.5 每日回顾：24h 周期对齐 21:00（Worker 内自读偏好，关则空转）
+        recapScheduler.start()
         // 7. v0.3 Per-app locale：恢复用户上次选的语言（SharedPreferences → AppCompatDelegate）
         //    第一次启动 prefs 为空 → AppCompatDelegate 保留 system default（中文系统就是中文）
         localeHelper.restoreOnStartup()

@@ -568,4 +568,8 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="plan_type_side">Side</string>
     <string name="template_apply_failed">Failed to apply template, please retry</string>
     <string name="backup_error_generic">Something went wrong, please retry</string>
+
+    <!-- v0.5 daily recap -->
+    <string name="notif_recap_title">Daily recap</string>
+    <string name="notif_recap_body">%1$d of %2$d tasks done today (%3$d%%)</string>
 </resources>

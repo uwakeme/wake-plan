@@ -39,6 +39,8 @@ class NotificationContentBuilderTest {
         completedTitle = "%1\$s 已完成",
         completedOnTime = "完成于 %1\$s · 按时完成",
         completedOverrun = "完成于 %1\$s · 超时 %2\$d 分钟",
+        recapTitle = "今日回顾",
+        recapBody = "今天完成 %1\$d/%2\$d 个任务（%3\$d%%）",
     )
 
     @Nested
@@ -125,6 +127,30 @@ class NotificationContentBuilderTest {
             val done = completion.copy(status = TaskStatus.COMPLETED, actualEnd = null)
             val content = NotificationContentBuilder.buildCompleted(done, "晨练", zhTexts)
             assertTrue("09:30" in content.text)
+        }
+    }
+
+    @Nested
+    @DisplayName("recap 每日回顾 (v0.5)")
+    inner class Recap {
+        @Test
+        fun `标题固定，正文带完成数分母与百分比`() {
+            val content = NotificationContentBuilder.buildRecap(completedCount = 3, expectedCount = 4, texts = zhTexts)
+            assertEquals(Channel.PLAN_RECAP.id, content.channelId)
+            assertEquals("今日回顾", content.title)
+            assertEquals("今天完成 3/4 个任务（75%）", content.text)
+        }
+
+        @Test
+        fun `全部完成显示 100 percent`() {
+            val content = NotificationContentBuilder.buildRecap(completedCount = 5, expectedCount = 5, texts = zhTexts)
+            assertEquals("今天完成 5/5 个任务（100%）", content.text)
+        }
+
+        @Test
+        fun `分母为 0 时百分比兜底为 0 不崩（Worker 层已保证不推送，纯函数防御）`() {
+            val content = NotificationContentBuilder.buildRecap(completedCount = 0, expectedCount = 0, texts = zhTexts)
+            assertEquals("今天完成 0/0 个任务（0%）", content.text)
         }
     }
 

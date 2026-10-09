@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FileDownload
@@ -384,6 +385,7 @@ fun SettingsScreen(
     val startingEnabled by viewModel.taskStartingEnabled.collectAsStateWithLifecycle(initialValue = true)
     val overdueEnabled by viewModel.taskOverdueEnabled.collectAsStateWithLifecycle(initialValue = true)
     val completedEnabled by viewModel.taskCompletedEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val recapEnabled by viewModel.planRecapEnabled.collectAsStateWithLifecycle(initialValue = false)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -634,10 +636,17 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_notifications_completed_sub),
                         checked = completedEnabled,
                         onChange = { viewModel.setCompletedEnabled(it) },
+                    )
+                    // v0.5 实装：每日 21:00 当日完成率小结（RecapWorker）
+                    SettingToggleRow(
+                        icon = Icons.Outlined.Insights,
+                        iconTint = SettingIconTint.PURPLE,
+                        title = stringResource(R.string.settings_notifications_recap),
+                        subtitle = stringResource(R.string.settings_notifications_recap_sub),
+                        checked = recapEnabled,
+                        onChange = { viewModel.setRecapEnabled(it) },
                         showDivider = false,
                     )
-                    // plan_recap 每日回顾 v0.5 实装（每日 21:00 完成率小结），
-                    // 之前只有开关没有行为，先隐藏避免误导；偏好与渠道保留
                 }
             }
 
@@ -942,6 +951,7 @@ class SettingsViewModel @Inject constructor(
     private val appVersionProvider: com.wakeplan.app.data.backup.AppVersionProvider,
     private val localeHelper: LocaleHelper,
     private val scheduleRefresher: com.wakeplan.app.notification.ScheduleRefresher,
+    private val recapScheduler: com.wakeplan.app.notification.RecapScheduler,
     private val clock: java.time.Clock,
 ) : ViewModel() {
 
@@ -986,7 +996,11 @@ class SettingsViewModel @Inject constructor(
     fun setCompletedEnabled(enabled: Boolean) {
         viewModelScope.launch { preferences.setTaskCompletedEnabled(enabled) }
     }
+    // v0.5：开关切换即起停每日回顾调度（Worker 内另有偏好自守）
     fun setRecapEnabled(enabled: Boolean) {
-        viewModelScope.launch { preferences.setPlanRecapEnabled(enabled) }
+        viewModelScope.launch {
+            preferences.setPlanRecapEnabled(enabled)
+            if (enabled) recapScheduler.start() else recapScheduler.stop()
+        }
     }
 }
