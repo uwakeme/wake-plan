@@ -77,3 +77,6 @@ locale-prefs.xml
 !.editorconfig
 !AGENTS.md
 !CLAUDE.md
+
+# Release build outputs (v0.4.1: 本地产物不入库，Release 走 GitHub Releases)
+app/release/

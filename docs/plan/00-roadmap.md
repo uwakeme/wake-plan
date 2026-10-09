@@ -334,3 +334,22 @@ Room DAO / DataStore
 - TaskEditor 的 isLocked 入口核实为已有（「自动延期」开关，isLocked = !autoExtend），无需改动
 - **验收**：256 个 JVM 单测全过（v0.3.1 为 219），lint 0 error，`assembleDebug` 干净，内测文档更新到 v0.4（`docs/INTERNAL_TEST.md`）
 
+### v0.4.1 执行结果（2026-10-09 更新）
+
+深挖审查（业务/功能/代码三层）后的一次正确性修复版，全部完成并推 main（versionCode 7）：
+
+| 主题 | 修复 |
+|---|---|
+| 链式延期 | COMPLETED 按 actualEnd 推同计划下游并**落库** + 重排闹钟（此前生产数据流永不触发）；跨计划不传播（AC-06.5）；IN_PROGRESS 拖堂实时可见 |
+| ONCE 语义 | tasks 加 created_epoch_day（schema v4 + MIGRATION_3_4），快速录入的临时任务只今天生效 |
+| 迁移链路 | MIGRATION_1_2/2_3 恢复并接线、拆 fallbackToDestructiveMigration（仅降级保留）；androidTest 重写 + schema 挂 androidTest assets |
+| 跨午夜/跨天 | 冲突检测、overdue、widget、统计覆盖昨日跨午夜尾巴；VM/Widget 日期每分钟翻页，过午夜自动刷新 |
+| 通知调度 | cancelAll 实装（关开关即取消已挂闹钟）；偏好变更即时重排；MY_PACKAGE_REPLACED；超时 3 次封顶；15min 周期；exported=false；去 USE_EXACT_ALARM |
+| 统计口径 | 完成率分母按任务定义推导（没开 App 的日子不再稀释）；平均延期统一口径 |
+| 数据健壮性 | 补实例 insertIfAbsent+事务；任务改定义同步/清理未开始实例；导出事务快照；备份迭代上限+64MB 文件上限；KeyStore unwrap 失败恢复；模板 seed 幂等 |
+| UI/UX | 深链 singleTop+真实索引滚动；冲突按任务匹配；加载/错误态补齐；Onboarding 返回；StartDate DatePicker；跨午夜编辑不截断；splash 每进程一次；滚动动画不重播 |
+| i18n | Today/Onboarding/通知/widget/徽章硬编码中文全部抽 strings（+56 键中英对齐） |
+| 工程 | GitHub Actions CI；app/release/ 入 .gitignore；versionCode 7 / 0.4.1 |
+
+**验收**：263 个 JVM 单测全过（v0.4.0 为 256），lint 0 error，assembleDebug + assembleDebugAndroidTest 干净，schema 4.json 生成并入库。
+
