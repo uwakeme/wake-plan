@@ -122,4 +122,42 @@ class WakePlanDatabaseMigrationTest {
             assertEquals(0L, c.getLong(1))
         }
     }
+
+    @Test
+    fun migrate_4_to_5_creates_focus_sessions_and_composite_index() {
+        helper.createDatabase(TEST_DB_NAME + "-v4", 4).apply {
+            execSQL(
+                """
+                INSERT INTO plans (id, title, color_hex, start_date, is_active, created_at, updated_at, archived)
+                VALUES ('plan-f', '写作', '#8B5CF6', '2026-10-01', 1, 1759276800000, 1759276800000, 0)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            TEST_DB_NAME + "-v4", 5, true,
+            WakePlanDatabase.MIGRATION_4_5,
+        )
+
+        // focus_sessions 可写入且字段齐全
+        db.execSQL(
+            """
+            INSERT INTO focus_sessions (id, completion_id, plan_id, started_at, ended_at, planned_minutes, actual_minutes, outcome)
+            VALUES ('fs-1', 'comp-x', 'plan-f', 1760000000000, 1760001500000, 25, 25, 'FINISHED')
+            """.trimIndent(),
+        )
+        db.query("SELECT completion_id, planned_minutes, outcome FROM focus_sessions").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("comp-x", c.getString(0))
+            assertEquals(25, c.getInt(1))
+            assertEquals("FINISHED", c.getString(2))
+        }
+        // 搭车的复合索引已建
+        db.query(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name='index_task_completions_plan_id_scheduled_date'",
+        ).use { c ->
+            assertTrue("task_completions 复合索引应存在", c.moveToFirst())
+        }
+    }
 }

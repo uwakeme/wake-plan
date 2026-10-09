@@ -34,4 +34,7 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindTaskCompletionRepository(impl: TaskCompletionRepositoryImpl): TaskCompletionRepository
+
+    @Binds @Singleton
+    abstract fun bindFocusSessionRepository(impl: com.wakeplan.app.data.repository.FocusSessionRepositoryImpl): com.wakeplan.app.domain.repository.FocusSessionRepository
 }

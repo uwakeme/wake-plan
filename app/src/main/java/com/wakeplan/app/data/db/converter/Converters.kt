@@ -1,6 +1,7 @@
 package com.wakeplan.app.data.db.converter
 
 import androidx.room.TypeConverter
+import com.wakeplan.app.domain.model.FocusOutcome
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.TaskStatus
 import java.time.DayOfWeek
@@ -85,4 +86,11 @@ class Converters {
 
     @TypeConverter
     fun toTaskStatus(value: String?): TaskStatus? = value?.let { TaskStatus.valueOf(it) }
+
+    // ===== Enum: FocusOutcome（v0.6 focus_sessions）=====
+    @TypeConverter
+    fun fromFocusOutcome(value: FocusOutcome?): String? = value?.name
+
+    @TypeConverter
+    fun toFocusOutcome(value: String?): FocusOutcome? = value?.let { FocusOutcome.valueOf(it) }
 }

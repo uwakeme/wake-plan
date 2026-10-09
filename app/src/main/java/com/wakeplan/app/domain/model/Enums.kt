@@ -35,3 +35,13 @@ fun RepeatRule.validateCustomDays(customDays: Set<DayOfWeek>): String? = when (t
     RepeatRule.CUSTOM -> if (customDays.isEmpty()) "CUSTOM 规则必须至少选 1 天" else null
     else -> null
 }
+
+/**
+ * 专注轮结局 — v0.6 番茄钟
+ * - FINISHED: 计时走完（整轮专注有效）
+ * - ABANDONED: 用户中途放弃（actualMinutes 记实际专注量）
+ */
+enum class FocusOutcome {
+    FINISHED,
+    ABANDONED,
+}

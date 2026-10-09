@@ -60,4 +60,6 @@ object DatabaseModule {
     @Provides fun provideTaskDao(db: WakePlanDatabase): TaskDao = db.taskDao()
     @Provides fun providePlanTemplateDao(db: WakePlanDatabase): PlanTemplateDao = db.planTemplateDao()
     @Provides fun provideTaskCompletionDao(db: WakePlanDatabase): TaskCompletionDao = db.taskCompletionDao()
+    @Provides fun provideFocusSessionDao(db: WakePlanDatabase): com.wakeplan.app.data.db.dao.FocusSessionDao =
+        db.focusSessionDao()
 }

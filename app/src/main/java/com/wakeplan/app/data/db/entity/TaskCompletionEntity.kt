@@ -36,6 +36,8 @@ import java.time.LocalDateTime
         Index("plan_id"),
         Index("scheduled_date"),
         Index(value = ["task_id", "scheduled_date"], unique = true),
+        // v0.6（schema v5）：observeByPlanAndDate 高频查询的复合索引
+        Index(value = ["plan_id", "scheduled_date"]),
     ],
 )
 data class TaskCompletionEntity(

@@ -105,3 +105,27 @@ fun TaskCompletion.toEntity(): TaskCompletionEntity = TaskCompletionEntity(
     overrunMinutes = overrunMinutes,
     affectedTasks = affectedTasks,
 )
+
+fun com.wakeplan.app.data.db.entity.FocusSessionEntity.toDomain(): com.wakeplan.app.domain.model.FocusSession =
+    com.wakeplan.app.domain.model.FocusSession(
+        id = id,
+        completionId = completionId,
+        planId = planId,
+        startedAt = startedAt,
+        endedAt = endedAt,
+        plannedMinutes = plannedMinutes,
+        actualMinutes = actualMinutes,
+        outcome = outcome,
+    )
+
+fun com.wakeplan.app.domain.model.FocusSession.toEntity(): com.wakeplan.app.data.db.entity.FocusSessionEntity =
+    com.wakeplan.app.data.db.entity.FocusSessionEntity(
+        id = id,
+        completionId = completionId,
+        planId = planId,
+        startedAt = startedAt,
+        endedAt = endedAt,
+        plannedMinutes = plannedMinutes,
+        actualMinutes = actualMinutes,
+        outcome = outcome,
+    )

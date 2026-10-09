@@ -6,10 +6,12 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.wakeplan.app.data.db.converter.Converters
+import com.wakeplan.app.data.db.dao.FocusSessionDao
 import com.wakeplan.app.data.db.dao.PlanDao
 import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
 import com.wakeplan.app.data.db.dao.TaskDao
+import com.wakeplan.app.data.db.entity.FocusSessionEntity
 import com.wakeplan.app.data.db.entity.PlanEntity
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
 import com.wakeplan.app.data.db.entity.TaskCompletionEntity
@@ -24,6 +26,8 @@ import com.wakeplan.app.data.db.entity.TaskEntity
  * - v3（v0.3.1）：扁平化——砍 time_segments，task 自带起止时间+重复规则，
  *   旧 tasks/task_completions 数据清零（当时走 fallbackToDestructiveMigration）
  * - v4（v0.4.1）：tasks 加 created_epoch_day（ONCE 任务只创建日生效）
+ * - v5（v0.6）：focus_sessions 表（番茄钟专注轮）+ task_completions 复合索引
+ *   (plan_id, scheduled_date)
  *
  * v0.4.1 起迁移全部显式声明并接入 DatabaseModule；升级缺路径会直接抛错
  * （不再 fallbackToDestructiveMigration 静默清库），新迁移必须配 androidTest。
@@ -34,8 +38,9 @@ import com.wakeplan.app.data.db.entity.TaskEntity
         TaskEntity::class,
         PlanTemplateEntity::class,
         TaskCompletionEntity::class,
+        FocusSessionEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -44,6 +49,7 @@ abstract class WakePlanDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun planTemplateDao(): PlanTemplateDao
     abstract fun taskCompletionDao(): TaskCompletionDao
+    abstract fun focusSessionDao(): FocusSessionDao
 
     companion object {
         const val DB_NAME = "wakeplan.db"
@@ -92,6 +98,38 @@ abstract class WakePlanDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        /**
+         * v5（v0.6）：focus_sessions 表 + task_completions 复合索引。
+         * completion_id 不建 FK（completions 走 REPLACE 更新，CASCADE 会误删专注记录）；
+         * plan_id 挂 plans 级联。
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS focus_sessions (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        completion_id TEXT NOT NULL,
+                        plan_id TEXT NOT NULL,
+                        started_at INTEGER NOT NULL,
+                        ended_at INTEGER NOT NULL,
+                        planned_minutes INTEGER NOT NULL,
+                        actual_minutes INTEGER NOT NULL,
+                        outcome TEXT NOT NULL,
+                        FOREIGN KEY(plan_id) REFERENCES plans(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_focus_sessions_plan_id ON focus_sessions (plan_id)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_focus_sessions_started_at ON focus_sessions (started_at)")
+                // 搭车（审查遗留项）：observeByPlanAndDate 高频复合索引
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_task_completions_plan_id_scheduled_date " +
+                        "ON task_completions (plan_id, scheduled_date)"
+                )
+            }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
     }
 }
