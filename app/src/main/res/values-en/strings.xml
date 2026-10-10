@@ -91,6 +91,9 @@ Tap the button below to continue.</string>
     <string name="today_cd_skip">Skip</string>
     <string name="today_undo_started">Started</string>
     <string name="today_undo_completed">Completed</string>
+    <!-- v0.6.1：single in-progress guard -->
+    <string name="today_conflict_in_progress">"%1$s" is still in progress — finish or skip it before starting another</string>
+    <string name="today_conflict_in_progress_noname">Another task is still in progress — finish or skip it before starting a new one</string>
     <string name="today_undo_skipped">Skipped</string>
     <string name="today_undo_action">Undo</string>
     <string name="today_conflict">Conflicts with %1$s by %2$d min</string>

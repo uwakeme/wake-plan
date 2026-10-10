@@ -87,6 +87,9 @@
     <string name="today_cd_skip">跳过</string>
     <string name="today_undo_started">已开始</string>
     <string name="today_undo_completed">已完成</string>
+    <!-- v0.6.1：单进行中守门被拒时的提示（引导先完成/跳过旧任务） -->
+    <string name="today_conflict_in_progress">「%1$s」还在进行，先完成或跳过它再开始新任务</string>
+    <string name="today_conflict_in_progress_noname">已有任务在进行，先完成或跳过它再开始新任务</string>
     <string name="today_undo_skipped">已跳过</string>
     <string name="today_undo_action">撤销</string>
     <string name="today_conflict">与 %1$s 冲突 %2$d 分钟</string>

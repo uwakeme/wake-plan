@@ -132,6 +132,24 @@ fun TodayScreen(
         }
     }
 
+    // 单进行中守门被拒：提示用户先完成/跳过正在跑的任务（方案 A，不阻断操作但不放行）
+    val inProgressConflict by viewModel.inProgressConflict.collectAsStateWithLifecycle()
+    val conflictNamedMsg = stringResource(R.string.today_conflict_in_progress)
+    val conflictNonameMsg = stringResource(R.string.today_conflict_in_progress_noname)
+    LaunchedEffect(inProgressConflict) {
+        val conflict = inProgressConflict ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(
+            message = if (conflict.runningTitle.isBlank()) {
+                conflictNonameMsg
+            } else {
+                conflictNamedMsg.format(conflict.runningTitle)
+            },
+            withDismissAction = true,
+            duration = SnackbarDuration.Long,
+        )
+        viewModel.consumeInProgressConflict()
+    }
+
     val isViewingToday by viewModel.isViewingToday.collectAsStateWithLifecycle()
     var showQuickAdd by remember { mutableStateOf(false) }
 
