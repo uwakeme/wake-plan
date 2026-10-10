@@ -111,7 +111,13 @@ class StartingAlarmScheduler @Inject constructor(
         const val EXTRA_COMPLETION_ID = "extra_completion_id"
         private const val REQUEST_CODE_BASE = 2000
 
+        /**
+         * completionId → requestCode。
+         *
+         * `hashCode()` 返回 Int，取值域含负数；负 requestCode 在部分 ROM 上行为不一致，
+         * 这里用 `and 0x7FFFFFFF` 压到非负区间（碰撞概率本就存在且已被接受）。
+         */
         fun requestCodeFor(completionId: String): Int =
-            REQUEST_CODE_BASE + completionId.hashCode()
+            (REQUEST_CODE_BASE + completionId.hashCode()) and 0x7FFFFFFF
     }
 }
