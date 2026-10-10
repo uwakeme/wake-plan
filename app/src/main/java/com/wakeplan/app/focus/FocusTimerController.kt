@@ -207,19 +207,7 @@ class FocusTimerController @Inject constructor(
     }
 
     private fun recordRound(s: FocusState, outcome: FocusOutcome) {
-        val now = Instant.now(clock)
-        val session = FocusSession(
-            id = newId(),
-            completionId = s.completionId,
-            planId = s.planId,
-            startedAt = s.currentRoundStartedAt,
-            endedAt = now,
-            plannedMinutes = s.config.focusMinutes,
-            actualMinutes = Duration.between(s.currentRoundStartedAt, now).toMinutes().toInt()
-                .coerceAtLeast(0),
-            outcome = outcome,
-        )
-        scope.launch { focusSessionRepository.insert(session) }
+        scope.launch { recordRoundInternal(s, outcome) }
     }
 
     private suspend fun recordRoundInternal(s: FocusState, outcome: FocusOutcome) {
