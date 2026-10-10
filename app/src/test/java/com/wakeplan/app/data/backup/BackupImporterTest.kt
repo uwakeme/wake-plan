@@ -50,6 +50,7 @@ class BackupImporterTest {
     private val taskDao: TaskDao = mockk(relaxed = true)
     private val taskCompletionDao: TaskCompletionDao = mockk(relaxed = true)
     private val planTemplateDao: PlanTemplateDao = mockk(relaxed = true)
+    private val focusSessionDao: com.wakeplan.app.data.db.dao.FocusSessionDao = mockk(relaxed = true)
 
     private val json = Json {
         prettyPrint = true
@@ -71,7 +72,7 @@ class BackupImporterTest {
     }
 
     private fun importer() = BackupImporter(
-        db, planDao, taskDao, taskCompletionDao, planTemplateDao,
+        db, planDao, taskDao, taskCompletionDao, planTemplateDao, focusSessionDao,
     )
 
     private fun samplePlan() = PlanEntity(
@@ -118,7 +119,7 @@ class BackupImporterTest {
         schemaVersion = 1,
     )
 
-    private fun plainFileJson(): String {
+    private fun plainFileJson(focusSessions: List<BackupFocusSession> = emptyList()): String {
         val envelope = BackupEnvelope(
             schemaVersion = 1,
             exportedAt = Instant.parse("2026-08-08T01:00:00Z"),
@@ -131,6 +132,7 @@ class BackupImporterTest {
                 tasks = listOf(sampleTask().toDto()),
                 taskCompletions = listOf(sampleCompletion().toDto()),
                 planTemplates = listOf(sampleTemplate().toDto()),
+                focusSessions = focusSessions,
             ),
         )
         val file = BackupFile(
@@ -179,23 +181,58 @@ class BackupImporterTest {
     }
 
     @Test
-    fun `plain 文件导入 — 调 4 个 DAO 的 deleteAll 然后 insert 4 张表（不再有 segments）`() = runTest {
+    fun `plain 文件导入 — 调 5 个 DAO 的 deleteAll 然后 insert 5 张表（不再有 segments）`() = runTest {
         importer().import(plainFileJson(), passphrase = null)
 
-        // 4 个 deleteAll 都调了（不再 timeSegmentDao.deleteAll）
+        // deleteAll 按 FK-safe 顺序（focus_sessions 挂 plans 级联，必须在 plans 之前清）
         coVerifyOrder {
             taskCompletionDao.deleteAll()
+            focusSessionDao.deleteAll()
             taskDao.deleteAll()
             planTemplateDao.deleteAll()
             planDao.deleteAll()
         }
-        // 4 个 insert 都调了（按 FK 顺序）
+        // insert 按 FK 依赖的正序
         coVerifyOrder {
             planTemplateDao.insert(match { it.id == "tpl-1" })
             planDao.insert(match { it.id == "plan-1" })
             taskDao.insert(match { it.id == "task-1" })
             taskCompletionDao.insert(match { it.id == "comp-1" })
         }
+    }
+
+    @Test
+    fun `v0_6 focus_sessions 进导入`() = runTest {
+        // 导出侧已纳入专注记录，导入侧必须对称恢复，否则换机后专注历史仍会丢
+        val fileJson = plainFileJson(
+            focusSessions = listOf(
+                BackupFocusSession(
+                    id = "focus-1",
+                    completionId = "comp-1",
+                    planId = "plan-1",
+                    startedAt = Instant.parse("2026-08-08T02:00:00Z"),
+                    endedAt = Instant.parse("2026-08-08T02:25:00Z"),
+                    plannedMinutes = 25,
+                    actualMinutes = 24,
+                    outcome = com.wakeplan.app.domain.model.FocusOutcome.FINISHED,
+                ),
+            ),
+        )
+
+        val result = importer().import(fileJson, passphrase = null)
+
+        assertEquals(1, result.focusSessionsImported)
+        coVerify {
+            focusSessionDao.insert(match {
+                it.id == "focus-1" && it.completionId == "comp-1" && it.actualMinutes == 24
+            })
+        }
+    }
+
+    @Test
+    fun `老备份文件无 focusSessions 时导入正常且计数为 0`() = runTest {
+        val result = importer().import(plainFileJson(), passphrase = null)
+        assertEquals(0, result.focusSessionsImported)
     }
 
     @Test

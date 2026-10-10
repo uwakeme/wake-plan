@@ -29,6 +29,7 @@ class BackupExporter @Inject constructor(
     private val taskDao: TaskDao,
     private val taskCompletionDao: TaskCompletionDao,
     private val planTemplateDao: PlanTemplateDao,
+    private val focusSessionDao: com.wakeplan.app.data.db.dao.FocusSessionDao,
     private val clock: Clock,
     private val appVersionProvider: AppVersionProvider,
 ) {
@@ -57,12 +58,14 @@ class BackupExporter @Inject constructor(
                 tasks = taskDao.observeAll().first(),
                 completions = readAllCompletions(),
                 templates = planTemplateDao.observeAll().first(),
+                focusSessions = focusSessionDao.getAllSnapshot(),
             )
         }
         val plans = snapshot.plans
         val tasks = snapshot.tasks
         val completions = snapshot.completions
         val templates = snapshot.templates
+        val focusSessions = snapshot.focusSessions
 
         val envelope = BackupEnvelope(
             exportedAt = Instant.now(clock),
@@ -74,6 +77,7 @@ class BackupExporter @Inject constructor(
                 tasks = tasks.map { it.toDto() },
                 taskCompletions = completions.map { it.toDto() },
                 planTemplates = templates.map { it.toDto() },
+                focusSessions = focusSessions.map { it.toDto() },
             ),
         )
         return json.encodeToString(envelope)
@@ -87,12 +91,13 @@ class BackupExporter @Inject constructor(
         return taskCompletionDao.getAllSnapshot()
     }
 
-    /** 事务快照的四表数据 */
+    /** 事务快照的数据表（v0.6 起含 focus_sessions） */
     private data class Snapshot(
         val plans: List<com.wakeplan.app.data.db.entity.PlanEntity>,
         val tasks: List<com.wakeplan.app.data.db.entity.TaskEntity>,
         val completions: List<com.wakeplan.app.data.db.entity.TaskCompletionEntity>,
         val templates: List<com.wakeplan.app.data.db.entity.PlanTemplateEntity>,
+        val focusSessions: List<com.wakeplan.app.data.db.entity.FocusSessionEntity>,
     )
 
     /**

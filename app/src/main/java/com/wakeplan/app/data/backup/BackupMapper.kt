@@ -1,5 +1,6 @@
 package com.wakeplan.app.data.backup
 
+import com.wakeplan.app.data.db.entity.FocusSessionEntity
 import com.wakeplan.app.data.db.entity.PlanEntity
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
 import com.wakeplan.app.data.db.entity.TaskCompletionEntity
@@ -102,4 +103,26 @@ fun BackupTemplate.toEntity() = PlanTemplateEntity(
     colorHex = colorHex,
     isBuiltIn = isBuiltIn,
     schemaVersion = schemaVersion,
+)
+
+fun FocusSessionEntity.toDto() = BackupFocusSession(
+    id = id,
+    completionId = completionId,
+    planId = planId,
+    startedAt = startedAt,
+    endedAt = endedAt,
+    plannedMinutes = plannedMinutes,
+    actualMinutes = actualMinutes,
+    outcome = outcome,
+)
+
+fun BackupFocusSession.toEntity() = FocusSessionEntity(
+    id = id,
+    completionId = completionId,
+    planId = planId,
+    startedAt = startedAt,
+    endedAt = endedAt,
+    plannedMinutes = plannedMinutes,
+    actualMinutes = actualMinutes,
+    outcome = outcome,
 )

@@ -1,14 +1,18 @@
 package com.wakeplan.app.data.backup
 
+import com.wakeplan.app.data.db.entity.FocusSessionEntity
 import com.wakeplan.app.data.db.entity.PlanEntity
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
 import com.wakeplan.app.data.db.entity.TaskCompletionEntity
 import com.wakeplan.app.data.db.entity.TaskEntity
+import com.wakeplan.app.domain.model.FocusOutcome
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.TaskStatus
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -122,5 +126,70 @@ class BackupMapperTest {
         )
         val roundTrip = original.toDto().toEntity()
         assertEquals(original, roundTrip)
+    }
+
+    @Test
+    fun `FocusSessionEntity round-trip 不丢字段`() {
+        // v0.6：专注记录此前不进备份，换机即丢——纳入备份后必须完整往返
+        val original = FocusSessionEntity(
+            id = "focus-1",
+            completionId = "comp-1",
+            planId = "plan-1",
+            startedAt = Instant.parse("2026-08-08T02:00:00Z"),
+            endedAt = Instant.parse("2026-08-08T02:25:00Z"),
+            plannedMinutes = 25,
+            actualMinutes = 25,
+            outcome = FocusOutcome.FINISHED,
+        )
+        val roundTrip = original.toDto().toEntity()
+        assertEquals(original, roundTrip)
+    }
+
+    @Test
+    fun `老备份文件无 focusSessions 字段时按空 list 解析`() {
+        // 兼容性：v0.6 之前导出的备份文件没有这个 key，导入不能炸
+        val json = """
+            {"plans":[],"tasks":[],"taskCompletions":[],"planTemplates":[]}
+        """.trimIndent()
+        val data = testJson.decodeFromString(BackupData.serializer(), json)
+        assertTrue(data.focusSessions.isEmpty())
+    }
+
+    @Test
+    fun `focusSessions 序列化后可反序列化回来`() {
+        val json = testJson.encodeToString(
+            BackupData.serializer(),
+            BackupData(
+                plans = emptyList(),
+                tasks = emptyList(),
+                taskCompletions = emptyList(),
+                planTemplates = emptyList(),
+                focusSessions = listOf(
+                    BackupFocusSession(
+                        id = "focus-1",
+                        completionId = "comp-1",
+                        planId = "plan-1",
+                        startedAt = Instant.parse("2026-08-08T02:00:00Z"),
+                        endedAt = Instant.parse("2026-08-08T02:25:00Z"),
+                        plannedMinutes = 25,
+                        actualMinutes = 25,
+                        outcome = FocusOutcome.ABANDONED,
+                    ),
+                ),
+            ),
+        )
+        val decoded = testJson.decodeFromString(BackupData.serializer(), json)
+        assertEquals(1, decoded.focusSessions.size)
+        assertEquals(FocusOutcome.ABANDONED, decoded.focusSessions.first().outcome)
+        assertEquals(Instant.parse("2026-08-08T02:00:00Z"), decoded.focusSessions.first().startedAt)
+    }
+
+    private companion object {
+        /** 与 BackupExporter/BackupImporter 生产配置一致 */
+        val testJson = Json {
+            prettyPrint = true
+            encodeDefaults = true
+            ignoreUnknownKeys = true
+        }
     }
 }

@@ -39,6 +39,7 @@ class BackupImporter @Inject constructor(
     private val taskDao: TaskDao,
     private val taskCompletionDao: TaskCompletionDao,
     private val planTemplateDao: PlanTemplateDao,
+    private val focusSessionDao: com.wakeplan.app.data.db.dao.FocusSessionDao,
 ) {
     private val json = Json {
         prettyPrint = false  // 解析不在意格式
@@ -55,6 +56,8 @@ class BackupImporter @Inject constructor(
         val completionsImported: Int,
         val templatesImported: Int,
         val schemaVersion: Int,
+        /** v0.6：专注轮导入数；老备份文件无此字段时为 0。放末尾以兼容既有位置构造 */
+        val focusSessionsImported: Int = 0,
     )
 
     /**
@@ -105,6 +108,8 @@ class BackupImporter @Inject constructor(
         envelope.data.plans.forEach { planDao.insert(it.toEntity()) }
         envelope.data.tasks.forEach { taskDao.insert(it.toEntity()) }
         envelope.data.taskCompletions.forEach { taskCompletionDao.insert(it.toEntity()) }
+        // v0.6：focus_sessions.planId 挂 plans 级联，必须在 plans 之后插
+        envelope.data.focusSessions.forEach { focusSessionDao.insert(it.toEntity()) }
 
         ImportResult(
             plansImported = envelope.data.plans.size,
@@ -112,6 +117,7 @@ class BackupImporter @Inject constructor(
             tasksImported = envelope.data.tasks.size,
             completionsImported = envelope.data.taskCompletions.size,
             templatesImported = envelope.data.planTemplates.size,
+            focusSessionsImported = envelope.data.focusSessions.size,
             schemaVersion = envelope.schemaVersion,
         )
     }
@@ -121,7 +127,9 @@ class BackupImporter @Inject constructor(
         //              tasks 依赖 plans → 第二个
         //              templates 独立
         //              plans 最后（CASCADE 会带走剩下的，但显式删更可控）
+        // v0.6：focus_sessions.planId 挂 plans CASCADE，必须在 plans 之前显式清
         taskCompletionDao.deleteAll()
+        focusSessionDao.deleteAll()
         taskDao.deleteAll()
         planTemplateDao.deleteAll()
         planDao.deleteAll()

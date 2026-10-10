@@ -1,13 +1,16 @@
 package com.wakeplan.app.data.backup
 
+import com.wakeplan.app.data.db.dao.FocusSessionDao
 import com.wakeplan.app.data.db.dao.PlanDao
 import com.wakeplan.app.data.db.dao.PlanTemplateDao
 import com.wakeplan.app.data.db.dao.TaskCompletionDao
 import com.wakeplan.app.data.db.dao.TaskDao
+import com.wakeplan.app.data.db.entity.FocusSessionEntity
 import com.wakeplan.app.data.db.entity.PlanEntity
 import com.wakeplan.app.data.db.entity.PlanTemplateEntity
 import com.wakeplan.app.data.db.entity.TaskCompletionEntity
 import com.wakeplan.app.data.db.entity.TaskEntity
+import com.wakeplan.app.domain.model.FocusOutcome
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.TaskStatus
 import io.mockk.coEvery
@@ -52,6 +55,7 @@ class BackupExporterTest {
     private val taskDao: TaskDao = mockk()
     private val taskCompletionDao: TaskCompletionDao = mockk()
     private val planTemplateDao: PlanTemplateDao = mockk()
+    private val focusSessionDao: FocusSessionDao = mockk()
 
     private val fixedClock = Clock.fixed(Instant.parse("2026-08-08T12:00:00Z"), ZoneOffset.UTC)
     private val appVersionProvider = object : AppVersionProvider {
@@ -65,6 +69,7 @@ class BackupExporterTest {
         taskDao = taskDao,
         taskCompletionDao = taskCompletionDao,
         planTemplateDao = planTemplateDao,
+        focusSessionDao = focusSessionDao,
         clock = fixedClock,
         appVersionProvider = appVersionProvider,
     )
@@ -113,12 +118,25 @@ class BackupExporterTest {
         schemaVersion = 1,
     )
 
+    private val sampleFocusSession = FocusSessionEntity(
+        id = "focus-1",
+        completionId = "comp-1",
+        planId = "plan-1",
+        startedAt = Instant.parse("2026-08-08T02:00:00Z"),
+        endedAt = Instant.parse("2026-08-08T02:25:00Z"),
+        plannedMinutes = 25,
+        actualMinutes = 25,
+        outcome = FocusOutcome.FINISHED,
+    )
+
     @Test
     fun `空数据库 export 出来 4 个列表都为空 + segments 也为空`() = runTest {
         coEvery { planDao.observeAll() } returns flowOf(emptyList())
         coEvery { taskDao.observeAll() } returns flowOf(emptyList())
         coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
         coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+        coEvery { focusSessionDao.getAllSnapshot() } returns emptyList()
+        coEvery { focusSessionDao.getAllSnapshot() } returns emptyList()
 
         val json = exporter().export()
         val envelope = Json.decodeFromString(BackupEnvelope.serializer(), json)
@@ -132,6 +150,31 @@ class BackupExporterTest {
         assertEquals(0, envelope.data.tasks.size)
         assertEquals(0, envelope.data.taskCompletions.size)
         assertEquals(0, envelope.data.planTemplates.size)
+        assertEquals(0, envelope.data.focusSessions.size)
+    }
+
+    @Test
+    fun `v0_6 focus_sessions 进导出`() = runTest {
+        // 专注记录此前不进备份，换机即丢——与 completions 同为用户历史数据，应同进同出
+        coEvery { planDao.observeAll() } returns flowOf(listOf(samplePlan))
+        coEvery { taskDao.observeAll() } returns flowOf(listOf(sampleTask))
+        coEvery { taskCompletionDao.getAllSnapshot() } returns listOf(sampleCompletion)
+        coEvery { planTemplateDao.observeAll() } returns flowOf(listOf(sampleTemplate))
+        coEvery { focusSessionDao.getAllSnapshot() } returns listOf(sampleFocusSession)
+
+        val json = exporter().export()
+        val envelope = Json.decodeFromString(BackupEnvelope.serializer(), json)
+
+        assertEquals(1, envelope.data.focusSessions.size)
+        val fs = envelope.data.focusSessions[0]
+        assertEquals("focus-1", fs.id)
+        assertEquals("comp-1", fs.completionId)
+        assertEquals("plan-1", fs.planId)
+        assertEquals(Instant.parse("2026-08-08T02:00:00Z"), fs.startedAt)
+        assertEquals(Instant.parse("2026-08-08T02:25:00Z"), fs.endedAt)
+        assertEquals(25, fs.plannedMinutes)
+        assertEquals(25, fs.actualMinutes)
+        assertEquals(FocusOutcome.FINISHED, fs.outcome)
     }
 
     @Test
@@ -140,6 +183,7 @@ class BackupExporterTest {
         coEvery { taskDao.observeAll() } returns flowOf(listOf(sampleTask))
         coEvery { taskCompletionDao.getAllSnapshot() } returns listOf(sampleCompletion)
         coEvery { planTemplateDao.observeAll() } returns flowOf(listOf(sampleTemplate))
+        coEvery { focusSessionDao.getAllSnapshot() } returns listOf(sampleFocusSession)
 
         val json = exporter().export()
         val envelope = Json.decodeFromString(BackupEnvelope.serializer(), json)
@@ -173,6 +217,7 @@ class BackupExporterTest {
         coEvery { taskDao.observeAll() } returns flowOf(emptyList())
         coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
         coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+        coEvery { focusSessionDao.getAllSnapshot() } returns emptyList()
 
         val ex = exporter()
         ex.export()
@@ -190,6 +235,7 @@ class BackupExporterTest {
         coEvery { taskDao.observeAll() } returns flowOf(emptyList())
         coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
         coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+        coEvery { focusSessionDao.getAllSnapshot() } returns emptyList()
 
         val json = exporter().export()
         val envelope = Json.decodeFromString(BackupEnvelope.serializer(), json)
@@ -202,13 +248,14 @@ class BackupExporterTest {
         coEvery { taskDao.observeAll() } returns flowOf(emptyList())
         coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
         coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+        coEvery { focusSessionDao.getAllSnapshot() } returns emptyList()
 
         val customProvider = object : AppVersionProvider {
             override val versionName = "1.2.3-test"
             override val versionCode = 999
         }
         val ex = BackupExporter(
-            db, planDao, taskDao, taskCompletionDao, planTemplateDao,
+            db, planDao, taskDao, taskCompletionDao, planTemplateDao, focusSessionDao,
             fixedClock, customProvider,
         )
         val json = ex.export()
@@ -223,6 +270,7 @@ class BackupExporterTest {
         coEvery { taskDao.observeAll() } returns flowOf(listOf(sampleTask))
         coEvery { taskCompletionDao.getAllSnapshot() } returns listOf(sampleCompletion)
         coEvery { planTemplateDao.observeAll() } returns flowOf(listOf(sampleTemplate))
+        coEvery { focusSessionDao.getAllSnapshot() } returns listOf(sampleFocusSession)
 
         val json = exporter().export()
         val element = Json.parseToJsonElement(json)
@@ -242,6 +290,7 @@ class BackupExporterTest {
         coEvery { taskDao.observeAll() } returns flowOf(emptyList())
         coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
         coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+        coEvery { focusSessionDao.getAllSnapshot() } returns emptyList()
 
         val fileJson = exporter().exportToBackupFile(passphrase = null)
         val file = Json.decodeFromString(BackupFile.serializer(), fileJson)
@@ -261,6 +310,7 @@ class BackupExporterTest {
         coEvery { taskDao.observeAll() } returns flowOf(emptyList())
         coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
         coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+        coEvery { focusSessionDao.getAllSnapshot() } returns emptyList()
 
         val pass = "test-passphrase".toCharArray()
         try {
@@ -296,6 +346,7 @@ class BackupExporterTest {
         coEvery { taskDao.observeAll() } returns flowOf(emptyList())
         coEvery { taskCompletionDao.getAllSnapshot() } returns emptyList()
         coEvery { planTemplateDao.observeAll() } returns flowOf(emptyList())
+        coEvery { focusSessionDao.getAllSnapshot() } returns emptyList()
 
         val rightPass = "right".toCharArray()
         val wrongPass = "wrong".toCharArray()

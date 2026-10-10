@@ -1,5 +1,6 @@
 package com.wakeplan.app.data.backup
 
+import com.wakeplan.app.domain.model.FocusOutcome
 import com.wakeplan.app.domain.model.RepeatRule
 import com.wakeplan.app.domain.model.TaskStatus
 import kotlinx.serialization.Serializable
@@ -51,6 +52,8 @@ data class BackupData(
     val tasks: List<BackupTask>,
     val taskCompletions: List<BackupCompletion>,
     val planTemplates: List<BackupTemplate>,
+    /** v0.6：番茄钟专注轮；带默认值，v0.6 之前的老备份文件（无此 key）解码为空 */
+    val focusSessions: List<BackupFocusSession> = emptyList(),
 )
 
 @Serializable
@@ -133,6 +136,26 @@ data class BackupTemplate(
     val colorHex: String,
     val isBuiltIn: Boolean,
     val schemaVersion: Int,
+)
+
+/**
+ * v0.6 番茄钟专注轮 — 对应 FocusSessionEntity
+ *
+ * 与 task_completions 一同纳入备份：换机后专注历史不该丢。
+ * completionId 在 entity 上故意不建 FK（REPLACE 会级联删），这里保持同样的"软引用"语义。
+ */
+@Serializable
+data class BackupFocusSession(
+    val id: String,
+    val completionId: String,
+    val planId: String,
+    @Serializable(with = InstantSerializer::class)
+    val startedAt: Instant,
+    @Serializable(with = InstantSerializer::class)
+    val endedAt: Instant,
+    val plannedMinutes: Int,
+    val actualMinutes: Int,
+    val outcome: FocusOutcome,
 )
 
 /**

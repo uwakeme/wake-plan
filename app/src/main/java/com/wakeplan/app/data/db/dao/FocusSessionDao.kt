@@ -23,6 +23,14 @@ interface FocusSessionDao {
     )
     suspend fun getByStartedAtRange(start: Instant, end: Instant): List<FocusSessionEntity>
 
+    /** 备份导出用全表快照（与 TaskCompletionDao.getAllSnapshot 同款语义） */
+    @Query("SELECT * FROM focus_sessions ORDER BY started_at ASC")
+    suspend fun getAllSnapshot(): List<FocusSessionEntity>
+
+    /** 备份导入前的 wipe（focus_sessions 无 FK 到 completions，可独立清） */
+    @Query("DELETE FROM focus_sessions")
+    suspend fun deleteAll(): Int
+
     /** 数据保留清理：结束时间早于 cutoff 的行（insert 时已终态定局） */
     @Query("DELETE FROM focus_sessions WHERE ended_at < :cutoff")
     suspend fun deleteEndedBefore(cutoff: Instant): Int
