@@ -21,12 +21,18 @@ class StatsUseCaseTest {
     private val useCase = StatsUseCase(TaskWindowCalculator())
     private val today = LocalDate.of(2026, 8, 8)
 
-    private fun plan(id: String, title: String = "Plan $id", color: String = "#3B6FB5") = Plan(
+    private fun plan(
+        id: String,
+        title: String = "Plan $id",
+        color: String = "#3B6FB5",
+        archived: Boolean = false,
+    ) = Plan(
         id = id,
         title = title,
         colorHex = color,
         startDate = LocalDate.of(2026, 1, 1),
         isActive = true,
+        archived = archived,
         createdAt = java.time.Instant.parse("2026-01-01T00:00:00Z"),
         updatedAt = java.time.Instant.parse("2026-01-01T00:00:00Z"),
     )
@@ -89,6 +95,47 @@ class StatsUseCaseTest {
         val r = useCase.compute(emptyList(), emptyList(), emptyList(), StatsUseCase.Range.LAST_7_DAYS, today)
         assertEquals(today.minusDays(6), r.startDate)
         assertEquals(today, r.endDate)
+    }
+
+    @Test
+    fun `归档计划的任务不进完成率分母`() {
+        // 归档计划不再铺实例、不再产生完成记录，留在分母里会无声拉低完成率
+        val plans = listOf(plan("plan-1"), plan("plan-archived", archived = true))
+        val tasks = listOf(
+            task(id = "task-active", planId = "plan-1"),
+            task(id = "task-archived", planId = "plan-archived"),
+        )
+        val completions = listOf(
+            completion(id = "c-1", taskId = "task-active", planId = "plan-1"),
+        )
+
+        // 只看今天：分母应为 1（仅活跃计划的任务），归档计划的 1 个任务被排除
+        val r = useCase.compute(
+            completions, plans, tasks,
+            StatsUseCase.Range.LAST_7_DAYS, today,
+        )
+        val todayBucket = r.perDay.last()
+
+        assertEquals(1, todayBucket.expectedCount)
+        // 整天窗口下活跃计划每天各贡献 1，归档计划 0
+        assertEquals(7, r.totalExpected)
+        assertEquals(1, r.totalCompleted)
+        assertEquals(1f / 7f, r.completionRate, 0.0001f)
+    }
+
+    @Test
+    fun `归档计划的历史完成仍计入分子`() {
+        // 归档是停止未来排期，不是抹除历史——分子保留既有完成
+        val plans = listOf(plan("plan-1"), plan("plan-archived", archived = true))
+        val tasks = listOf(task(id = "task-archived", planId = "plan-archived"))
+        val completions = listOf(
+            completion(id = "c-old", taskId = "task-archived", planId = "plan-archived"),
+        )
+
+        val r = useCase.compute(completions, plans, tasks, StatsUseCase.Range.LAST_7_DAYS, today)
+
+        assertEquals(1, r.totalCompleted)
+        assertEquals(0, r.totalExpected)
     }
 
     @Test

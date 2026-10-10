@@ -231,10 +231,13 @@ class StatsUseCase @Inject constructor(
         date: LocalDate,
     ): DayBucket {
         val completed = dayList.filter { it.status == TaskStatus.COMPLETED }
-        // 分母：当天应生效的任务数（计划已开始且任务已创建）
+        // 分母：当天应生效的任务数（计划已开始、任务已创建、且计划未归档）
+        // 归档计划不再铺实例、不再产生完成记录，留在分母里会无声拉低完成率
+        // （与 TodayViewModel 的 `!archived` 过滤保持同一口径）
+        // 已归档计划的历史完成仍计入分子——归档停止的是未来排期，不是抹除历史
         val expected = tasks.count { task ->
             val plan = plansById[task.planId]
-            plan != null && !plan.startDate.isAfter(date) &&
+            plan != null && !plan.archived && !plan.startDate.isAfter(date) &&
                 (task.createdEpochDay == 0L || task.createdEpochDay <= date.toEpochDay()) &&
                 taskWindowCalculator(task, date) != null
         }
