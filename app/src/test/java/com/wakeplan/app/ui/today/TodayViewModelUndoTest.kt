@@ -116,6 +116,53 @@ class TodayViewModelUndoTest {
     }
 
     @Test
+    fun `已有别的任务在进行中时 onStartTask 被守门拒绝`() = runTest(testDispatcher) {
+        // TaskStatus.KDoc 声明"同时只允许 1 个 IN_PROGRESS"——不守就会有两条级联链同时生效
+        every { taskCompletionRepo.observeByDateRangeInclusive(any(), any()) } returns flowOf(
+            listOf(
+                pendingCompletion().copy(
+                    id = "comp-running",
+                    status = TaskStatus.IN_PROGRESS,
+                    actualStart = LocalDateTime.of(2026, 8, 8, 8, 0),
+                ),
+            ),
+        )
+        coEvery { taskCompletionRepo.getById("comp-1") } returns pendingCompletion()
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onStartTask("comp-1")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { taskCompletionRepo.upsert(match { it.status == TaskStatus.IN_PROGRESS }) }
+        coVerify(exactly = 0) { startingAlarmScheduler.cancelStartingAlarm("comp-1") }
+        assertNull(vm.undoableAction.value)
+    }
+
+    @Test
+    fun `唯一进行中任务重复 start 自己不算冲突`() = runTest(testDispatcher) {
+        // 守门要排除"它自己"，否则进行中的任务无法被再次触发
+        every { taskCompletionRepo.observeByDateRangeInclusive(any(), any()) } returns flowOf(
+            listOf(
+                pendingCompletion().copy(
+                    id = "comp-1",
+                    status = TaskStatus.IN_PROGRESS,
+                    actualStart = LocalDateTime.of(2026, 8, 8, 8, 0),
+                ),
+            ),
+        )
+        coEvery { taskCompletionRepo.getById("comp-1") } returns pendingCompletion()
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onStartTask("comp-1")
+        advanceUntilIdle()
+
+        // 冲突事件应当为 null（不是自己与自己冲突）
+        assertNull(vm.inProgressConflict.value)
+    }
+
+    @Test
     fun `onStartTask PENDING 状态写 IN_PROGRESS 且 emit UndoableAction Start 带 snapshot`() = runTest(testDispatcher) {
         val snapshot = pendingCompletion()
         coEvery { taskCompletionRepo.getById("comp-1") } returns snapshot
@@ -153,6 +200,60 @@ class TodayViewModelUndoTest {
         coVerify(exactly = 0) { taskCompletionRepo.upsert(any()) }
         coVerify(exactly = 0) { startingAlarmScheduler.cancelStartingAlarm(any()) }
         assertNull(vm.undoableAction.value)
+    }
+
+    @Test
+    fun `撤销 Start 重排闹钟`() = runTest(testDispatcher) {
+        // onStartTask 取消了 starting 闹钟，撤销后任务回到 PENDING，
+        // 必须重排否则本次会话内该任务不再提醒（对称性：取消有，恢复也要有）
+        val snapshot = pendingCompletion()
+        coEvery { taskCompletionRepo.getById("comp-1") } returns snapshot
+        val vm = viewModel()
+
+        vm.onStartTask("comp-1")
+        advanceUntilIdle()
+        coVerify(exactly = 0) { scheduleRefresher.refresh(any()) }
+
+        vm.undo()
+        advanceUntilIdle()
+
+        coVerify { scheduleRefresher.refresh(snapshot.scheduledDate) }
+    }
+
+    @Test
+    fun `撤销 Skip 重排闹钟`() = runTest(testDispatcher) {
+        val snapshot = pendingCompletion()
+        coEvery { taskCompletionRepo.getById("comp-1") } returns snapshot
+        val vm = viewModel()
+
+        vm.onSkipTask("comp-1")
+        advanceUntilIdle()
+
+        vm.undo()
+        advanceUntilIdle()
+
+        coVerify { scheduleRefresher.refresh(snapshot.scheduledDate) }
+    }
+
+    @Test
+    fun `撤销 Complete 仍走 resync 加 refresh 不变`() = runTest(testDispatcher) {
+        // 回归保护：Complete 分支原有行为不能被上面的改动破坏
+        val snapshot = pendingCompletion().copy(
+            status = TaskStatus.IN_PROGRESS,
+            actualStart = LocalDateTime.of(2026, 8, 8, 9, 5),
+        )
+        coEvery { taskCompletionRepo.getById("comp-1") } returns snapshot
+        every { cascadeDelayCalculator(any(), any(), any(), any()) } returns emptyList()
+        val vm = viewModel()
+
+        vm.onCompleteTask("comp-1")
+        advanceUntilIdle()
+
+        vm.undo()
+        advanceUntilIdle()
+
+        coVerify { taskRepo.resyncPlanCompletions("plan-1", snapshot.scheduledDate) }
+        coVerify { scheduleRefresher.refresh(snapshot.scheduledDate) }
     }
 
     @Test

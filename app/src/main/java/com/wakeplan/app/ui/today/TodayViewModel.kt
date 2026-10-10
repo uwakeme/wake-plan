@@ -239,6 +239,20 @@ class TodayViewModel @Inject constructor(
         viewModelScope.launch {
             val c = taskCompletionRepository.getById(completionId) ?: return@launch
             if (c.status != TaskStatus.PENDING) return@launch
+
+            // 守 TaskStatus.IN_PROGRESS 的不变量「同时只允许 1 个」（domain/model/Enums.kt）：
+            // 已有别的任务在跑时拒绝启动——两个 IN_PROGRESS 会让 CascadeDelayCalculator
+            // 同时跑两条链，下游被重复后推。排除自己，否则进行中的任务无法再次触发。
+            val running = taskCompletionRepository
+                .observeByDateRangeInclusive(c.scheduledDate.minusDays(1), c.scheduledDate)
+                .first()
+                .firstOrNull { it.status == TaskStatus.IN_PROGRESS && it.id != completionId }
+            if (running != null) {
+                val title = taskRepository.getById(running.taskId)?.title.orEmpty()
+                _inProgressConflict.value = InProgressConflict(running.id, title)
+                return@launch
+            }
+
             val now = LocalDateTime.now(clock)
             taskCompletionRepository.upsert(c.copy(
                 status = TaskStatus.IN_PROGRESS,
@@ -247,6 +261,17 @@ class TodayViewModel @Inject constructor(
             startingAlarmScheduler.cancelStartingAlarm(completionId)
             enqueueUndo(UndoableAction.Start(completionId, c))
         }
+    }
+
+    /** 启动被守门拒绝时的提示载荷——UI 层据此弹 Snackbar 引导用户先处理旧任务 */
+    data class InProgressConflict(val runningCompletionId: String, val runningTitle: String)
+
+    private val _inProgressConflict = MutableStateFlow<InProgressConflict?>(null)
+    val inProgressConflict: StateFlow<InProgressConflict?> = _inProgressConflict.asStateFlow()
+
+    /** Snackbar 消费后调用，清掉提示避免重复弹出 */
+    fun consumeInProgressConflict() {
+        _inProgressConflict.value = null
     }
 
     fun onCompleteTask(completionId: String) {
@@ -279,6 +304,10 @@ class TodayViewModel @Inject constructor(
                     action.previous.planId,
                     action.previous.scheduledDate,
                 )
+                scheduleRefresher.refresh(action.previous.scheduledDate)
+            } else {
+                // 撤销 Start / Skip：这两个动作都 cancelStartingAlarm 过，任务回到 PENDING 后
+                // 同样需要重排，否则本次会话内该任务不再提醒（对称性：取消有，恢复也要有）
                 scheduleRefresher.refresh(action.previous.scheduledDate)
             }
         }
