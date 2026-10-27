@@ -81,6 +81,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wakeplan.app.R
 import com.wakeplan.app.ui.common.TimeFormat
 import com.wakeplan.app.domain.model.Plan
+import com.wakeplan.app.domain.model.TaskCompletion
 import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.usecase.TaskConflict
 import com.wakeplan.app.ui.common.HighlightBus
@@ -778,6 +779,14 @@ private fun NowCard(
 }
 
 
+/** 时间线块的组合期预计算：draw 内不再排序、拼时间文案、逐字符量测标题（review §4.2） */
+private data class TimelineBlock(
+    val completion: TaskCompletion,
+    val startText: String,
+    /** 任务标题长度 1..n 前缀的量测宽度 */
+    val prefixWidths: List<Float>,
+)
+
 @Composable
 private fun TodayTimeLine(
     date: LocalDate,
@@ -811,6 +820,27 @@ private fun TodayTimeLine(
     }
     val plansById = remember(planItems) {
         planItems.associate { it.plan.id to it.plan }
+    }
+
+    // 时间线块预计算：排序、时间文案、标题前缀量测都随数据变化才重算；
+    // draw 约每分钟一次（now 变化触发），重复做这些纯属浪费（review §4.2）
+    val blockTextStyle = remember(tickLabelStyle) {
+        tickLabelStyle.copy(color = onTrackColor, fontWeight = FontWeight.SemiBold)
+    }
+    val timelineBlocks = remember(planItems, tasksById, blockTextStyle) {
+        planItems.flatMap { it.completions }
+            .sortedBy { it.plannedStart }
+            .map { c ->
+                val title = tasksById[c.taskId]?.title.orEmpty()
+                TimelineBlock(
+                    completion = c,
+                    startText = String.format("%02d:%02d", c.plannedStart.hour, c.plannedStart.minute),
+                    prefixWidths = List(title.length) { i ->
+                        textMeasurer.measure(title.substring(0, i + 1), style = blockTextStyle)
+                            .size.width.toFloat()
+                    },
+                )
+            }
     }
 
     val titleText = if (isViewingToday) {
@@ -953,17 +983,12 @@ private fun TodayTimeLine(
                                 )
                             }
 
-                            val blockTextStyle = tickLabelStyle.copy(
-                                color = onTrackColor,
-                                fontWeight = FontWeight.SemiBold,
-                            )
                             val minTextWidth = with(density) { 56.dp.toPx() }
                             val blockPadding = with(density) { 7.dp.toPx() }
                             val blockGap = with(density) { 5.dp.toPx() }
 
-                            val allCompletions = planItems.flatMap { it.completions }
-                                .sortedBy { it.plannedStart }
-                            allCompletions.forEach { c ->
+                            timelineBlocks.forEach { block ->
+                                val c = block.completion
                                 val plan = plansById[c.planId] ?: return@forEach
                                 val planColor = parseHexColor(plan.colorHex)
 
@@ -1005,10 +1030,7 @@ private fun TodayTimeLine(
                                 }
 
                                 if (blockWidth >= minTextWidth) {
-                                    val startText = String.format(
-                                        "%02d:%02d",
-                                        c.plannedStart.hour, c.plannedStart.minute,
-                                    )
+                                    val startText = block.startText
                                     val startMeasured = textMeasurer.measure(startText, style = blockTextStyle)
                                     val centerY = blockTop + blockPx / 2f
                                     drawText(
@@ -1025,13 +1047,13 @@ private fun TodayTimeLine(
                                             startMeasured.size.width - blockGap
                                     if (titleSpace > with(density) { 24.dp.toPx() }) {
                                         val taskTitle = tasksById[c.taskId]?.title ?: ""
-                                        var shown = ""
-                                        for (i in taskTitle.indices) {
-                                            val candidate = taskTitle.substring(0, i + 1)
-                                            val m = textMeasurer.measure(candidate, style = blockTextStyle)
-                                            if (m.size.width.toFloat() > titleSpace) break
-                                            shown = candidate
+                                        // 前缀宽度已在组合期量好，draw 时只查表找放得下的最长前缀
+                                        var shownLen = 0
+                                        for (prefixWidth in block.prefixWidths) {
+                                            if (prefixWidth > titleSpace) break
+                                            shownLen++
                                         }
+                                        val shown = if (shownLen > 0) taskTitle.substring(0, shownLen) else ""
                                         val finalText = if (shown.length < taskTitle.length && shown.isNotEmpty()) {
                                             shown.dropLast(1) + "…"
                                         } else if (shown.isEmpty() && taskTitle.isNotEmpty()) {
