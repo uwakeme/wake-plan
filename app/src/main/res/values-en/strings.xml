@@ -614,6 +614,8 @@ Forgotten passwords cannot be recovered — keep it safe.</string>
     <string name="focus_screen_title">Focus</string>
     <string name="focus_start">Start focusing</string>
     <string name="focus_busy_other">Another focus session is running — finish it first</string>
+    <string name="focus_conflict_in_progress">"%1$s" is still in progress — finish or skip it before focusing</string>
+    <string name="focus_conflict_in_progress_noname">Another task is still in progress — finish or skip it before focusing</string>
     <string name="focus_idle_config_summary">%1$d min focus · %2$d min short break · long break every %3$d rounds</string>
     <string name="focus_round_count">%1$d focus rounds done</string>
     <string name="focus_waiting_hint">Phase done — tap next to continue</string>

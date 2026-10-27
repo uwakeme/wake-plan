@@ -68,6 +68,7 @@ fun FocusScreen(
     val target by viewModel.target.collectAsStateWithLifecycle()
     val focusState by viewModel.focusState.collectAsStateWithLifecycle()
     val config by viewModel.config.collectAsStateWithLifecycle()
+    val startConflict by viewModel.startConflict.collectAsStateWithLifecycle()
 
     val state = focusState
     val active = state != null && state.completionId == viewModel.completionId
@@ -142,6 +143,7 @@ fun FocusScreen(
                     config.focusMinutes, config.shortBreakMinutes, config.roundsBeforeLongBreak,
                 ),
                 busyWithOther = focusState != null,
+                conflictTitle = startConflict,
                 onStart = viewModel::start,
             )
         }
@@ -345,6 +347,7 @@ private fun IdleFocusContent(
     taskTitle: String,
     planDurationHint: String,
     busyWithOther: Boolean,
+    conflictTitle: String?,
     onStart: () -> Unit,
 ) {
     Column(
@@ -369,6 +372,19 @@ private fun IdleFocusContent(
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.weight(1f))
+        if (conflictTitle != null) {
+            Text(
+                text = if (conflictTitle.isBlank()) {
+                    stringResource(R.string.focus_conflict_in_progress_noname)
+                } else {
+                    stringResource(R.string.focus_conflict_in_progress, conflictTitle)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+        }
         if (busyWithOther) {
             Text(
                 text = stringResource(R.string.focus_busy_other),

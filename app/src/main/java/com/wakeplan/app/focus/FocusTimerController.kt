@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -54,13 +55,27 @@ class FocusTimerController @Inject constructor(
     private val _state = MutableStateFlow<FocusState?>(null)
     val state: StateFlow<FocusState?> = _state.asStateFlow()
 
-    /** 开始一场专注（同一时间只允许一场；已在跑的直接忽略） */
-    fun start(
+    /**
+     * 开始一场专注（同一时间只允许一场；已在跑的同任务幂等忽略）
+     *
+     * 守 TaskStatus.IN_PROGRESS 的不变量「同时只允许 1 个」（domain/model/Enums.kt）：
+     * 专注页入口绕过了 TodayViewModel 点「开始」的守门，PENDING 目标在这里做
+     * 同口径检查（前一天到当天窗口内已有其他任务进行中则拒绝）。本类是所有
+     * 专注启动路径的单一入口，守门必须落在这里才兜得住。
+     *
+     * @return false = 被守门拒绝；true = 已开跑（含已在跑的幂等忽略）
+     */
+    suspend fun start(
         completion: TaskCompletion,
         task: Task,
         config: FocusConfig,
-    ) {
-        if (_state.value != null) return
+    ): Boolean {
+        _state.value?.let { return it.completionId == completion.id }
+        val running = taskCompletionRepository
+            .observeByDateRangeInclusive(completion.scheduledDate.minusDays(1), completion.scheduledDate)
+            .first()
+            .firstOrNull { it.status == TaskStatus.IN_PROGRESS && it.id != completion.id }
+        if (running != null) return false
         val now = Instant.now(clock)
         _state.value = FocusState(
             completionId = completion.id,
@@ -87,6 +102,7 @@ class FocusTimerController @Inject constructor(
             Intent(context, FocusTimerService::class.java).apply { action = FocusTimerService.ACTION_START },
         )
         tickLoop()
+        return true
     }
 
     /** 用户点"下一轮"（running=false 等待时；休息结束等待 → 开下一专注轮） */

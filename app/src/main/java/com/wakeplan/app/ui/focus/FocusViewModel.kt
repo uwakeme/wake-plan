@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.wakeplan.app.data.prefs.UserPreferences
 import com.wakeplan.app.domain.model.Task
 import com.wakeplan.app.domain.model.TaskCompletion
+import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.repository.TaskCompletionRepository
 import com.wakeplan.app.domain.repository.TaskRepository
 import com.wakeplan.app.focus.FocusConfig
@@ -64,10 +65,22 @@ class FocusViewModel @Inject constructor(
 
     fun start() {
         val t = _target.value ?: return
+        _startConflict.value = null
         viewModelScope.launch {
-            focusTimerController.start(t.completion, t.task, readConfig())
+            if (focusTimerController.start(t.completion, t.task, readConfig())) return@launch
+            // controller 守门拒绝：查出进行中的任务给用户提示（与 Today 点「开始」被拒同语义）
+            val running = taskCompletionRepository
+                .observeByDateRangeInclusive(t.completion.scheduledDate.minusDays(1), t.completion.scheduledDate)
+                .first()
+                .firstOrNull { it.status == TaskStatus.IN_PROGRESS && it.id != t.completion.id }
+                ?: return@launch
+            _startConflict.value = taskRepository.getById(running.taskId)?.title.orEmpty()
         }
     }
+
+    /** start 被守门拒绝时置值：进行中任务标题（空串=未知），UI 据此提示 */
+    private val _startConflict = MutableStateFlow<String?>(null)
+    val startConflict: StateFlow<String?> = _startConflict.asStateFlow()
 
     fun advance() = focusTimerController.advance()
 

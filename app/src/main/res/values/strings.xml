@@ -621,6 +621,8 @@
     <string name="focus_screen_title">专注</string>
     <string name="focus_start">开始专注</string>
     <string name="focus_busy_other">已有另一场专注在进行，先结束它</string>
+    <string name="focus_conflict_in_progress">「%1$s」还在进行，先完成或跳过它再开始专注</string>
+    <string name="focus_conflict_in_progress_noname">已有任务在进行，先完成或跳过它再开始专注</string>
     <string name="focus_idle_config_summary">%1$d 分钟专注 · %2$d 分钟短休 · 每 %3$d 轮长休</string>
     <string name="focus_round_count">已完成 %1$d 轮专注</string>
     <string name="focus_waiting_hint">本阶段结束，点"下一阶段"继续</string>
