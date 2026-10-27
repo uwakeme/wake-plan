@@ -2,6 +2,7 @@
 
 package com.wakeplan.app.ui.settings
 
+import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -316,6 +317,276 @@ private fun SettingNavRow(
     }
 }
 
+/** 下拉选择行：提醒提前量 / 专注三档时长共用（合并原先四处内联的同一形态） */
+@Composable
+private fun SettingDropdownRow(
+    icon: ImageVector,
+    iconTint: SettingIconTint,
+    title: String,
+    subtitle: String?,
+    value: Int,
+    options: List<Int>,
+    optionLabel: (Int) -> String,
+    onSelect: (Int) -> Unit,
+    showDivider: Boolean = true,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = true }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SettingIcon(icon = icon, tint = iconTint)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp),
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+            Box {
+                TextButton(onClick = { expanded = true }) {
+                    Text(
+                        text = optionLabel(value),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    options.forEach { v ->
+                        DropdownMenuItem(
+                            text = { Text(optionLabel(v)) },
+                            onClick = {
+                                onSelect(v)
+                                expanded = false
+                            },
+                        )
+                    }
+                }
+            }
+        }
+        if (showDivider) {
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 64.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotificationsSection(
+    leadMinutes: Int,
+    startingEnabled: Boolean,
+    overdueEnabled: Boolean,
+    completedEnabled: Boolean,
+    recapEnabled: Boolean,
+    onLeadSelect: (Int) -> Unit,
+    onStartingChange: (Boolean) -> Unit,
+    onOverdueChange: (Boolean) -> Unit,
+    onCompletedChange: (Boolean) -> Unit,
+    onRecapChange: (Boolean) -> Unit,
+) {
+    val context = LocalContext.current
+    SettingsGroupCard {
+        SettingDropdownRow(
+            icon = Icons.Outlined.Schedule,
+            iconTint = SettingIconTint.AMBER,
+            title = stringResource(R.string.settings_lead_time_title),
+            subtitle = stringResource(R.string.settings_lead_time_sub),
+            value = leadMinutes,
+            options = UserPreferences.ALLOWED_LEAD_VALUES.toList().sorted(),
+            optionLabel = { v ->
+                if (v == 0) context.getString(R.string.settings_lead_time_zero)
+                else context.getString(R.string.settings_lead_time_n_minutes, v)
+            },
+            onSelect = onLeadSelect,
+        )
+        SettingToggleRow(
+            icon = Icons.Outlined.NotificationsActive,
+            iconTint = SettingIconTint.AMBER,
+            title = stringResource(R.string.settings_notifications_starting),
+            subtitle = stringResource(R.string.settings_notifications_starting_sub),
+            checked = startingEnabled,
+            onChange = onStartingChange,
+        )
+        SettingToggleRow(
+            icon = Icons.Outlined.ErrorOutline,
+            iconTint = SettingIconTint.RED,
+            title = stringResource(R.string.settings_notifications_overdue),
+            subtitle = stringResource(R.string.settings_notifications_overdue_sub),
+            checked = overdueEnabled,
+            onChange = onOverdueChange,
+        )
+        SettingToggleRow(
+            icon = Icons.Outlined.CheckCircle,
+            iconTint = SettingIconTint.GREEN,
+            title = stringResource(R.string.settings_notifications_completed),
+            subtitle = stringResource(R.string.settings_notifications_completed_sub),
+            checked = completedEnabled,
+            onChange = onCompletedChange,
+        )
+        // v0.5 实装：每日 21:00 当日完成率小结（RecapWorker）
+        SettingToggleRow(
+            icon = Icons.Outlined.Insights,
+            iconTint = SettingIconTint.PURPLE,
+            title = stringResource(R.string.settings_notifications_recap),
+            subtitle = stringResource(R.string.settings_notifications_recap_sub),
+            checked = recapEnabled,
+            onChange = onRecapChange,
+            showDivider = false,
+        )
+    }
+}
+
+@Composable
+private fun BackupSection(
+    onExportClick: () -> Unit,
+    onImportClick: () -> Unit,
+    onCsvExportClick: () -> Unit,
+) {
+    SettingsGroupCard {
+        SettingNavRow(
+            icon = Icons.Outlined.FileDownload,
+            iconTint = SettingIconTint.GREEN,
+            title = stringResource(R.string.settings_backup_export_title),
+            subtitle = stringResource(R.string.settings_backup_intro_runtime).replace("\\n", "\n"),
+            onClick = onExportClick,
+        )
+        SettingNavRow(
+            icon = Icons.Outlined.FileUpload,
+            iconTint = SettingIconTint.PURPLE,
+            title = stringResource(R.string.settings_backup_import),
+            subtitle = stringResource(R.string.settings_import_confirm_text),
+            onClick = onImportClick,
+        )
+        // v0.5：任务执行记录 CSV 导出（SAF，同备份导出状态机）
+        SettingNavRow(
+            icon = Icons.Outlined.TableView,
+            iconTint = SettingIconTint.AMBER,
+            title = stringResource(R.string.settings_csv_export),
+            subtitle = stringResource(R.string.settings_csv_export_sub),
+            onClick = onCsvExportClick,
+            showDivider = false,
+        )
+    }
+}
+
+@Composable
+private fun FocusSection(
+    focusMinutes: Int,
+    focusShortBreak: Int,
+    focusLongBreak: Int,
+    focusAutoStart: Boolean,
+    onFocusSelect: (Int) -> Unit,
+    onShortSelect: (Int) -> Unit,
+    onLongSelect: (Int) -> Unit,
+    onAutoStartChange: (Boolean) -> Unit,
+) {
+    val context = LocalContext.current
+    val minutesLabel: (Int) -> String = { context.getString(R.string.settings_focus_minutes_value, it) }
+    SettingsGroupCard {
+        // 专注时长
+        SettingDropdownRow(
+            icon = Icons.Outlined.Timer,
+            iconTint = SettingIconTint.AMBER,
+            title = stringResource(R.string.settings_focus_duration),
+            subtitle = stringResource(R.string.settings_focus_duration_sub),
+            value = focusMinutes,
+            options = UserPreferences.FOCUS_MINUTES_ALLOWED.toList().sorted(),
+            optionLabel = minutesLabel,
+            onSelect = onFocusSelect,
+        )
+        // 短休
+        SettingDropdownRow(
+            icon = Icons.Outlined.Pause,
+            iconTint = SettingIconTint.GREEN,
+            title = stringResource(R.string.settings_focus_short_break),
+            subtitle = null,
+            value = focusShortBreak,
+            options = UserPreferences.FOCUS_SHORT_BREAK_ALLOWED.toList().sorted(),
+            optionLabel = minutesLabel,
+            onSelect = onShortSelect,
+        )
+        // 长休（其后紧跟开关行，不再画分隔线）
+        SettingDropdownRow(
+            icon = Icons.Outlined.Bedtime,
+            iconTint = SettingIconTint.PURPLE,
+            title = stringResource(R.string.settings_focus_long_break),
+            subtitle = null,
+            value = focusLongBreak,
+            options = UserPreferences.FOCUS_LONG_BREAK_ALLOWED.toList().sorted(),
+            optionLabel = minutesLabel,
+            onSelect = onLongSelect,
+            showDivider = false,
+        )
+        // 自动下一阶段
+        SettingToggleRow(
+            icon = Icons.Outlined.Autorenew,
+            iconTint = SettingIconTint.AMBER,
+            title = stringResource(R.string.settings_focus_auto_next),
+            subtitle = stringResource(R.string.settings_focus_auto_next_sub),
+            checked = focusAutoStart,
+            onChange = onAutoStartChange,
+            showDivider = false,
+        )
+    }
+}
+
+/** 测试通知：构造假 completion 走 Starting 通知构建链，未授权时静默跳过 */
+private fun sendTestNotification(context: Context, leadMinutes: Int, taskTitle: String) {
+    val testCompletion = TaskCompletion(
+        id = "test-${System.currentTimeMillis()}",
+        taskId = "test-task",
+        planId = "test-plan",
+        scheduledDate = java.time.LocalDate.now(),
+        plannedStart = LocalDateTime.now(),
+        plannedEnd = LocalDateTime.now().plusMinutes(30),
+        status = TaskStatus.PENDING,
+    )
+    val notification = NotificationBuilder.buildStarting(
+        context = context,
+        completion = testCompletion,
+        taskTitle = taskTitle,
+        leadMinutes = leadMinutes,
+    )
+    // Android 13+ 未授权 POST_NOTIFICATIONS 时直接跳过（lint MissingPermission）
+    if (!NotificationPermissionChecker.hasPostNotificationsPermission(context)) {
+        return
+    }
+    NotificationManagerCompat.from(context).let { notifier ->
+        try {
+            notifier.notify(
+                (System.currentTimeMillis() % Int.MAX_VALUE).toInt(),
+                notification,
+            )
+        } catch (_: SecurityException) {
+            // 通知权限未授权，测试通知静默跳过
+        }
+    }
+}
+
 @Composable
 private fun AboutAppCard(
     versionName: String,
@@ -397,7 +668,6 @@ fun SettingsScreen(
     val focusShortBreak by viewModel.focusShortBreak.collectAsStateWithLifecycle(initialValue = UserPreferences.FOCUS_SHORT_BREAK_DEFAULT)
     val focusLongBreak by viewModel.focusLongBreak.collectAsStateWithLifecycle(initialValue = UserPreferences.FOCUS_LONG_BREAK_DEFAULT)
     val focusAutoStart by viewModel.focusAutoStart.collectAsStateWithLifecycle(initialValue = false)
-    var focusMenu by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -417,8 +687,6 @@ fun SettingsScreen(
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showRetentionDialog by remember { mutableStateOf(false) }
     val currentLocale = viewModel.currentLocale
-
-    var leadMenuExpanded by remember { mutableStateOf(false) }
 
     // v0.5：CSV 导出 launcher（复用 ExportState 状态机与结果消费）
     val csvLauncher = rememberLauncherForActivityResult(
@@ -492,11 +760,6 @@ fun SettingsScreen(
         }
     }
 
-    val leadValueText = if (leadMinutes == 0) {
-        stringResource(R.string.settings_lead_time_zero)
-    } else {
-        stringResource(R.string.settings_lead_time_n_minutes, leadMinutes)
-    }
     val languageValueText = when (currentLocale) {
         LocaleHelper.LocaleChoice.SYSTEM -> stringResource(R.string.language_summary_system)
         LocaleHelper.LocaleChoice.ZH -> stringResource(R.string.language_summary_zh)
@@ -567,106 +830,18 @@ fun SettingsScreen(
 
             item { SectionTitle(stringResource(R.string.settings_section_notifications)) }
             item {
-                SettingsGroupCard {
-                    Column {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { leadMenuExpanded = true }
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            SettingIcon(icon = Icons.Outlined.Schedule, tint = SettingIconTint.AMBER)
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(start = 12.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.settings_lead_time_title),
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Text(
-                                    text = stringResource(R.string.settings_lead_time_sub),
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.padding(top = 2.dp),
-                                )
-                            }
-                            Box {
-                                TextButton(onClick = { leadMenuExpanded = true }) {
-                                    Text(
-                                        text = leadValueText,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium,
-                                    )
-                                }
-                                val options = UserPreferences.ALLOWED_LEAD_VALUES.toList().sorted()
-                                DropdownMenu(
-                                    expanded = leadMenuExpanded,
-                                    onDismissRequest = { leadMenuExpanded = false },
-                                ) {
-                                    options.forEach { v ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    if (v == 0) stringResource(R.string.settings_lead_time_zero)
-                                                    else stringResource(R.string.settings_lead_time_n_minutes, v),
-                                                )
-                                            },
-                                            onClick = {
-                                                viewModel.setLeadMinutes(v)
-                                                leadMenuExpanded = false
-                                            },
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 64.dp),
-                            thickness = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                        )
-                    }
-                    SettingToggleRow(
-                        icon = Icons.Outlined.NotificationsActive,
-                        iconTint = SettingIconTint.AMBER,
-                        title = stringResource(R.string.settings_notifications_starting),
-                        subtitle = stringResource(R.string.settings_notifications_starting_sub),
-                        checked = startingEnabled,
-                        onChange = { viewModel.setStartingEnabled(it) },
-                    )
-                    SettingToggleRow(
-                        icon = Icons.Outlined.ErrorOutline,
-                        iconTint = SettingIconTint.RED,
-                        title = stringResource(R.string.settings_notifications_overdue),
-                        subtitle = stringResource(R.string.settings_notifications_overdue_sub),
-                        checked = overdueEnabled,
-                        onChange = { viewModel.setOverdueEnabled(it) },
-                    )
-                    SettingToggleRow(
-                        icon = Icons.Outlined.CheckCircle,
-                        iconTint = SettingIconTint.GREEN,
-                        title = stringResource(R.string.settings_notifications_completed),
-                        subtitle = stringResource(R.string.settings_notifications_completed_sub),
-                        checked = completedEnabled,
-                        onChange = { viewModel.setCompletedEnabled(it) },
-                    )
-                    // v0.5 实装：每日 21:00 当日完成率小结（RecapWorker）
-                    SettingToggleRow(
-                        icon = Icons.Outlined.Insights,
-                        iconTint = SettingIconTint.PURPLE,
-                        title = stringResource(R.string.settings_notifications_recap),
-                        subtitle = stringResource(R.string.settings_notifications_recap_sub),
-                        checked = recapEnabled,
-                        onChange = { viewModel.setRecapEnabled(it) },
-                        showDivider = false,
-                    )
-                }
+                NotificationsSection(
+                    leadMinutes = leadMinutes,
+                    startingEnabled = startingEnabled,
+                    overdueEnabled = overdueEnabled,
+                    completedEnabled = completedEnabled,
+                    recapEnabled = recapEnabled,
+                    onLeadSelect = { viewModel.setLeadMinutes(it) },
+                    onStartingChange = { viewModel.setStartingEnabled(it) },
+                    onOverdueChange = { viewModel.setOverdueEnabled(it) },
+                    onCompletedChange = { viewModel.setCompletedEnabled(it) },
+                    onRecapChange = { viewModel.setRecapEnabled(it) },
+                )
             }
 
             item {
@@ -674,35 +849,7 @@ fun SettingsScreen(
                 OutlinedButton(
                     onClick = {
                         scope.launch {
-                            val testCompletion = TaskCompletion(
-                                id = "test-${System.currentTimeMillis()}",
-                                taskId = "test-task",
-                                planId = "test-plan",
-                                scheduledDate = java.time.LocalDate.now(),
-                                plannedStart = LocalDateTime.now(),
-                                plannedEnd = LocalDateTime.now().plusMinutes(30),
-                                status = TaskStatus.PENDING,
-                            )
-                            val notification = NotificationBuilder.buildStarting(
-                                context = context,
-                                completion = testCompletion,
-                                taskTitle = testNotificationTitle,
-                                leadMinutes = leadMinutes,
-                            )
-                            // Android 13+ 未授权 POST_NOTIFICATIONS 时直接跳过（lint MissingPermission）
-                            if (!NotificationPermissionChecker.hasPostNotificationsPermission(context)) {
-                                return@launch
-                            }
-                            NotificationManagerCompat.from(context).let { notifier ->
-                                try {
-                                    notifier.notify(
-                                        (System.currentTimeMillis() % Int.MAX_VALUE).toInt(),
-                                        notification,
-                                    )
-                                } catch (_: SecurityException) {
-                                    // 通知权限未授权，测试通知静默跳过
-                                }
-                            }
+                            sendTestNotification(context, leadMinutes, testNotificationTitle)
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -717,34 +864,14 @@ fun SettingsScreen(
 
             item { SectionTitle(stringResource(R.string.settings_section_backup)) }
             item {
-                SettingsGroupCard {
-                    SettingNavRow(
-                        icon = Icons.Outlined.FileDownload,
-                        iconTint = SettingIconTint.GREEN,
-                        title = stringResource(R.string.settings_backup_export_title),
-                        subtitle = stringResource(R.string.settings_backup_intro_runtime).replace("\\n", "\n"),
-                        onClick = { showExportChooserDialog = true },
-                    )
-                    SettingNavRow(
-                        icon = Icons.Outlined.FileUpload,
-                        iconTint = SettingIconTint.PURPLE,
-                        title = stringResource(R.string.settings_backup_import),
-                        subtitle = stringResource(R.string.settings_import_confirm_text),
-                        onClick = { showImportConfirmDialog = true },
-                    )
-                    // v0.5：任务执行记录 CSV 导出（SAF，同备份导出状态机）
-                    SettingNavRow(
-                        icon = Icons.Outlined.TableView,
-                        iconTint = SettingIconTint.AMBER,
-                        title = stringResource(R.string.settings_csv_export),
-                        subtitle = stringResource(R.string.settings_csv_export_sub),
-                        onClick = {
-                            val ts = java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date())
-                            csvLauncher.launch("wakeplan-completions-$ts.csv")
-                        },
-                        showDivider = false,
-                    )
-                }
+                BackupSection(
+                    onExportClick = { showExportChooserDialog = true },
+                    onImportClick = { showImportConfirmDialog = true },
+                    onCsvExportClick = {
+                        val ts = java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date())
+                        csvLauncher.launch("wakeplan-completions-$ts.csv")
+                    },
+                )
             }
 
             if (exportState is BackupViewModel.ExportState.Running || importState is BackupViewModel.ImportState.Running) {
@@ -774,172 +901,16 @@ fun SettingsScreen(
 
             item { SectionTitle(stringResource(R.string.settings_section_focus)) }
             item {
-                SettingsGroupCard {
-                    // 专注时长
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { focusMenu = "focus" }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        SettingIcon(icon = Icons.Outlined.Timer, tint = SettingIconTint.AMBER)
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 12.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_focus_duration),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_focus_duration_sub),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.tertiary,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        Box {
-                            TextButton(onClick = { focusMenu = "focus" }) {
-                                Text(
-                                    text = stringResource(R.string.settings_focus_minutes_value, focusMinutes),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = focusMenu == "focus",
-                                onDismissRequest = { focusMenu = null },
-                            ) {
-                                UserPreferences.FOCUS_MINUTES_ALLOWED.sorted().forEach { v ->
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.settings_focus_minutes_value, v)) },
-                                        onClick = {
-                                            viewModel.setFocusMinutes(v)
-                                            focusMenu = null
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = 64.dp),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                    )
-                    // 短休
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { focusMenu = "short" }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        SettingIcon(icon = Icons.Outlined.Pause, tint = SettingIconTint.GREEN)
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 12.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_focus_short_break),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                        Box {
-                            TextButton(onClick = { focusMenu = "short" }) {
-                                Text(
-                                    text = stringResource(R.string.settings_focus_minutes_value, focusShortBreak),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = focusMenu == "short",
-                                onDismissRequest = { focusMenu = null },
-                            ) {
-                                UserPreferences.FOCUS_SHORT_BREAK_ALLOWED.sorted().forEach { v ->
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.settings_focus_minutes_value, v)) },
-                                        onClick = {
-                                            viewModel.setFocusShortBreak(v)
-                                            focusMenu = null
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = 64.dp),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                    )
-                    // 长休
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { focusMenu = "long" }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        SettingIcon(icon = Icons.Outlined.Bedtime, tint = SettingIconTint.PURPLE)
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 12.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_focus_long_break),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                        Box {
-                            TextButton(onClick = { focusMenu = "long" }) {
-                                Text(
-                                    text = stringResource(R.string.settings_focus_minutes_value, focusLongBreak),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = focusMenu == "long",
-                                onDismissRequest = { focusMenu = null },
-                            ) {
-                                UserPreferences.FOCUS_LONG_BREAK_ALLOWED.sorted().forEach { v ->
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.settings_focus_minutes_value, v)) },
-                                        onClick = {
-                                            viewModel.setFocusLongBreak(v)
-                                            focusMenu = null
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    // 自动下一阶段
-                    SettingToggleRow(
-                        icon = Icons.Outlined.Autorenew,
-                        iconTint = SettingIconTint.AMBER,
-                        title = stringResource(R.string.settings_focus_auto_next),
-                        subtitle = stringResource(R.string.settings_focus_auto_next_sub),
-                        checked = focusAutoStart,
-                        onChange = { viewModel.setFocusAutoStart(it) },
-                        showDivider = false,
-                    )
-                }
+                FocusSection(
+                    focusMinutes = focusMinutes,
+                    focusShortBreak = focusShortBreak,
+                    focusLongBreak = focusLongBreak,
+                    focusAutoStart = focusAutoStart,
+                    onFocusSelect = { viewModel.setFocusMinutes(it) },
+                    onShortSelect = { viewModel.setFocusShortBreak(it) },
+                    onLongSelect = { viewModel.setFocusLongBreak(it) },
+                    onAutoStartChange = { viewModel.setFocusAutoStart(it) },
+                )
             }
 
             item { SectionTitle(stringResource(R.string.settings_retention_title)) }
