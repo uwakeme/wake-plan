@@ -161,7 +161,7 @@ object NotificationBuilder {
             completion, taskTitle, leadMinutes, NotificationTexts.from(context),
         )
         return NotificationCompat.Builder(context, content.channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentTitle(content.title)
             .setContentText(content.text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(content.text))
@@ -182,7 +182,7 @@ object NotificationBuilder {
             completion, taskTitle, overdueCount, NotificationTexts.from(context),
         )
         return NotificationCompat.Builder(context, content.channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentTitle(content.title)
             .setContentText(content.text)
             .setContentIntent(buildContentIntent(context, completion))
@@ -202,7 +202,7 @@ object NotificationBuilder {
             completion, taskTitle, NotificationTexts.from(context),
         )
         return NotificationCompat.Builder(context, content.channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentTitle(content.title)
             .setContentText(content.text)
             .setContentIntent(buildContentIntent(context, completion))
@@ -220,7 +220,7 @@ object NotificationBuilder {
             text = context.getString(R.string.notif_test_text),
         )
         return NotificationCompat.Builder(context, content.channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentTitle(content.title)
             .setContentText(content.text)
             .setAutoCancel(true)
@@ -235,7 +235,7 @@ object NotificationBuilder {
             completedCount, expectedCount, NotificationTexts.from(context),
         )
         return NotificationCompat.Builder(context, content.channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentTitle(content.title)
             .setContentText(content.text)
             .setContentIntent(buildTodayIntent(context))

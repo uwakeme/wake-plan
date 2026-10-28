@@ -98,7 +98,7 @@ class FocusTimerService : Service() {
         val ctx = this
         if (state == null) {
             return NotificationCompat.Builder(ctx, Channel.FOCUS_TIMER.id)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_launcher_monochrome)
                 .setContentTitle(ctx.getString(R.string.focus_notif_title))
                 .build()
         }
@@ -107,7 +107,7 @@ class FocusTimerService : Service() {
             java.time.Duration.between(java.time.Instant.now(), state.phaseEndsAt),
         )
         val builder = NotificationCompat.Builder(ctx, Channel.FOCUS_TIMER.id)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentTitle(state.taskTitle)
             .setContentText(
                 if (state.running) {
