@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./designs/banner/wake-plan-banner.png" alt="Wake Plan — 本地优先的多计划时间管理" width="100%">
+</p>
+
 # Wake Plan
 
 本地优先的多计划时间管理 Android App。一个人同时跑几件事，健身、学习、副业，用"时间段 + 任务 + 自动延期"模型，让一天乱了的时候不用一路手动改时间。

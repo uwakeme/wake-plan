@@ -80,3 +80,6 @@ locale-prefs.xml
 
 # Release build outputs (v0.4.1: 本地产物不入库，Release 走 GitHub Releases)
 app/release/
+
+# banner 的 AI 原始底图（本地素材，约 7MB；发布图见 designs/banner/wake-plan-banner.png）
+designs/banner/bg-raw-*.jpg
