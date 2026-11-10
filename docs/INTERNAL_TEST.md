@@ -10,11 +10,12 @@
 
 从 GitHub Release 页面下载最新版 release APK：
 
-- v0.4.0（当前）：<https://github.com/uwakeme/wake-plan/releases/tag/v0.4.0>
+- v0.6.0（当前）：<https://github.com/uwakeme/wake-plan/releases/tag/v0.6.0>
+- v0.4.0：<https://github.com/uwakeme/wake-plan/releases/tag/v0.4.0>
 - v0.3.1：<https://github.com/uwakeme/wake-plan/releases/tag/v0.3.1>
 - v0.3.0：<https://github.com/uwakeme/wake-plan/releases/tag/v0.3.0>
 
-下载链接：`app-release.apk`（约 40 MB，SQLCipher 4.6.1 native 库占大头）
+下载链接：`app-release.apk`（24.7 MB，SQLCipher 4.6.1 native 库占大头）
 
 Android 8.0+ 即可装。第一次装会被系统提示"未知来源"，到设置里允许一次就行。
 
@@ -32,9 +33,11 @@ Android 8.0+ 即可装。第一次装会被系统提示"未知来源"，到设�
 
 跨版本迁移（v0.4.1 修复迁移链路）：
 - 从 v0.2 装上来的 App（schema v1）：v1→v2（plans 加 archived）→ v3（扁平化重建
-  tasks，任务/完成记录清零，计划与模板保留）→ v4（tasks 加创建日）。全程显式迁移，
-  不再整库清零（v0.4.0 及之前对 v1/v2 用户是 destructive 清库）
-- 从 v0.4.0（schema v3）升级：只走 v3→v4，数据全保留
+  tasks，任务/完成记录清零，计划与模板保留）→ v4（tasks 加创建日）→ v5（focus_sessions
+  表 + task_completions 复合索引）。全程显式迁移，不再整库清零（v0.4.0 及之前对
+  v1/v2 用户是 destructive 清库）
+- 从 v0.4.0（schema v3）升级：走 v3→v4→v5，数据全保留
+- 从 v0.5.0（schema v4）升级：只走 v4→v5，数据全保留
 - 降级安装（debug 场景）允许清库重建
 
 ## 测什么
@@ -93,7 +96,7 @@ Android 8.0+ 即可装。第一次装会被系统提示"未知来源"，到设�
 
 ### 应该测（v0.2 / v0.3 新功能）
 7. **完成统计**：今日 tab 完成几个任务后切到 Stats tab，看 7 天 / 30 天数字 + 折线图 + 按计划柱状图是否对得上
-8. **模板库**：Settings 屏点「模板库」→ 3 个内置模板 → 进详情看任务列表（v0.3 不含段）→ 点「应用此模板」回 Plans（v0.3 只建空 plan，task 复制留后续版本）
+8. **模板库**：Settings 屏点「模板库」→ 3 个内置模板 → 进详情看任务列表（v0.3 不含段）→ 点「应用此模板」回 Plans（v0.4 起会连任务一起复制，v0.3 才只建空 plan）
 9. **桌面 AppWidget**：长按桌面 → 小部件 → 找 Wake Plan → 拖到桌面，看 mini timeline 是不是更新
 10. **快捷设置 Tile**：下拉系统快捷栏 → 编辑 → 拖 Wake Plan tile 进去 → 点它是不是跳到 Today tab
 11. **SQLCipher 加密**：装上后看 `/data/data/com.wakeplan.app/databases/wakeplan.db` 前 16 字节应该是随机的密文（不是 `SQLite format 3\0`）。备份导出后用文本编辑器看是 JSON，删 App 重装再用「导入备份」恢复
@@ -111,8 +114,6 @@ Android 8.0+ 即可装。第一次装会被系统提示"未知来源"，到设�
 
 ## 已知问题 / 不在 v0.6 范围
 
-- **专注记录暂不进备份**：focus_sessions 不在备份 JSON 里（本地统计性质；
-  数据保留清理会同步覆盖它）；视内测反馈决定 v0.6.1 是否纳入
 - **专注计时精度**：阶段按墙钟推进，进程被杀后场次丢失（不恢复）——番茄钟
   场景可接受；重启后重新开始即可
 - **多语言只有中英** — 其他语言先按系统默认（=英文）
@@ -122,15 +123,6 @@ Android 8.0+ 即可装。第一次装会被系统提示"未知来源"，到设�
 - **撤销栈** — 深度 5 的 Snackbar 队列；跨天的操作不建议依赖撤销
 - **精确闹钟权限** — 只保留 SCHEDULE_EXACT_ALARM；未授权时降级 inexact 闹钟（Doze 下可能延迟）
 
-
-
-- **多语言只有中英** — 其他语言先按系统默认（=英文）
-- **每日回顾触发时间** — WorkManager 24h 周期对齐 21:00，长期可能有小幅漂移（分钟级），不保证秒级准时
-- **超时提醒节奏** — WorkManager 周期 15 分钟是系统硬下限（v0.4.1 前声明的 10 分钟实际也是 ≥15 分钟）；"每 10 分钟一档、最多 3 次"的封顶语义由检查逻辑按超时时长推导
-- **CSV 全量导出** — 暂不分页（与备份导出同假设，数据量 1k 行级；数据保留策略上线后自然有界）
-- **没有番茄钟 / 专注模式** — v0.6（绑任务的专注页，设计已拍板）
-- **撤销栈** — 深度 5 的 Snackbar 队列；跨天的操作不建议依赖撤销
-- **精确闹钟权限** — 只保留 SCHEDULE_EXACT_ALARM；未授权时降级 inexact 闹钟（Doze 下可能延迟）
 
 ## v0.6.0 changelog
 
@@ -150,8 +142,16 @@ Android 8.0+ 即可装。第一次装会被系统提示"未知来源"，到设�
 - **schema v5**：focus_sessions 表（completion_id 故意不建 FK，防 completions
   REPLACE 误删）+ task_completions 复合索引 (plan_id, scheduled_date) 搭车
 
-**v0.6.0 验收**：296 个 JVM 单测全过（v0.5.0 为 291），lint 0 error，
-assembleDebug 干净，迁移 androidTest 在 API 36 模拟器 3/3（含 v4→v5），
+**v0.6.0 收口修复**（v0.6.0 内测期间）：
+
+- FocusTimerController 轮次记账去重，守住「同时只有一个任务进行中」的不变量
+- focus_sessions 纳入备份导出与导入（此前不在备份里）
+- 撤销开始 / 跳过时重排 starting 闹钟
+- 归档计划的任务不再计入统计完成率分母
+- 应用图标换正式版
+
+**v0.6.0 验收**：326 个 JVM 单测全过（56 个套件，v0.5.0 为 291），lint 0 error，
+assembleDebug / assembleRelease 干净，迁移 androidTest 在 API 36 模拟器 3/3（含 v4→v5），
 装机冒烟通过（focus_timer 渠道创建、启动无崩溃）。
 
 ## v0.5.0 changelog
@@ -170,15 +170,6 @@ assembleDebug 干净，迁移 androidTest 在 API 36 模拟器 3/3（含 v4→v5
 
 **v0.5.0 验收**：291 个 JVM 单测全过（v0.4.1 为 264），lint 0 error，
 `assembleDebug` 干净，装机冒烟通过。
-
-## v0.4.1 changelog
-
-- **多语言只有中英** — 其他语言先按系统默认（=英文）
-- **超时提醒节奏** — WorkManager 周期 15 分钟是系统硬下限（v0.4.1 前声明的 10 分钟实际也是 ≥15 分钟）；"每 10 分钟一档、最多 3 次"的封顶语义由检查逻辑按超时时长推导
-- **没有番茄钟 / 专注模式** — v0.6（绑任务的专注页，设计已拍板）
-- **没有 CSV 导出 / 按月统计 / 每日回顾通知** — v0.5（路线图存量）
-- **撤销栈** — 现在只有最后一步的 5 秒 Snackbar 撤销，栈版留 v0.5
-- **精确闹钟权限** — v0.4.1 移除了 USE_EXACT_ALARM（Play 政策仅限闹钟/日历类），只保留 SCHEDULE_EXACT_ALARM；未授权时降级 inexact 闹钟（Doze 下可能延迟）
 
 ## 怎么报 bug
 
