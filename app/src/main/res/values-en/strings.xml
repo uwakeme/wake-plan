@@ -64,9 +64,12 @@ Tap the button below to continue.</string>
     <!-- ============================================================ -->
     <!-- Today screen -->
     <!-- ============================================================ -->
-    <string name="today_quick_add_title">Quick add task</string>
+    <string name="today_quick_add_title">Quick add</string>
     <string name="today_quick_add_plan_label">Plan</string>
-    <string name="today_quick_add_no_plan">No active plans yet — create one on the Plans tab first</string>
+    <string name="today_quick_add_no_plan">No active plans yet — create one first</string>
+    <string name="today_quick_add_new_plan">New plan</string>
+    <string name="today_quick_add_conflict">Conflicts with "%2$s" in %1$s by %3$d min</string>
+    <string name="today_quick_add_conflict_plan">Conflicts with %1$s by %2$d min</string>
     <string name="today_quick_add_save">Add</string>
     <string name="today_title_today">Today %1$s</string>
     <string name="today_title_other">Viewing %1$s</string>
@@ -97,6 +100,7 @@ Tap the button below to continue.</string>
     <string name="today_undo_skipped">Skipped</string>
     <string name="today_undo_action">Undo</string>
     <string name="today_conflict">Conflicts with %1$s by %2$d min</string>
+    <string name="today_conflict_task">Conflicts with "%2$s" in %1$s by %3$d min</string>
     <string name="today_conflict_other_plan">another plan</string>
 
     <!-- ============================================================ -->

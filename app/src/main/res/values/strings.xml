@@ -60,9 +60,12 @@
     <!-- ============================================================ -->
     <!-- Today 屏 -->
     <!-- ============================================================ -->
-    <string name="today_quick_add_title">快速加任务</string>
+    <string name="today_quick_add_title">快速添加</string>
     <string name="today_quick_add_plan_label">所属计划</string>
-    <string name="today_quick_add_no_plan">还没有可用计划，先到「计划」页新建一个</string>
+    <string name="today_quick_add_no_plan">还没有可用计划，先新建一个</string>
+    <string name="today_quick_add_new_plan">新建计划</string>
+    <string name="today_quick_add_conflict">将与 %1$s 的「%2$s」冲突 %3$d 分钟</string>
+    <string name="today_quick_add_conflict_plan">将与 %1$s 冲突 %2$d 分钟</string>
     <string name="today_quick_add_save">添加</string>
     <string name="today_title_today">今日 %1$s</string>
     <string name="today_title_other">查看 %1$s</string>
@@ -93,6 +96,7 @@
     <string name="today_undo_skipped">已跳过</string>
     <string name="today_undo_action">撤销</string>
     <string name="today_conflict">与 %1$s 冲突 %2$d 分钟</string>
+    <string name="today_conflict_task">与 %1$s 的「%2$s」冲突 %3$d 分钟</string>
     <string name="today_conflict_other_plan">其他计划</string>
     <string name="today_section_in_progress">进行中</string>
     <string name="today_section_upcoming">即将开始</string>
