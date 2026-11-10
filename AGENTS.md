@@ -48,3 +48,18 @@ Wake Plan — 本地优先的多计划时间管理 Android App。
 - 不要提交 `local.properties`（已在 `.gitignore`）
 - 不要提交任何 secrets / 密钥 / token
 - 本地数据库走 SQLCipher 加密（master key 在 AndroidKeyStore）
+
+## Release checklist
+
+- 仓库是**私有**的 ⇒ shields.io 匿名取不到 GitHub API，README 徽章一律用**静态**徽章
+  （`/badge/version-x.y.z-color`）。用 `github/v/release` 这类动态的会渲染成红底报错
+- **每次发版要手动改** `README.md` 和 `README.en.md` 里的 `version-x.y.z`（各一处）；
+  仓库公开后可改回动态徽章
+- **APK 从 tag 的干净 worktree 编**：`git worktree add <dir> <tag>` → 拷 `local.properties` →
+  在 worktree 里 `assembleRelease` → `gh release create <tag> <apk>` → `git worktree remove --force`。
+  别在主工作区编，否则未提交的 WIP 会被打进产物，APK 与 tag 对不上
+- tag 之后若又改了 README（Release 页按 tag 渲染 README），要 `git tag -f -a <tag> -F <msg>`
+  +`git push --force origin <tag>` 把 tag 移过去
+- Release 正文用 `.release-notes.md`，发版前更新到当前版本
+- 版本号改 `app/build.gradle.kts` 的 `versionCode` / `versionName`，并同步
+  `docs/INTERNAL_TEST.md` 的安装段、迁移链与版本记录
