@@ -15,8 +15,6 @@
 
 [![Version][version-shield]][version-url]
 [![License][license-shield]][license-url]
-[![CI][ci-shield]][ci-url]
-[![Contributors][contributors-shield]][contributors-url]
 [![Kotlin][kotlin-shield]][kotlin-url]
 [![Android][android-shield]][android-url]
 
@@ -266,14 +264,10 @@ Apache License 2.0，见 [LICENSE](LICENSE)。
 
 <!-- MARKDOWN LINKS & IMAGES -->
 
-[version-shield]: https://img.shields.io/github/v/release/uwakeme/wake-plan.svg?style=for-the-badge
+[version-shield]: https://img.shields.io/badge/version-0.6.0-blue?style=for-the-badge
 [version-url]: https://github.com/uwakeme/wake-plan/releases
-[license-shield]: https://img.shields.io/github/license/uwakeme/wake-plan.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/badge/license-Apache--2.0-green?style=for-the-badge
 [license-url]: https://github.com/uwakeme/wake-plan/blob/main/LICENSE
-[ci-shield]: https://img.shields.io/github/actions/workflow/status/uwakeme/wake-plan/ci.yml?branch=main&style=for-the-badge
-[ci-url]: https://github.com/uwakeme/wake-plan/actions/workflows/ci.yml
-[contributors-shield]: https://img.shields.io/github/contributors/uwakeme/wake-plan.svg?style=for-the-badge
-[contributors-url]: https://github.com/uwakeme/wake-plan/graphs/contributors
 [kotlin-shield]: https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white
 [kotlin-url]: https://kotlinlang.org
 [android-shield]: https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white
