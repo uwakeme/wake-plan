@@ -274,6 +274,8 @@ private fun TodayContent(
     }
 
     val plansById = state.planItems.associate { it.plan.id to it.plan }
+    // completion id → 列表行：冲突红条要报出对方"哪个计划的哪个任务"
+    val itemsByCompletionId = state.todayTaskItems.associateBy { it.completion.id }
 
     LazyColumn(
         state = listState,
@@ -338,6 +340,7 @@ private fun TodayContent(
                             item = item,
                             conflicts = taskConflicts,
                             plansById = plansById,
+                            itemsByCompletionId = itemsByCompletionId,
                             highlighted = item.completion.taskId == highlightedTaskId,
                             onStart = { onStartTask(item.completion.id) },
                             onComplete = { onCompleteTask(item.completion.id) },
@@ -366,6 +369,7 @@ private fun TodayContent(
                             item = item,
                             conflicts = taskConflicts,
                             plansById = plansById,
+                            itemsByCompletionId = itemsByCompletionId,
                             highlighted = item.completion.taskId == highlightedTaskId,
                             onStart = { onStartTask(item.completion.id) },
                             onComplete = { onCompleteTask(item.completion.id) },
@@ -390,6 +394,7 @@ private fun TodayContent(
                         item = item,
                         conflicts = emptyList(),
                         plansById = plansById,
+                        itemsByCompletionId = itemsByCompletionId,
                         highlighted = false,
                         onStart = { onStartTask(item.completion.id) },
                         onComplete = { onCompleteTask(item.completion.id) },
@@ -1113,6 +1118,7 @@ private fun TodayTaskCard(
     item: TodayTaskItem,
     conflicts: List<TaskConflict>,
     plansById: Map<String, Plan>,
+    itemsByCompletionId: Map<String, TodayTaskItem>,
     highlighted: Boolean,
     onStart: () -> Unit,
     onComplete: () -> Unit,
@@ -1300,8 +1306,9 @@ private fun TodayTaskCard(
         Spacer(Modifier.height(4.dp))
         ConflictBanner(
             conflicts = conflicts,
-            // 全量 plan 映射——之前只装本计划，"与 XX 计划冲突"显示的对方
-            // 计划名永远解析成自己
+            selfCompletionId = item.completion.id,
+            itemsByCompletionId = itemsByCompletionId,
+            // 全量 plan 映射——对端不在今日列表时退化按计划名提示
             plansById = plansById,
         )
     }
@@ -1310,12 +1317,28 @@ private fun TodayTaskCard(
 @Composable
 private fun ConflictBanner(
     conflicts: List<TaskConflict>,
+    selfCompletionId: String,
+    itemsByCompletionId: Map<String, TodayTaskItem>,
     plansById: Map<String, Plan>,
 ) {
-    val maxOverlap = conflicts.maxOf { it.overlapMinutes }
-    val otherPlan = conflicts.firstOrNull()?.let { c ->
-        plansById[c.taskA.planId]?.takeIf { it.id != c.taskB.planId }
-            ?: plansById[c.taskB.planId]
+    // 多条冲突取重叠最重的一条展示；对方任务具体到"哪个计划的哪个任务"
+    val top = conflicts.maxByOrNull { it.overlapMinutes } ?: return
+    val otherCompletion = if (top.taskA.id == selfCompletionId) top.taskB else top.taskA
+    val otherItem = itemsByCompletionId[otherCompletion.id]
+    val text = if (otherItem != null) {
+        stringResource(
+            R.string.today_conflict_task,
+            otherItem.plan.title,
+            otherItem.task.title,
+            top.overlapMinutes,
+        )
+    } else {
+        stringResource(
+            R.string.today_conflict,
+            plansById[otherCompletion.planId]?.title
+                ?: stringResource(R.string.today_conflict_other_plan),
+            top.overlapMinutes,
+        )
     }
     Surface(
         shape = RoundedCornerShape(8.dp),
@@ -1333,11 +1356,7 @@ private fun ConflictBanner(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = stringResource(
-                    R.string.today_conflict,
-                    otherPlan?.title ?: stringResource(R.string.today_conflict_other_plan),
-                    maxOverlap,
-                ),
+                text = text,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer,
             )
