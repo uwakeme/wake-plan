@@ -40,6 +40,16 @@ Wake Plan — 本地优先的多计划时间管理 Android App。
 - 新增 behavior 必须同步加测试（参考同包已有 `*Test.kt`）
 - 所有测试通过再提交推送
 
+## CI
+
+- GitHub Actions 跑在境外 runner（Azure）上，**不能走阿里云镜像**：实测 `maven.aliyun.com`
+  从 runner 返回 **502**，会让 Gradle 插件解析整体失败（报「Plugin [id: 'com.google.devtools.ksp']
+  was not found」，即使官方源有该工件）。CI 命令一律带 `-PchinaMirror=false`——
+  `settings.gradle.kts` 里镜像受该属性控制，本地开发默认仍走阿里云加速
+- workflow 里的 `Probe plugin repositories` 步骤会把各仓库状态码打进日志，
+  插件解析类失败先看这几行，别猜
+- 2026-11-17 首次跑绿；此前 22 次运行全挂在插件解析这一步
+
 ## Commit conventions
 
 - 主分支 `main`；初期单人开发阶段直接在 main 提交并推送，不建 feature 分支（等多人协作时再恢复分支 + PR 流程）
