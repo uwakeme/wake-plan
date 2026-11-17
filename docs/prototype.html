@@ -1,0 +1,2772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wake Plan — Mobile Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  /* Dark theme — primary */
+  --bg:#090E1A;
+  --bg-elevated:#121A2C;
+  --bg-card:#151E32;
+  --bg-overlay:#0F1626;
+  --bg-input:#0F1626;
+  /* Primary — amber gold */
+  --primary:#F0B44A;
+  --primary-hover:#D4962E;
+  --primary-surface:#2A210F;
+  /* Text */
+  --text-primary:#F0F2F8;
+  --text-secondary:#8492AD;
+  --text-tertiary:#4F5E78;
+  --text-inverse:#090E1A;
+  /* Border */
+  --border:rgba(132,146,173,0.08);
+  --border-strong:rgba(132,146,173,0.18);
+  /* Semantic */
+  --success:#5DB88A;
+  --warning:#F0B44A;
+  --error:#E85C5C;
+  --info:#4A90D9;
+  /* Plan colors */
+  --plan-fitness:#E87B9B;
+  --plan-study:#5B9BD5;
+  --plan-writing:#5DB88A;
+  --plan-sideproject:#B07FE8;
+  /* Typography */
+  --font-display:'DM Sans','Noto Sans SC',system-ui,sans-serif;
+  --font-body:'DM Sans','Noto Sans SC',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  /* Radius */
+  --radius-sm:8px;
+  --radius-md:12px;
+  --radius-lg:16px;
+  --radius-xl:22px;
+  --radius-2xl:28px;
+  --radius-full:9999px;
+  /* Shadow */
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.5);
+  --shadow-glow:0 0 20px rgba(240,180,74,0.15);
+}
+html,body{height:100%;width:100%}
+body{
+  font-family:var(--font-body);
+  background:#050810;
+  color:var(--text-primary);
+  margin:0;
+  padding:0;
+  overflow-x:auto;
+  overflow-y:auto;
+  -webkit-font-smoothing:antialiased;
+}
+.prototype-label{
+  position:fixed;
+  top:16px;
+  left:50%;
+  transform:translateX(-50%);
+  font-family:var(--font-display);
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--text-tertiary);
+  z-index:100;
+  pointer-events:none;
+}
+/* Screen navigation bar */
+.screen-nav{
+  position:fixed;
+  top:44px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:6px;
+  z-index:99;
+  background:rgba(9,14,26,0.8);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  padding:6px;
+  border-radius:var(--radius-full);
+  border:1px solid var(--border);
+}
+.screen-nav-btn{
+  padding:6px 14px;
+  background:transparent;
+  border:none;
+  border-radius:var(--radius-full);
+  font-family:var(--font-display);
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-tertiary);
+  cursor:pointer;
+  transition:all 0.2s ease;
+  white-space:nowrap;
+}
+.screen-nav-btn:hover{color:var(--text-secondary)}
+.screen-nav-btn.active{
+  background:var(--primary);
+  color:var(--text-inverse);
+}
+.screens-wrapper{
+  display:inline-flex;
+  gap:48px;
+  padding:104px 48px 48px;
+  min-width:100%;
+  justify-content:flex-start;
+  align-items:flex-start;
+}
+.screen-container{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+.screen-title{
+  font-family:var(--font-display);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--text-tertiary);
+}
+/* Phone frame */
+.phone{
+  width:390px;
+  height:844px;
+  background:var(--bg);
+  border-radius:50px;
+  border:8px solid #1a1f2e;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 25px 80px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(255,255,255,0.05);
+  flex-shrink:0;
+}
+.phone::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:120px;
+  height:32px;
+  background:#1a1f2e;
+  border-radius:0 0 20px 20px;
+  z-index:100;
+}
+/* Status bar */
+.status-bar{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:44px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 28px 0 32px;
+  font-family:var(--font-mono);
+  font-size:14px;
+  font-weight:600;
+  z-index:50;
+  padding-top:12px;
+}
+.status-bar .time{letter-spacing:-0.02em}
+.status-bar .icons{display:flex;gap:6px;align-items:center}
+.status-bar .icons svg{width:18px;height:18px;fill:var(--text-primary)}
+/* Screen content */
+.screen-content{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:none;
+}
+.screen-content::-webkit-scrollbar{display:none}
+/* Bottom nav */
+.bottom-nav{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:80px;
+  background:rgba(18,26,44,0.85);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-top:0.5px solid var(--border-strong);
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  padding-bottom:20px;
+  z-index:40;
+}
+.nav-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  cursor:pointer;
+  padding:6px 12px;
+  border-radius:var(--radius-full);
+  transition:all 0.2s ease;
+}
+.nav-item.active{color:var(--text-primary)}
+.nav-item:not(.active){color:var(--text-tertiary)}
+.nav-item svg{width:22px;height:22px;transition:transform 0.2s ease}
+.nav-item.active svg{transform:scale(1.05)}
+.nav-item span{
+  font-family:var(--font-display);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.06em;
+}
+.nav-item.active span{color:var(--primary)}
+.nav-pill{
+  position:absolute;
+  top:8px;
+  width:32px;
+  height:3px;
+  background:var(--primary);
+  border-radius:var(--radius-full);
+  left:calc(12.5% - 16px);
+  transition:left 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+/* =============================================
+   TODAY SCREEN
+   ============================================= */
+.today-screen{padding-top:44px}
+.today-greeting{
+  padding:16px 24px 8px;
+}
+.today-date{
+  font-family:var(--font-mono);
+  font-size:12px;
+  font-weight:500;
+  color:var(--text-tertiary);
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.today-title{
+  font-family:var(--font-display);
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-0.04em;
+  line-height:1.2;
+}
+.today-title .highlight{color:var(--primary)}
+/* Big now card */
+.now-card{
+  margin:16px 20px;
+  background:linear-gradient(135deg,#1E2A45 0%,#151E32 100%);
+  border-radius:var(--radius-2xl);
+  padding:24px;
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-lg);
+}
+.now-card::before{
+  content:'';
+  position:absolute;
+  top:-60px;right:-60px;
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(240,180,74,0.12) 0%,transparent 70%);
+  border-radius:50%;
+}
+.now-card .now-label{
+  font-family:var(--font-display);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--error);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:12px;
+}
+.now-card .now-label .dot{
+  width:6px;height:6px;
+  background:var(--error);
+  border-radius:50%;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.5;transform:scale(0.8)}
+}
+.now-card .now-time-big{
+  font-family:var(--font-mono);
+  font-size:48px;
+  font-weight:600;
+  letter-spacing:-0.04em;
+  line-height:1;
+  margin-bottom:12px;
+  font-variant-numeric:tabular-nums;
+}
+.now-card .now-task-name{
+  font-family:var(--font-display);
+  font-size:20px;
+  font-weight:600;
+  letter-spacing:-0.02em;
+  margin-bottom:6px;
+}
+.now-card .now-plan-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:4px 10px;
+  background:var(--plan-fitness);
+  background:rgba(232,123,155,0.15);
+  border-radius:var(--radius-full);
+  font-size:12px;
+  font-weight:600;
+  color:var(--plan-fitness);
+}
+.now-card .now-plan-tag .dot{
+  width:6px;height:6px;
+  background:var(--plan-fitness);
+  border-radius:50%;
+}
+.now-card .now-actions{
+  display:flex;
+  gap:10px;
+  margin-top:20px;
+  position:relative;
+  z-index:1;
+}
+.btn-complete{
+  flex:1;
+  padding:14px 20px;
+  background:var(--primary);
+  color:var(--text-inverse);
+  border:none;
+  border-radius:var(--radius-lg);
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:all 0.2s ease;
+  box-shadow:var(--shadow-glow);
+}
+.btn-complete:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.btn-skip{
+  width:48px;height:48px;
+  background:var(--bg-overlay);
+  border:1px solid var(--border-strong);
+  border-radius:var(--radius-lg);
+  color:var(--text-secondary);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s ease;
+}
+.btn-skip:hover{background:var(--bg-elevated);color:var(--text-primary)}
+.btn-skip svg{width:18px;height:18px}
+/* Countdown bar */
+.countdown-bar{
+  margin-top:16px;
+  position:relative;
+  z-index:1;
+}
+.countdown-bar .countdown-label{
+  display:flex;
+  justify-content:space-between;
+  font-family:var(--font-mono);
+  font-size:12px;
+  font-weight:500;
+  color:var(--text-tertiary);
+  margin-bottom:6px;
+}
+.countdown-bar .countdown-label .remaining{color:var(--primary);font-weight:600}
+.countdown-bar .track{
+  height:6px;
+  background:var(--bg-overlay);
+  border-radius:var(--radius-full);
+  overflow:hidden;
+}
+.countdown-bar .fill{
+  height:100%;
+  width:65%;
+  background:linear-gradient(90deg,var(--primary),var(--primary-hover));
+  border-radius:var(--radius-full);
+  transition:width 1s ease;
+}
+/* Timeline section */
+.section-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:20px 24px 12px;
+}
+.section-title{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-0.01em;
+}
+.section-action{
+  font-family:var(--font-display);
+  font-size:13px;
+  font-weight:600;
+  color:var(--primary);
+  cursor:pointer;
+}
+/* Horizontal timeline */
+.timeline-wrapper{
+  padding:0 20px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.timeline-wrapper::-webkit-scrollbar{display:none}
+.timeline-container{
+  min-width:100%;
+  position:relative;
+}
+.timeline-hours{
+  display:flex;
+  padding-left:0;
+  margin-bottom:4px;
+  position:relative;
+}
+.timeline-hour{
+  font-family:var(--font-mono);
+  font-size:10px;
+  font-weight:500;
+  color:var(--text-tertiary);
+  min-width:calc(100% / 12);
+  text-align:center;
+}
+.timeline-hour.major{color:var(--text-secondary);font-weight:600}
+.timeline-track{
+  height:56px;
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.timeline-grid{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  display:flex;
+}
+.timeline-grid-line{
+  flex:1;
+  border-right:1px solid var(--border);
+}
+.timeline-grid-line:last-child{border-right:none}
+.timeline-grid-line.major{border-right-color:var(--border-strong)}
+.timeline-task{
+  position:absolute;
+  top:8px;
+  height:40px;
+  border-radius:8px;
+  padding:0 8px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-family:var(--font-mono);
+  font-size:10px;
+  font-weight:600;
+  color:white;
+  cursor:pointer;
+  transition:transform 0.15s ease,box-shadow 0.15s ease;
+  overflow:hidden;
+  white-space:nowrap;
+}
+.timeline-task:hover{transform:scaleY(1.05);box-shadow:var(--shadow-md)}
+.timeline-task.current{
+  border:2px solid var(--error);
+  top:6px;
+  height:44px;
+  z-index:2;
+  box-shadow:0 0 16px rgba(232,92,92,0.3);
+}
+.timeline-task.done{opacity:0.5}
+.timeline-now-line{
+  position:absolute;
+  top:-4px;
+  bottom:-4px;
+  width:2px;
+  background:var(--error);
+  z-index:3;
+  left:54%;
+}
+.timeline-now-line::before{
+  content:'';
+  position:absolute;
+  top:-4px;left:50%;
+  transform:translateX(-50%);
+  width:8px;height:8px;
+  background:var(--error);
+  border-radius:50%;
+  box-shadow:0 0 8px rgba(232,92,92,0.5);
+}
+.timeline-now-line::after{
+  content:'';
+  position:absolute;
+  top:0;bottom:0;left:50%;
+  transform:translateX(-50%);
+  width:12px;
+  background:rgba(232,92,92,0.15);
+  border-radius:var(--radius-full);
+}
+/* Upcoming tasks */
+.tasks-list{
+  padding:8px 20px 100px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.task-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-xl);
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  border:1px solid var(--border);
+  transition:all 0.2s ease;
+  cursor:pointer;
+}
+.task-card:hover{border-color:var(--border-strong);transform:translateX(2px)}
+.task-card.in-progress{
+  border-color:var(--error);
+  background:linear-gradient(135deg,rgba(232,92,92,0.08) 0%,var(--bg-card) 100%);
+}
+.task-card.completed{opacity:0.5}
+.task-card.completed .task-title{text-decoration:line-through}
+.task-time{
+  font-family:var(--font-mono);
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-secondary);
+  min-width:72px;
+  font-variant-numeric:tabular-nums;
+}
+.task-card.in-progress .task-time{color:var(--error)}
+.task-plan-dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.task-info{flex:1;min-width:0}
+.task-title{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:500;
+  letter-spacing:-0.01em;
+  margin-bottom:2px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.task-plan-name{
+  font-size:12px;
+  color:var(--text-tertiary);
+  font-weight:500;
+}
+.task-action{
+  width:36px;height:36px;
+  border-radius:var(--radius-full);
+  border:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s ease;
+  flex-shrink:0;
+}
+.task-action.start{
+  background:var(--primary);
+  color:var(--text-inverse);
+  box-shadow:var(--shadow-glow);
+}
+.task-action.start:hover{background:var(--primary-hover);transform:scale(1.05)}
+.task-action.complete{
+  background:var(--success);
+  color:white;
+}
+.task-action.skip{
+  background:transparent;
+  color:var(--text-tertiary);
+}
+.task-action svg{width:16px;height:16px}
+/* =============================================
+   PLANS SCREEN
+   ============================================= */
+.plans-screen{padding-top:44px}
+.screen-header{
+  padding:16px 24px 8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+}
+.screen-header h1{
+  font-family:var(--font-display);
+  font-size:32px;
+  font-weight:700;
+  letter-spacing:-0.04em;
+  line-height:1.1;
+}
+.fab{
+  width:48px;height:48px;
+  background:var(--primary);
+  border-radius:var(--radius-full);
+  border:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text-inverse);
+  box-shadow:var(--shadow-glow),var(--shadow-md);
+  transition:all 0.2s ease;
+}
+.fab:hover{background:var(--primary-hover);transform:scale(1.05)}
+.fab svg{width:22px;height:22px}
+.plan-cards{
+  padding:16px 20px 100px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.plan-card-item{
+  background:var(--bg-card);
+  border-radius:var(--radius-2xl);
+  padding:20px;
+  border:1px solid var(--border);
+  cursor:pointer;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  position:relative;
+  overflow:hidden;
+}
+.plan-card-item::after{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  border-radius:var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+.plan-card-item:nth-child(1)::after{background:var(--plan-fitness)}
+.plan-card-item:nth-child(2)::after{background:var(--plan-study)}
+.plan-card-item:nth-child(3)::after{background:var(--plan-writing)}
+.plan-card-item:nth-child(4)::after{background:var(--plan-sideproject)}
+.plan-card-item:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--border-strong)}
+.plan-card-top{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:16px;
+}
+.plan-icon{
+  width:44px;height:44px;
+  border-radius:var(--radius-md);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.plan-icon svg{width:22px;height:22px}
+.plan-icon.fitness{background:rgba(232,123,155,0.12);color:var(--plan-fitness)}
+.plan-icon.study{background:rgba(91,155,213,0.12);color:var(--plan-study)}
+.plan-icon.writing{background:rgba(93,184,138,0.12);color:var(--plan-writing)}
+.plan-icon.sideproject{background:rgba(176,127,232,0.12);color:var(--plan-sideproject)}
+.plan-meta{flex:1}
+.plan-name{
+  font-family:var(--font-display);
+  font-size:17px;
+  font-weight:600;
+  letter-spacing:-0.01em;
+  margin-bottom:3px;
+}
+.plan-stats{
+  font-size:13px;
+  color:var(--text-tertiary);
+  font-weight:500;
+}
+.plan-status-badge{
+  padding:4px 10px;
+  border-radius:var(--radius-sm);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+}
+.plan-status-badge.active{background:rgba(93,184,138,0.12);color:var(--success)}
+.plan-status-badge.upcoming{background:rgba(240,180,74,0.12);color:var(--warning)}
+.plan-progress-section{}
+.plan-progress-label{
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-secondary);
+  margin-bottom:6px;
+}
+.plan-progress-label .percent{font-family:var(--font-mono);font-weight:600}
+.plan-progress-track{
+  height:8px;
+  background:var(--bg-overlay);
+  border-radius:var(--radius-full);
+  overflow:hidden;
+}
+.plan-progress-fill{
+  height:100%;
+  border-radius:var(--radius-full);
+  transition:width 1s ease;
+}
+/* =============================================
+   PLAN DETAIL SCREEN
+   ============================================= */
+.plan-detail-screen{padding-top:44px}
+.detail-nav{
+  display:flex;
+  align-items:center;
+  padding:12px 20px 8px;
+  gap:8px;
+}
+.back-btn{
+  width:36px;height:36px;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-full);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text-primary);
+  transition:all 0.2s ease;
+}
+.back-btn:hover{background:var(--bg-elevated)}
+.back-btn svg{width:18px;height:18px}
+.detail-title-section{
+  padding:8px 24px 16px;
+}
+.detail-plan-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 12px;
+  border-radius:var(--radius-full);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+.detail-plan-badge .dot{width:6px;height:6px;border-radius:50%}
+.detail-plan-badge.fitness{background:rgba(232,123,155,0.12);color:var(--plan-fitness)}
+.detail-plan-badge.fitness .dot{background:var(--plan-fitness)}
+.detail-title{
+  font-family:var(--font-display);
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-0.04em;
+  margin-bottom:4px;
+}
+.detail-subtitle{
+  font-size:14px;
+  color:var(--text-tertiary);
+  font-weight:500;
+}
+/* Plan detail stats bar */
+.detail-stats-bar{
+  display:flex;
+  gap:10px;
+  padding:0 20px 16px;
+}
+.detail-stat-pill{
+  flex:1;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:12px;
+  text-align:center;
+}
+.detail-stat-value{
+  font-family:var(--font-mono);
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  color:var(--text-primary);
+  line-height:1;
+  margin-bottom:4px;
+}
+.detail-stat-label{
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-tertiary);
+  letter-spacing:0.04em;
+}
+/* Flat tasks list */
+.detail-tasks-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 24px 10px;
+}
+.detail-tasks-title{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-0.01em;
+}
+.detail-tasks-count{
+  font-family:var(--font-mono);
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-tertiary);
+}
+.tasks-list-flat{
+  padding:0 20px 100px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+/* Task detail card — flat model, each task has its own time */
+.task-detail-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-xl);
+  border:1px solid var(--border);
+  padding:14px 16px;
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+.task-detail-card:hover{
+  border-color:var(--border-strong);
+  transform:translateX(2px);
+}
+.task-detail-card.locked{
+  border-left:3px solid var(--warning);
+}
+.task-time-block{
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:56px;
+}
+.task-start-time{
+  font-family:var(--font-mono);
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  color:var(--text-primary);
+  line-height:1.2;
+  font-variant-numeric:tabular-nums;
+}
+.task-time-dash{
+  width:1px;
+  height:12px;
+  background:var(--border-strong);
+  margin:2px 0;
+}
+.task-end-time{
+  font-family:var(--font-mono);
+  font-size:12px;
+  font-weight:500;
+  color:var(--text-tertiary);
+  font-variant-numeric:tabular-nums;
+}
+.task-color-bar{
+  width:3px;
+  align-self:stretch;
+  border-radius:var(--radius-full);
+  flex-shrink:0;
+  margin:4px 0;
+}
+.task-detail-content{flex:1;min-width:0}
+.task-detail-title-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:6px;
+}
+.task-detail-title{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:-0.01em;
+  flex:1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.task-locked-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:2px 6px;
+  background:rgba(240,180,74,0.12);
+  border-radius:var(--radius-sm);
+  font-size:10px;
+  font-weight:700;
+  color:var(--warning);
+  letter-spacing:0.04em;
+}
+.task-locked-badge svg{width:10px;height:10px}
+.task-meta-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.task-repeat-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-tertiary);
+}
+.task-repeat-tag svg{width:12px;height:12px}
+.task-duration-tag{
+  font-family:var(--font-mono);
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-tertiary);
+}
+.task-chevron{color:var(--text-tertiary);flex-shrink:0;margin-top:2px}
+.task-chevron svg{width:16px;height:16px}
+/* Add task button */
+.add-task-btn-flat{
+  margin-top:4px;
+  padding:14px;
+  background:transparent;
+  border:1.5px dashed var(--border-strong);
+  border-radius:var(--radius-xl);
+  color:var(--text-tertiary);
+  font-family:var(--font-display);
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:all 0.2s ease;
+}
+.add-task-btn-flat:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+  background:var(--primary-surface);
+}
+/* =============================================
+   STATS SCREEN
+   ============================================= */
+.stats-screen{padding-top:44px}
+.stats-header{
+  padding:16px 24px 8px;
+}
+.stats-header h1{
+  font-family:var(--font-display);
+  font-size:32px;
+  font-weight:700;
+  letter-spacing:-0.04em;
+  line-height:1.1;
+}
+.stats-period-toggle{
+  display:flex;
+  margin:16px 20px;
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);
+  padding:4px;
+  border:1px solid var(--border);
+}
+.period-btn{
+  flex:1;
+  padding:8px;
+  border:none;
+  background:transparent;
+  color:var(--text-tertiary);
+  font-family:var(--font-display);
+  font-size:13px;
+  font-weight:600;
+  border-radius:var(--radius-md);
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+.period-btn.active{
+  background:var(--primary);
+  color:var(--text-inverse);
+}
+.stats-cards{
+  padding:0 20px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:20px;
+}
+.stat-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-xl);
+  padding:16px;
+  border:1px solid var(--border);
+}
+.stat-label{
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-tertiary);
+  letter-spacing:0.03em;
+  margin-bottom:8px;
+}
+.stat-value{
+  font-family:var(--font-mono);
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-0.04em;
+  line-height:1;
+  margin-bottom:4px;
+}
+.stat-value.primary{color:var(--primary)}
+.stat-value.success{color:var(--success)}
+.stat-value.warning{color:var(--warning)}
+.stat-change{
+  font-size:11px;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:3px;
+}
+.stat-change.up{color:var(--success)}
+.stat-change.down{color:var(--error)}
+/* Chart card */
+.chart-card{
+  margin:0 20px 16px;
+  background:var(--bg-card);
+  border-radius:var(--radius-xl);
+  padding:20px;
+  border:1px solid var(--border);
+}
+.chart-title{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:700;
+  margin-bottom:16px;
+}
+.chart-area{
+  height:140px;
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+  padding-bottom:24px;
+}
+.chart-bar-group{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.chart-bar-stack{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  height:100px;
+  gap:2px;
+}
+.chart-bar{
+  width:100%;
+  border-radius:4px 4px 0 0;
+  min-height:4px;
+  transition:height 0.5s ease;
+}
+.chart-bar.fitness{background:var(--plan-fitness)}
+.chart-bar.study{background:var(--plan-study)}
+.chart-bar.writing{background:var(--plan-writing)}
+.chart-bar.sideproject{background:var(--plan-sideproject)}
+.chart-label{
+  font-family:var(--font-mono);
+  font-size:10px;
+  color:var(--text-tertiary);
+  font-weight:500;
+}
+/* Line chart */
+.line-chart{
+  height:100px;
+  position:relative;
+  margin-top:8px;
+}
+.line-chart svg{width:100%;height:100%}
+.chart-legend{
+  display:flex;
+  gap:16px;
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid var(--border);
+}
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-secondary);
+}
+.legend-dot{
+  width:8px;height:8px;
+  border-radius:50%;
+}
+/* =============================================
+   SETTINGS SCREEN
+   ============================================= */
+.settings-screen{padding-top:44px;padding-bottom:100px}
+.settings-header{
+  padding:16px 24px 16px;
+}
+.settings-header h1{
+  font-family:var(--font-display);
+  font-size:32px;
+  font-weight:700;
+  letter-spacing:-0.04em;
+  line-height:1.1;
+}
+.settings-section{
+  padding:0 20px;
+  margin-bottom:24px;
+}
+.settings-section-title{
+  font-family:var(--font-display);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--text-tertiary);
+  padding:0 4px 8px;
+}
+.settings-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-xl);
+  border:1px solid var(--border);
+  overflow:hidden;
+}
+.setting-item{
+  display:flex;
+  align-items:center;
+  padding:14px 16px;
+  gap:12px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  transition:background 0.15s ease;
+}
+.setting-item:last-child{border-bottom:none}
+.setting-item:hover{background:var(--bg-overlay)}
+.setting-icon{
+  width:36px;height:36px;
+  border-radius:var(--radius-md);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.setting-icon svg{width:18px;height:18px}
+.setting-icon.amber{background:rgba(240,180,74,0.12);color:var(--primary)}
+.setting-icon.blue{background:rgba(74,144,217,0.12);color:var(--info)}
+.setting-icon.green{background:rgba(93,184,138,0.12);color:var(--success)}
+.setting-icon.red{background:rgba(232,92,92,0.12);color:var(--error)}
+.setting-icon.purple{background:rgba(176,127,232,0.12);color:var(--plan-sideproject)}
+.setting-info{flex:1}
+.setting-name{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:500;
+  margin-bottom:2px;
+}
+.setting-desc{
+  font-size:12px;
+  color:var(--text-tertiary);
+  font-weight:500;
+}
+.setting-arrow{color:var(--text-tertiary)}
+.setting-arrow svg{width:16px;height:16px}
+/* Toggle */
+.toggle{
+  width:48px;height:28px;
+  background:var(--bg-overlay);
+  border-radius:var(--radius-full);
+  position:relative;
+  cursor:pointer;
+  transition:background 0.2s ease;
+  border:1px solid var(--border-strong);
+}
+.toggle.on{background:var(--primary);border-color:var(--primary)}
+.toggle-thumb{
+  position:absolute;
+  top:2px;left:2px;
+  width:22px;height:22px;
+  background:white;
+  border-radius:50%;
+  transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 1px 3px rgba(0,0,0,0.3);
+}
+.toggle.on .toggle-thumb{transform:translateX(20px)}
+/* About section */
+.about-card{
+  margin:0 20px;
+  background:var(--bg-card);
+  border-radius:var(--radius-xl);
+  padding:20px;
+  border:1px solid var(--border);
+  text-align:center;
+}
+.app-icon{
+  width:64px;height:64px;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-hover) 100%);
+  border-radius:var(--radius-lg);
+  margin:0 auto 12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--font-display);
+  font-size:28px;
+  font-weight:700;
+  color:var(--text-inverse);
+  box-shadow:var(--shadow-glow);
+}
+.app-name{
+  font-family:var(--font-display);
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:4px;
+}
+.app-version{
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--text-tertiary);
+  font-weight:500;
+  margin-bottom:12px;
+}
+.privacy-points{
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.privacy-point{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size:13px;
+  color:var(--text-secondary);
+  font-weight:500;
+}
+.privacy-point svg{width:16px;height:16px;color:var(--success);flex-shrink:0;margin-top:1px}
+/* =============================================
+   ONBOARDING / SPLASH
+   ============================================= */
+.onboarding-screen{
+  background:linear-gradient(160deg,#0F1626 0%,#090E1A 50%,#050810 100%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:60px 40px;
+  height:100%;
+  position:relative;
+  overflow:hidden;
+}
+.onboarding-screen::before{
+  content:'';
+  position:absolute;
+  top:-200px;left:-100px;
+  width:400px;height:400px;
+  background:radial-gradient(circle,rgba(240,180,74,0.08) 0%,transparent 70%);
+  border-radius:50%;
+}
+.onboarding-screen::after{
+  content:'';
+  position:absolute;
+  bottom:-200px;right:-100px;
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(74,144,217,0.06) 0%,transparent 70%);
+  border-radius:50%;
+}
+.onboarding-logo{
+  width:80px;height:80px;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-hover) 100%);
+  border-radius:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--font-display);
+  font-size:36px;
+  font-weight:700;
+  color:var(--text-inverse);
+  margin-bottom:24px;
+  box-shadow:0 8px 32px rgba(240,180,74,0.3);
+  position:relative;
+  z-index:1;
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+}
+.onboarding-title{
+  font-family:var(--font-display);
+  font-size:36px;
+  font-weight:700;
+  letter-spacing:-0.04em;
+  text-align:center;
+  margin-bottom:12px;
+  position:relative;
+  z-index:1;
+}
+.onboarding-subtitle{
+  font-size:16px;
+  color:var(--text-secondary);
+  text-align:center;
+  line-height:1.6;
+  margin-bottom:40px;
+  position:relative;
+  z-index:1;
+  max-width:280px;
+}
+.onboarding-features{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  width:100%;
+  max-width:300px;
+  margin-bottom:40px;
+  position:relative;
+  z-index:1;
+}
+.onboarding-feature{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.feature-icon{
+  width:40px;height:40px;
+  border-radius:var(--radius-md);
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.feature-icon svg{width:18px;height:18px;color:var(--primary)}
+.feature-text{
+  font-size:14px;
+  font-weight:500;
+  color:var(--text-secondary);
+}
+.feature-text strong{
+  color:var(--text-primary);
+  font-weight:600;
+}
+.onboarding-btn{
+  width:100%;
+  max-width:300px;
+  padding:16px;
+  background:var(--primary);
+  color:var(--text-inverse);
+  border:none;
+  border-radius:var(--radius-lg);
+  font-family:var(--font-display);
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  box-shadow:var(--shadow-glow);
+  transition:all 0.2s ease;
+  position:relative;
+  z-index:1;
+}
+.onboarding-btn:hover{background:var(--primary-hover);transform:translateY(-1px)}
+/* FAB extended */
+.fab-extended{
+  position:absolute;
+  bottom:100px;
+  right:20px;
+  padding:14px 20px;
+  background:var(--primary);
+  color:var(--text-inverse);
+  border:none;
+  border-radius:var(--radius-full);
+  font-family:var(--font-display);
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  box-shadow:var(--shadow-glow),var(--shadow-lg);
+  z-index:30;
+  transition:all 0.2s ease;
+}
+.fab-extended:hover{background:var(--primary-hover);transform:scale(1.02)}
+.fab-extended svg{width:18px;height:18px}
+/* =============================================
+   TASK EDITOR SCREEN
+   ============================================= */
+.task-editor-screen{padding-top:44px;padding-bottom:40px}
+.editor-nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 20px 8px;
+}
+.editor-nav-left{display:flex;align-items:center;gap:8px}
+.editor-cancel{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:500;
+  color:var(--text-secondary);
+  background:none;
+  border:none;
+  cursor:pointer;
+  padding:6px 0;
+}
+.editor-save{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:600;
+  color:var(--primary);
+  background:none;
+  border:none;
+  cursor:pointer;
+  padding:6px 0;
+}
+.editor-title{
+  font-family:var(--font-display);
+  font-size:17px;
+  font-weight:600;
+  letter-spacing:-0.01em;
+}
+.editor-form{
+  padding:16px 20px 100px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.form-section{
+  background:var(--bg-card);
+  border-radius:var(--radius-xl);
+  border:1px solid var(--border);
+  overflow:hidden;
+}
+.form-input-group{
+  padding:16px;
+}
+.form-label{
+  font-family:var(--font-display);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--text-tertiary);
+  margin-bottom:8px;
+}
+.form-input{
+  width:100%;
+  background:transparent;
+  border:none;
+  font-family:var(--font-body);
+  font-size:22px;
+  font-weight:600;
+  letter-spacing:-0.02em;
+  color:var(--text-primary);
+  outline:none;
+  padding:0;
+}
+.form-input::placeholder{color:var(--text-tertiary);font-weight:400}
+.form-divider{
+  height:1px;
+  background:var(--border);
+  margin:0 16px;
+}
+.form-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 16px;
+  gap:12px;
+}
+.form-row + .form-row{border-top:1px solid var(--border)}
+.form-row-label{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:500;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.form-row-label .form-icon{
+  width:28px;height:28px;
+  border-radius:var(--radius-md);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.form-row-label .form-icon.amber{background:rgba(240,180,74,0.12);color:var(--primary)}
+.form-row-label .form-icon.blue{background:rgba(74,144,217,0.12);color:var(--info)}
+.form-row-label .form-icon.purple{background:rgba(176,127,232,0.12);color:var(--plan-sideproject)}
+.form-row-label .form-icon.green{background:rgba(93,184,138,0.12);color:var(--success)}
+.form-row-label .form-icon svg{width:14px;height:14px}
+.form-row-value{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-family:var(--font-mono);
+  font-size:15px;
+  font-weight:600;
+  color:var(--primary);
+}
+.form-row-value.secondary{color:var(--text-secondary);font-family:var(--font-body);font-weight:500}
+.form-row-value svg{width:14px;height:14px;color:var(--text-tertiary)}
+.time-picker-row{
+  display:flex;
+  gap:12px;
+  padding:16px;
+}
+.time-picker-btn{
+  flex:1;
+  padding:14px;
+  background:var(--bg-overlay);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  font-family:var(--font-mono);
+  font-size:24px;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  color:var(--text-primary);
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  transition:all 0.2s ease;
+}
+.time-picker-btn:hover{border-color:var(--primary);background:var(--primary-surface)}
+.time-picker-btn .time-label{
+  font-family:var(--font-display);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--text-tertiary);
+}
+.repeat-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  padding:0 16px 16px;
+}
+.repeat-chip{
+  padding:8px 14px;
+  background:var(--bg-overlay);
+  border:1px solid var(--border);
+  border-radius:var(--radius-full);
+  font-family:var(--font-display);
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-secondary);
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+.repeat-chip.active{
+  background:var(--primary);
+  border-color:var(--primary);
+  color:var(--text-inverse);
+}
+.repeat-chip:hover:not(.active){border-color:var(--border-strong);color:var(--text-primary)}
+.weekday-selector{
+  display:flex;
+  gap:6px;
+  padding:0 16px 16px;
+}
+.weekday-btn{
+  flex:1;
+  aspect-ratio:1;
+  max-width:40px;
+  background:var(--bg-overlay);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  font-family:var(--font-display);
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-secondary);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s ease;
+}
+.weekday-btn.active{
+  background:var(--primary);
+  border-color:var(--primary);
+  color:var(--text-inverse);
+}
+.form-textarea{
+  width:100%;
+  background:transparent;
+  border:none;
+  font-family:var(--font-body);
+  font-size:15px;
+  font-weight:400;
+  color:var(--text-primary);
+  outline:none;
+  resize:none;
+  min-height:60px;
+  line-height:1.5;
+}
+.form-textarea::placeholder{color:var(--text-tertiary)}
+.delete-btn{
+  margin:0 20px;
+  padding:14px;
+  background:rgba(232,92,92,0.08);
+  border:1px solid rgba(232,92,92,0.2);
+  border-radius:var(--radius-xl);
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:600;
+  color:var(--error);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:all 0.2s ease;
+}
+.delete-btn:hover{background:rgba(232,92,92,0.15)}
+.delete-btn svg{width:16px;height:16px}
+/* Active nav states per screen */
+.phone#screen-today .nav-pill{left:calc(12.5% - 16px)}
+.phone#screen-plans .nav-pill{left:calc(37.5% - 16px)}
+.phone#screen-stats .nav-pill{left:calc(62.5% - 16px)}
+.phone#screen-settings .nav-pill{left:calc(87.5% - 16px)}
+.phone#screen-today .nav-item:nth-child(1){color:var(--text-primary)}
+.phone#screen-today .nav-item:nth-child(1) span{color:var(--primary)}
+.phone#screen-plans .nav-item:nth-child(2){color:var(--text-primary)}
+.phone#screen-plans .nav-item:nth-child(2) span{color:var(--primary)}
+.phone#screen-stats .nav-item:nth-child(3){color:var(--text-primary)}
+.phone#screen-stats .nav-item:nth-child(3) span{color:var(--primary)}
+.phone#screen-settings .nav-item:nth-child(4){color:var(--text-primary)}
+.phone#screen-settings .nav-item:nth-child(4) span{color:var(--primary)}
+</style>
+</head>
+<body>
+
+<div class="prototype-label">Wake Plan — Mobile Prototype · Dark Theme</div>
+
+<!-- Screen nav -->
+<div class="screen-nav">
+  <button class="screen-nav-btn active" data-target="0">现在</button>
+  <button class="screen-nav-btn" data-target="1">计划</button>
+  <button class="screen-nav-btn" data-target="2">计划详情</button>
+  <button class="screen-nav-btn" data-target="3">统计</button>
+  <button class="screen-nav-btn" data-target="4">设置</button>
+  <button class="screen-nav-btn" data-target="5">引导页</button>
+  <button class="screen-nav-btn" data-target="6">任务编辑</button>
+</div>
+
+<div class="screens-wrapper">
+
+<!-- ============ SCREEN 1: TODAY ============ -->
+<div class="screen-container">
+<div class="screen-title">Today</div>
+<div class="phone" id="screen-today">
+  <div class="status-bar">
+    <span class="time">14:32</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <div class="screen-content today-screen">
+    <div class="today-greeting">
+      <div class="today-date">周四 · 8月20日</div>
+      <h1 class="today-title">现在该做<span class="highlight">什么</span></h1>
+    </div>
+
+    <!-- Now Card -->
+    <div class="now-card">
+      <div class="now-label"><span class="dot"></span>进行中</div>
+      <div class="now-time-big">14:32</div>
+      <div class="now-task-name">有氧慢跑</div>
+      <div class="now-plan-tag"><span class="dot"></span>健身计划</div>
+      <div class="countdown-bar">
+        <div class="countdown-label">
+          <span>06:30 – 07:30</span>
+          <span class="remaining">剩 18 分钟</span>
+        </div>
+        <div class="track"><div class="fill"></div></div>
+      </div>
+      <div class="now-actions">
+        <button class="btn-complete">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          完成
+        </button>
+        <button class="btn-skip">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="section-header">
+      <span class="section-title">今日时间线</span>
+    </div>
+    <div class="timeline-wrapper">
+      <div class="timeline-container">
+        <div class="timeline-hours">
+          <span class="timeline-hour major">06</span>
+          <span class="timeline-hour">08</span>
+          <span class="timeline-hour major">10</span>
+          <span class="timeline-hour">12</span>
+          <span class="timeline-hour major">14</span>
+          <span class="timeline-hour">16</span>
+          <span class="timeline-hour major">18</span>
+          <span class="timeline-hour">20</span>
+          <span class="timeline-hour major">22</span>
+          <span class="timeline-hour">24</span>
+        </div>
+        <div class="timeline-track">
+          <div class="timeline-grid">
+            <div class="timeline-grid-line major"></div>
+            <div class="timeline-grid-line"></div>
+            <div class="timeline-grid-line major"></div>
+            <div class="timeline-grid-line"></div>
+            <div class="timeline-grid-line major"></div>
+            <div class="timeline-grid-line"></div>
+            <div class="timeline-grid-line major"></div>
+            <div class="timeline-grid-line"></div>
+            <div class="timeline-grid-line major"></div>
+            <div class="timeline-grid-line"></div>
+            <div class="timeline-grid-line major"></div>
+            <div class="timeline-grid-line"></div>
+          </div>
+          <div class="timeline-task done" style="left:4%;width:8%;background:var(--plan-fitness)">06:30 热身</div>
+          <div class="timeline-task current" style="left:12%;width:14%;background:var(--plan-fitness)">07:00 慢跑</div>
+          <div class="timeline-task" style="left:28%;width:10%;background:var(--plan-study)">09:00 阅读</div>
+          <div class="timeline-task" style="left:40%;width:16%;background:var(--plan-study)">10:00 深度工作</div>
+          <div class="timeline-task" style="left:60%;width:10%;background:var(--plan-writing)">15:00 写作</div>
+          <div class="timeline-task" style="left:72%;width:12%;background:var(--plan-sideproject)">18:00 副业</div>
+          <div class="timeline-task" style="left:86%;width:8%;background:var(--plan-fitness)">21:00 拉伸</div>
+          <div class="timeline-now-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming tasks -->
+    <div class="section-header">
+      <span class="section-title">接下来</span>
+    </div>
+    <div class="tasks-list">
+      <div class="task-card in-progress">
+        <span class="task-time">14:00–15:00</span>
+        <span class="task-plan-dot" style="background:var(--plan-fitness)"></span>
+        <div class="task-info">
+          <div class="task-title">有氧慢跑</div>
+          <div class="task-plan-name">健身计划 · 进行中</div>
+        </div>
+        <button class="task-action complete">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+      <div class="task-card">
+        <span class="task-time">15:00–16:30</span>
+        <span class="task-plan-dot" style="background:var(--plan-writing)"></span>
+        <div class="task-info">
+          <div class="task-title">小说写作 · 第二章</div>
+          <div class="task-plan-name">写作计划</div>
+        </div>
+        <button class="task-action start">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+      </div>
+      <div class="task-card">
+        <span class="task-time">18:00–19:30</span>
+        <span class="task-plan-dot" style="background:var(--plan-sideproject)"></span>
+        <div class="task-info">
+          <div class="task-title">App 原型设计</div>
+          <div class="task-plan-name">副业项目</div>
+        </div>
+        <button class="task-action start">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+      </div>
+      <div class="task-card completed">
+        <span class="task-time">09:00–10:00</span>
+        <span class="task-plan-dot" style="background:var(--plan-study)"></span>
+        <div class="task-info">
+          <div class="task-title">技术书籍阅读</div>
+          <div class="task-plan-name">学习计划</div>
+        </div>
+        <button class="task-action skip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+      <div class="task-card">
+        <span class="task-time">21:00–21:30</span>
+        <span class="task-plan-dot" style="background:var(--plan-fitness)"></span>
+        <div class="task-info">
+          <div class="task-title">睡前拉伸</div>
+          <div class="task-plan-name">健身计划</div>
+        </div>
+        <button class="task-action start">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-pill"></div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>现在</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>计划</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>统计</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ SCREEN 2: PLANS ============ -->
+<div class="screen-container">
+<div class="screen-title">Plans</div>
+<div class="phone" id="screen-plans">
+  <div class="status-bar">
+    <span class="time">14:32</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <div class="screen-content plans-screen">
+    <div class="screen-header">
+      <h1>我的计划</h1>
+      <button class="fab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <div class="plan-cards">
+      <!-- Fitness -->
+      <div class="plan-card-item">
+        <div class="plan-card-top">
+          <div class="plan-icon fitness">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11"/><path d="M21 21l-1-1"/><path d="M3 3l1 1"/><path d="M18 22l4-4"/><path d="M2 6l4-4"/><path d="M3 10l7-7"/><path d="M14 21l7-7"/></svg>
+          </div>
+          <div class="plan-meta">
+            <div class="plan-name">健身计划</div>
+            <div class="plan-stats">12 个任务 · 今日 90 分钟</div>
+          </div>
+          <span class="plan-status-badge active">进行中</span>
+        </div>
+        <div class="plan-progress-section">
+          <div class="plan-progress-label">
+            <span>今日进度</span>
+            <span class="percent" style="color:var(--plan-fitness)">50%</span>
+          </div>
+          <div class="plan-progress-track">
+            <div class="plan-progress-fill" style="width:50%;background:var(--plan-fitness)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Study -->
+      <div class="plan-card-item">
+        <div class="plan-card-top">
+          <div class="plan-icon study">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <div class="plan-meta">
+            <div class="plan-name">深度学习计划</div>
+            <div class="plan-stats">18 个任务 · 今日 180 分钟</div>
+          </div>
+          <span class="plan-status-badge active">进行中</span>
+        </div>
+        <div class="plan-progress-section">
+          <div class="plan-progress-label">
+            <span>今日进度</span>
+            <span class="percent" style="color:var(--plan-study)">33%</span>
+          </div>
+          <div class="plan-progress-track">
+            <div class="plan-progress-fill" style="width:33%;background:var(--plan-study)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Writing -->
+      <div class="plan-card-item">
+        <div class="plan-card-top">
+          <div class="plan-icon writing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+          </div>
+          <div class="plan-meta">
+            <div class="plan-name">小说写作</div>
+            <div class="plan-stats">8 个任务 · 今日 90 分钟</div>
+          </div>
+          <span class="plan-status-badge upcoming">待开始</span>
+        </div>
+        <div class="plan-progress-section">
+          <div class="plan-progress-label">
+            <span>今日进度</span>
+            <span class="percent" style="color:var(--plan-writing)">0%</span>
+          </div>
+          <div class="plan-progress-track">
+            <div class="plan-progress-fill" style="width:0%;background:var(--plan-writing)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side Project -->
+      <div class="plan-card-item">
+        <div class="plan-card-top">
+          <div class="plan-icon sideproject">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <div class="plan-meta">
+            <div class="plan-name">副业项目</div>
+            <div class="plan-stats">15 个任务 · 今日 90 分钟</div>
+          </div>
+          <span class="plan-status-badge upcoming">待开始</span>
+        </div>
+        <div class="plan-progress-section">
+          <div class="plan-progress-label">
+            <span>今日进度</span>
+            <span class="percent" style="color:var(--plan-sideproject)">0%</span>
+          </div>
+          <div class="plan-progress-track">
+            <div class="plan-progress-fill" style="width:0%;background:var(--plan-sideproject)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-pill"></div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>现在</span>
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>计划</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>统计</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ SCREEN 3: PLAN DETAIL ============ -->
+<div class="screen-container">
+<div class="screen-title">Plan Detail</div>
+<div class="phone" id="screen-plans">
+  <div class="status-bar">
+    <span class="time">14:32</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <div class="screen-content plan-detail-screen">
+    <div class="detail-nav">
+      <button class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+    </div>
+    <div class="detail-title-section">
+      <div class="detail-plan-badge fitness"><span class="dot"></span>健身计划</div>
+      <h2 class="detail-title">每日健身</h2>
+      <p class="detail-subtitle">每周一至周六 · 开始于 6月15日</p>
+    </div>
+
+    <div class="detail-stats-bar">
+      <div class="detail-stat-pill">
+        <div class="detail-stat-value" style="color:var(--plan-fitness)">5</div>
+        <div class="detail-stat-label">任务</div>
+      </div>
+      <div class="detail-stat-pill">
+        <div class="detail-stat-value">150<span style="font-size:12px;font-weight:500">m</span></div>
+        <div class="detail-stat-label">今日时长</div>
+      </div>
+      <div class="detail-stat-pill">
+        <div class="detail-stat-value" style="color:var(--success)">3</div>
+        <div class="detail-stat-label">已完成</div>
+      </div>
+    </div>
+
+    <div class="detail-tasks-header">
+      <span class="detail-tasks-title">任务列表</span>
+      <span class="detail-tasks-count">按时间排序</span>
+    </div>
+
+    <div class="tasks-list-flat">
+      <!-- Task 1: Morning warmup -->
+      <div class="task-detail-card">
+        <div class="task-time-block">
+          <span class="task-start-time" style="color:var(--plan-fitness)">06:30</span>
+          <div class="task-time-dash"></div>
+          <span class="task-end-time">06:35</span>
+        </div>
+        <div class="task-color-bar" style="background:var(--plan-fitness)"></div>
+        <div class="task-detail-content">
+          <div class="task-detail-title-row">
+            <span class="task-detail-title">热身</span>
+          </div>
+          <div class="task-meta-row">
+            <span class="task-duration-tag">5 分钟</span>
+            <span class="task-repeat-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              工作日
+            </span>
+          </div>
+        </div>
+        <div class="task-chevron">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Task 2: Jogging (LOCKED) -->
+      <div class="task-detail-card locked">
+        <div class="task-time-block">
+          <span class="task-start-time" style="color:var(--plan-fitness)">06:35</span>
+          <div class="task-time-dash"></div>
+          <span class="task-end-time">07:05</span>
+        </div>
+        <div class="task-color-bar" style="background:var(--plan-fitness)"></div>
+        <div class="task-detail-content">
+          <div class="task-detail-title-row">
+            <span class="task-detail-title">有氧慢跑</span>
+            <span class="task-locked-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              钉死
+            </span>
+          </div>
+          <div class="task-meta-row">
+            <span class="task-duration-tag">30 分钟</span>
+            <span class="task-repeat-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              每天
+            </span>
+          </div>
+        </div>
+        <div class="task-chevron">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Task 3: Stretch -->
+      <div class="task-detail-card">
+        <div class="task-time-block">
+          <span class="task-start-time" style="color:var(--plan-fitness)">07:05</span>
+          <div class="task-time-dash"></div>
+          <span class="task-end-time">07:15</span>
+        </div>
+        <div class="task-color-bar" style="background:var(--plan-fitness)"></div>
+        <div class="task-detail-content">
+          <div class="task-detail-title-row">
+            <span class="task-detail-title">拉伸放松</span>
+          </div>
+          <div class="task-meta-row">
+            <span class="task-duration-tag">10 分钟</span>
+            <span class="task-repeat-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              工作日
+            </span>
+          </div>
+        </div>
+        <div class="task-chevron">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Task 4: Yoga -->
+      <div class="task-detail-card">
+        <div class="task-time-block">
+          <span class="task-start-time" style="color:var(--plan-sideproject)">21:00</span>
+          <div class="task-time-dash"></div>
+          <span class="task-end-time">21:20</span>
+        </div>
+        <div class="task-color-bar" style="background:var(--plan-sideproject)"></div>
+        <div class="task-detail-content">
+          <div class="task-detail-title-row">
+            <span class="task-detail-title">瑜伽拉伸</span>
+          </div>
+          <div class="task-meta-row">
+            <span class="task-duration-tag">20 分钟</span>
+            <span class="task-repeat-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              每天
+            </span>
+          </div>
+        </div>
+        <div class="task-chevron">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Task 5: Meditation -->
+      <div class="task-detail-card">
+        <div class="task-time-block">
+          <span class="task-start-time" style="color:var(--plan-sideproject)">21:20</span>
+          <div class="task-time-dash"></div>
+          <span class="task-end-time">21:30</span>
+        </div>
+        <div class="task-color-bar" style="background:var(--plan-sideproject)"></div>
+        <div class="task-detail-content">
+          <div class="task-detail-title-row">
+            <span class="task-detail-title">冥想</span>
+          </div>
+          <div class="task-meta-row">
+            <span class="task-duration-tag">10 分钟</span>
+            <span class="task-repeat-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              仅一次
+            </span>
+          </div>
+        </div>
+        <div class="task-chevron">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Add task button -->
+      <button class="add-task-btn-flat">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        新建任务
+      </button>
+    </div>
+  </div>
+
+  <button class="fab" style="position:absolute;bottom:100px;right:20px;z-index:30">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+
+  <div class="bottom-nav">
+    <div class="nav-pill"></div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>现在</span>
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>计划</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>统计</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ SCREEN 4: STATS ============ -->
+<div class="screen-container">
+<div class="screen-title">Stats</div>
+<div class="phone" id="screen-stats">
+  <div class="status-bar">
+    <span class="time">14:32</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <div class="screen-content stats-screen">
+    <div class="stats-header">
+      <h1>统计</h1>
+    </div>
+
+    <div class="stats-period-toggle">
+      <button class="period-btn">7 天</button>
+      <button class="period-btn active">30 天</button>
+      <button class="period-btn">全部</button>
+    </div>
+
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-label">完成率</div>
+        <div class="stat-value primary">78%</div>
+        <div class="stat-change up">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+          5%
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">已完成</div>
+        <div class="stat-value success">142</div>
+        <div class="stat-change up">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+          23
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">平均延期</div>
+        <div class="stat-value warning">8m</div>
+        <div class="stat-change down">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:rotate(180deg)"><polyline points="18 15 12 9 6 15"/></svg>
+          2m
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">连续天数</div>
+        <div class="stat-value" style="color:var(--plan-sideproject)">12</div>
+        <div class="stat-change up">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+          3
+        </div>
+      </div>
+    </div>
+
+    <!-- Stacked bar chart -->
+    <div class="chart-card">
+      <div class="chart-title">每日完成任务数</div>
+      <div class="chart-area">
+        <div class="chart-bar-group">
+          <div class="chart-bar-stack">
+            <div class="chart-bar sideproject" style="height:15%"></div>
+            <div class="chart-bar writing" style="height:10%"></div>
+            <div class="chart-bar study" style="height:30%"></div>
+            <div class="chart-bar fitness" style="height:25%"></div>
+          </div>
+          <span class="chart-label">一</span>
+        </div>
+        <div class="chart-bar-group">
+          <div class="chart-bar-stack">
+            <div class="chart-bar sideproject" style="height:10%"></div>
+            <div class="chart-bar writing" style="height:20%"></div>
+            <div class="chart-bar study" style="height:25%"></div>
+            <div class="chart-bar fitness" style="height:30%"></div>
+          </div>
+          <span class="chart-label">二</span>
+        </div>
+        <div class="chart-bar-group">
+          <div class="chart-bar-stack">
+            <div class="chart-bar sideproject" style="height:20%"></div>
+            <div class="chart-bar writing" style="height:15%"></div>
+            <div class="chart-bar study" style="height:35%"></div>
+            <div class="chart-bar fitness" style="height:20%"></div>
+          </div>
+          <span class="chart-label">三</span>
+        </div>
+        <div class="chart-bar-group">
+          <div class="chart-bar-stack">
+            <div class="chart-bar sideproject" style="height:5%"></div>
+            <div class="chart-bar writing" style="height:25%"></div>
+            <div class="chart-bar study" style="height:20%"></div>
+            <div class="chart-bar fitness" style="height:35%"></div>
+          </div>
+          <span class="chart-label">四</span>
+        </div>
+        <div class="chart-bar-group">
+          <div class="chart-bar-stack">
+            <div class="chart-bar sideproject" style="height:15%"></div>
+            <div class="chart-bar writing" style="height:20%"></div>
+            <div class="chart-bar study" style="height:30%"></div>
+            <div class="chart-bar fitness" style="height:25%"></div>
+          </div>
+          <span class="chart-label">五</span>
+        </div>
+        <div class="chart-bar-group">
+          <div class="chart-bar-stack">
+            <div class="chart-bar sideproject" style="height:25%"></div>
+            <div class="chart-bar writing" style="height:15%"></div>
+            <div class="chart-bar study" style="height:15%"></div>
+            <div class="chart-bar fitness" style="height:20%"></div>
+          </div>
+          <span class="chart-label">六</span>
+        </div>
+        <div class="chart-bar-group">
+          <div class="chart-bar-stack">
+            <div class="chart-bar sideproject" style="height:20%"></div>
+            <div class="chart-bar writing" style="height:30%"></div>
+            <div class="chart-bar fitness" style="height:25%"></div>
+          </div>
+          <span class="chart-label">日</span>
+        </div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--plan-fitness)"></span>健身</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--plan-study)"></span>学习</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--plan-writing)"></span>写作</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--plan-sideproject)"></span>副业</div>
+      </div>
+    </div>
+
+    <!-- Line chart card -->
+    <div class="chart-card">
+      <div class="chart-title">完成率趋势</div>
+      <div class="line-chart">
+        <svg viewBox="0 0 340 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#F0B44A;stop-opacity:0.3"/>
+              <stop offset="100%" style="stop-color:#F0B44A;stop-opacity:0"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid lines -->
+          <line x1="0" y1="25" x2="340" y2="25" stroke="rgba(132,146,173,0.08)" stroke-width="1"/>
+          <line x1="0" y1="50" x2="340" y2="50" stroke="rgba(132,146,173,0.08)" stroke-width="1"/>
+          <line x1="0" y1="75" x2="340" y2="75" stroke="rgba(132,146,173,0.08)" stroke-width="1"/>
+          <!-- Area -->
+          <path d="M0,70 L48,60 L96,55 L144,45 L192,50 L240,35 L288,30 L340,25 L340,100 L0,100 Z" fill="url(#lineGrad)"/>
+          <!-- Line -->
+          <polyline points="0,70 48,60 96,55 144,45 192,50 240,35 288,30 340,25" fill="none" stroke="#F0B44A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Dots -->
+          <circle cx="0" cy="70" r="3" fill="#F0B44A"/>
+          <circle cx="48" cy="60" r="3" fill="#F0B44A"/>
+          <circle cx="96" cy="55" r="3" fill="#F0B44A"/>
+          <circle cx="144" cy="45" r="3" fill="#F0B44A"/>
+          <circle cx="192" cy="50" r="3" fill="#F0B44A"/>
+          <circle cx="240" cy="35" r="3" fill="#F0B44A"/>
+          <circle cx="288" cy="30" r="3" fill="#F0B44A"/>
+          <circle cx="340" cy="25" r="4" fill="#F0B44A" stroke="#090E1A" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-pill"></div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>现在</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>计划</span>
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>统计</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ SCREEN 5: SETTINGS ============ -->
+<div class="screen-container">
+<div class="screen-title">Settings</div>
+<div class="phone" id="screen-settings">
+  <div class="status-bar">
+    <span class="time">14:32</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <div class="screen-content settings-screen">
+    <div class="settings-header">
+      <h1>设置</h1>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">通知</div>
+      <div class="settings-card">
+        <div class="setting-item">
+          <div class="setting-icon amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div class="setting-info">
+            <div class="setting-name">任务提醒</div>
+            <div class="setting-desc">开始前 5 分钟通知</div>
+          </div>
+          <div class="toggle on"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon red">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="setting-info">
+            <div class="setting-name">超时提醒</div>
+            <div class="setting-desc">每 10 分钟，最多 3 次</div>
+          </div>
+          <div class="toggle on"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="setting-info">
+            <div class="setting-name">每日小结</div>
+            <div class="setting-desc">21:00 推送当日完成率</div>
+          </div>
+          <div class="toggle"><div class="toggle-thumb"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">数据</div>
+      <div class="settings-card">
+        <div class="setting-item">
+          <div class="setting-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div class="setting-info">
+            <div class="setting-name">导出数据</div>
+            <div class="setting-desc">备份为加密 JSON 文件</div>
+          </div>
+          <div class="setting-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="setting-info">
+            <div class="setting-name">导入备份</div>
+            <div class="setting-desc">从 JSON 文件恢复数据</div>
+          </div>
+          <div class="setting-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">偏好</div>
+      <div class="settings-card">
+        <div class="setting-item">
+          <div class="setting-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <div class="setting-info">
+            <div class="setting-name">语言</div>
+            <div class="setting-desc">跟随系统</div>
+          </div>
+          <div class="setting-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </div>
+          <div class="setting-info">
+            <div class="setting-name">外观</div>
+            <div class="setting-desc">跟随系统深色模式</div>
+          </div>
+          <div class="setting-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="about-card">
+      <div class="app-icon">W</div>
+      <div class="app-name">Wake Plan</div>
+      <div class="app-version">v0.3.0 · build 30</div>
+      <div class="privacy-points">
+        <div class="privacy-point">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          零网络请求，所有数据仅存本地
+        </div>
+        <div class="privacy-point">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          SQLCipher AES-256 加密数据库
+        </div>
+        <div class="privacy-point">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          无第三方 SDK，无数据收集
+        </div>
+        <div class="privacy-point">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          开源 · Apache License 2.0
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-pill"></div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>现在</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>计划</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>统计</span>
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ SCREEN 6: ONBOARDING ============ -->
+<div class="screen-container">
+<div class="screen-title">Onboarding</div>
+<div class="phone" id="screen-today">
+  <div class="status-bar">
+    <span class="time">14:32</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <div class="screen-content">
+    <div class="onboarding-screen">
+      <div class="onboarding-logo">W</div>
+      <h2 class="onboarding-title">Wake Plan</h2>
+      <p class="onboarding-subtitle">本地优先的多计划时间管理<br>让每一天都在掌控之中</p>
+      <div class="onboarding-features">
+        <div class="onboarding-feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="feature-text"><strong>任务自带时间</strong><br>每项任务都有自己的起止时间</div>
+        </div>
+        <div class="onboarding-feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div class="feature-text"><strong>智能自动延期</strong><br>超时任务自动后移，不用手动改</div>
+        </div>
+        <div class="onboarding-feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div class="feature-text"><strong>完全本地加密</strong><br>零外联，数据只在你手机里</div>
+        </div>
+      </div>
+      <button class="onboarding-btn">开始使用</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ SCREEN 7: TASK EDITOR ============ -->
+<div class="screen-container">
+<div class="screen-title">Task Editor</div>
+<div class="phone" id="screen-plans">
+  <div class="status-bar">
+    <span class="time">14:32</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <div class="screen-content task-editor-screen">
+    <div class="editor-nav">
+      <button class="editor-cancel">取消</button>
+      <span class="editor-title">新建任务</span>
+      <button class="editor-save">保存</button>
+    </div>
+
+    <div class="editor-form">
+      <!-- Title input -->
+      <div class="form-section">
+        <div class="form-input-group">
+          <div class="form-label">任务名称</div>
+          <input class="form-input" type="text" placeholder="输入任务名称" value="有氧慢跑">
+        </div>
+      </div>
+
+      <!-- Time pickers -->
+      <div class="form-section">
+        <div class="form-input-group" style="padding-bottom:0">
+          <div class="form-label">时间</div>
+        </div>
+        <div class="time-picker-row">
+          <button class="time-picker-btn">
+            <span class="time-label">开始</span>
+            06:35
+          </button>
+          <button class="time-picker-btn">
+            <span class="time-label">结束</span>
+            07:05
+          </button>
+        </div>
+        <div class="form-divider"></div>
+        <div class="form-row">
+          <div class="form-row-label">
+            <span class="form-icon amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            时长
+          </div>
+          <div class="form-row-value secondary">30 分钟</div>
+        </div>
+      </div>
+
+      <!-- Repeat rule -->
+      <div class="form-section">
+        <div class="form-input-group" style="padding-bottom:12px">
+          <div class="form-label">重复</div>
+          <div class="repeat-options">
+            <button class="repeat-chip">仅一次</button>
+            <button class="repeat-chip">每天</button>
+            <button class="repeat-chip active">工作日</button>
+            <button class="repeat-chip">自定义</button>
+          </div>
+        </div>
+        <div class="form-divider"></div>
+        <div class="form-input-group" style="padding-top:12px">
+          <div class="weekday-selector">
+            <button class="weekday-btn">一</button>
+            <button class="weekday-btn active">二</button>
+            <button class="weekday-btn active">三</button>
+            <button class="weekday-btn active">四</button>
+            <button class="weekday-btn active">五</button>
+            <button class="weekday-btn">六</button>
+            <button class="weekday-btn">日</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lock toggle -->
+      <div class="form-section">
+        <div class="form-row">
+          <div class="form-row-label">
+            <span class="form-icon purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <div>
+              <div style="font-size:15px;font-weight:500;color:var(--text-primary)">钉死任务</div>
+              <div style="font-size:12px;color:var(--text-tertiary);font-weight:400;margin-top:2px">链式延期碰到此任务停止</div>
+            </div>
+          </div>
+          <div class="toggle on"><div class="toggle-thumb"></div></div>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div class="form-section">
+        <div class="form-input-group">
+          <div class="form-label">备注</div>
+          <textarea class="form-textarea" placeholder="添加备注（可选）"></textarea>
+        </div>
+      </div>
+
+      <!-- Delete button (edit mode only, hidden for new tasks) -->
+      <button class="delete-btn" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        删除任务
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- end screens-wrapper -->
+
+<script>
+// Simple toggle interaction
+document.querySelectorAll('.toggle').forEach(t => {
+  t.addEventListener('click', () => t.classList.toggle('on'));
+});
+
+// Tab interaction
+document.querySelectorAll('.detail-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    t.parentElement.querySelectorAll('.detail-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+
+// Period toggle
+document.querySelectorAll('.period-btn').forEach(t => {
+  t.addEventListener('click', () => {
+    t.parentElement.querySelectorAll('.period-btn').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+
+// Repeat chips
+document.querySelectorAll('.repeat-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    c.parentElement.querySelectorAll('.repeat-chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+  });
+});
+
+// Weekday buttons
+document.querySelectorAll('.weekday-btn').forEach(b => {
+  b.addEventListener('click', () => b.classList.toggle('active'));
+});
+
+// Screen navigation
+const screenContainers = document.querySelectorAll('.screen-container');
+const navBtns = document.querySelectorAll('.screen-nav-btn');
+
+function scrollToScreen(index) {
+  const target = screenContainers[index];
+  if (!target) return;
+  const wrapper = document.querySelector('.screens-wrapper');
+  const targetLeft = target.offsetLeft - wrapper.offsetLeft;
+  const scrollTarget = targetLeft - (window.innerWidth / 2) + (target.offsetWidth / 2);
+  window.scrollTo({ left: Math.max(0, scrollTarget - 48), behavior: 'smooth' });
+  
+  navBtns.forEach((b, i) => b.classList.toggle('active', i === index));
+}
+
+navBtns.forEach((btn, i) => {
+  btn.addEventListener('click', () => scrollToScreen(i));
+});
+
+// Update active nav on scroll
+let scrollTimeout;
+window.addEventListener('scroll', () => {
+  clearTimeout(scrollTimeout);
+  scrollTimeout = setTimeout(() => {
+    const centerX = window.scrollX + window.innerWidth / 2;
+    let closest = 0;
+    let closestDist = Infinity;
+    screenContainers.forEach((el, i) => {
+      const elCenter = el.offsetLeft + el.offsetWidth / 2;
+      const dist = Math.abs(elCenter - centerX);
+      if (dist < closestDist) { closestDist = dist; closest = i; }
+    });
+    navBtns.forEach((b, i) => b.classList.toggle('active', i === closest));
+  }, 80);
+}, { passive: true });
+
+// Ensure we start at the first screen
+window.addEventListener('load', () => {
+  window.scrollTo({ left: 0, behavior: 'auto' });
+});
+</script>
+
+</body>
+</html>

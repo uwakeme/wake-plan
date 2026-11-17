@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wake Plan — 本地优先的多计划时间管理 Android App</title>
+<meta name="description" content="Wake Plan 把时间切段，段里放任务。任务超时后，后面没锁定的任务自动顺延。一天打开一次就知道现在该做什么。数据只存本机，SQLCipher 加密。">
+<meta property="og:title" content="Wake Plan">
+<meta property="og:description" content="时间段 + 任务 + 自动延期。一天打开一次就知道现在该做什么。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://uwakeme.github.io/wake-plan/">
+<meta property="og:image" content="https://uwakeme.github.io/wake-plan/assets/wake-plan-banner.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Wake Plan">
+<meta name="twitter:description" content="时间段 + 任务 + 自动延期。一天打开一次就知道现在该做什么。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Cpath d='M32 60A24 24 0 0 0 76 60' fill='none' stroke='%238492AD' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='54' cy='52' r='13' fill='%23F0B44A'/%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Wake Plan",
+  "applicationCategory": "LifestyleApplication",
+  "operatingSystem": "Android 8.0+",
+  "softwareVersion": "0.6.0",
+  "description": "本地优先的多计划时间管理 Android App：时间段 + 任务 + 自动延期。",
+  "offers": { "@type": "Offer", "price": "0" },
+  "license": "Apache-2.0",
+  "codeRepository": "https://github.com/uwakeme/wake-plan"
+}
+</script>
+<style>
+:root{
+  --bg:#F2F0EC;
+  --bg-elev:#FAF8F4;
+  --bg-sunken:#EAE7E2;
+  --bg-nav:rgba(242,240,236,.86);
+  --text:#18160F;
+  --text-2:#6E695E;
+  --text-3:#A5A099;
+  --line:rgba(24,22,15,.10);
+  --line-strong:rgba(24,22,15,.18);
+  --primary:#C48520;
+  --primary-hover:#A86F14;
+  --primary-soft:#FCEED4;
+  --on-primary:#1A1408;
+  --danger:#C84545;
+  --plan-1:#C48520;
+  --plan-2:#3B6FB5;
+  --plan-3:#8B5CF6;
+  --on-plan-1:#1A1408;
+  --on-plan-2:#FFFFFF;
+  --on-plan-3:#FFFFFF;
+  --shadow:0 1px 2px rgba(24,22,15,.05), 0 16px 40px rgba(24,22,15,.07);
+  --radius-sm:8px;
+  --radius-md:14px;
+  --radius-lg:22px;
+  --font-display:'DM Sans','Noto Sans SC',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-body:'DM Sans','Noto Sans SC',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#090E1A;
+    --bg-elev:#121A2C;
+    --bg-sunken:#0F1626;
+    --bg-nav:rgba(9,14,26,.86);
+    --text:#F0F2F8;
+    --text-2:#8492AD;
+    --text-3:#4F5E78;
+    --line:rgba(132,146,173,.12);
+    --line-strong:rgba(132,146,173,.24);
+    --primary:#F0B44A;
+    --primary-hover:#D4962E;
+    --primary-soft:#2A210F;
+    --on-primary:#090E1A;
+    --danger:#E85C5C;
+    --plan-1:#E0A33A;
+    --plan-2:#4A87D6;
+    --plan-3:#A97AF0;
+    --on-plan-1:#181203;
+    --on-plan-2:#FFFFFF;
+    --on-plan-3:#FFFFFF;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 48px rgba(0,0,0,.38);
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img,svg{max-width:100%}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+.wrap{width:100%;max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* ---------- nav ---------- */
+.nav{position:sticky;top:0;z-index:50;background:var(--bg-nav);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav-inner{display:flex;align-items:center;gap:22px;height:62px}
+.brand{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:-.02em;white-space:nowrap}
+.brand svg{width:25px;height:25px;flex:none}
+.nav-links{display:flex;gap:22px;font-size:14px;color:var(--text-2)}
+.nav-links a{transition:color .16s}
+.nav-links a:hover{color:var(--text)}
+.nav-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+@media (max-width:768px){
+  .nav-links{display:none}
+  .nav-actions .btn-ghost{display:none}
+}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:40px;padding:0 18px;border-radius:999px;font-size:14px;font-weight:600;border:1px solid transparent;transition:background-color .18s,border-color .18s,color .18s;white-space:nowrap}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-ghost{border-color:var(--line-strong);color:var(--text)}
+.btn-ghost:hover{border-color:var(--text-3);background:var(--bg-elev)}
+
+/* ---------- hero ---------- */
+.hero{padding:76px 0 8px}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin:0}
+h1{font-family:var(--font-display);font-size:clamp(40px,6.4vw,66px);line-height:1.04;letter-spacing:-.035em;font-weight:700;margin:20px 0 0;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+h1 .mark{width:.78em;height:.78em;flex:none;display:block}
+.lead{max-width:640px;font-size:clamp(16px,1.9vw,19px);line-height:1.8;color:var(--text-2);margin:24px 0 0}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.hero-meta{margin-top:20px;font-family:var(--font-mono);font-size:12px;letter-spacing:.02em;color:var(--text-3)}
+
+/* ---------- timeline card ---------- */
+.tl-card{margin-top:46px;background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
+.tl-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line)}
+.tl-title{font-weight:600;font-size:15px}
+.chip{font-family:var(--font-mono);font-size:11px;letter-spacing:.05em;color:var(--text-2);border:1px solid var(--line-strong);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.tl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tl-scroll svg{display:block;width:100%;min-width:1040px;height:auto}
+.tl-foot{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--text-3)}
+.tl-hint{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.04em}
+
+/* svg pieces */
+.tl-lane-line{stroke:var(--line);stroke-width:1;shape-rendering:crispEdges}
+.tl-tick{stroke:var(--line-strong);stroke-width:1;shape-rendering:crispEdges}
+.tl-tick-major{stroke:var(--text-3);stroke-width:1;shape-rendering:crispEdges}
+.tl-hour{font-family:var(--font-mono);font-size:12px;fill:var(--text-3);text-anchor:middle}
+.tl-lane-name{font-family:var(--font-body);font-size:13px;font-weight:600;fill:var(--text)}
+.tl-lane-meta{font-family:var(--font-mono);font-size:10.5px;fill:var(--text-3)}
+.tl-block-label{font-family:var(--font-body);font-size:11px;font-weight:600;text-anchor:middle}
+.tl-now-line{stroke:var(--danger);stroke-width:1.5}
+.tl-now-dot{fill:var(--danger)}
+.tl-now-chip{fill:var(--danger);fill-opacity:.14}
+.tl-now-text{font-family:var(--font-mono);font-size:11px;fill:var(--danger)}
+.b1{fill:var(--plan-1)}.b2{fill:var(--plan-2)}.b3{fill:var(--plan-3)}
+.o1{fill:var(--on-plan-1)}.o2{fill:var(--on-plan-2)}.o3{fill:var(--on-plan-3)}
+.tl-lock{fill:none;stroke-width:1.6}
+.tl-lock-body{stroke:none}
+
+/* ---------- sections ---------- */
+section{padding:66px 0}
+.ruler{height:16px;border-top:1px solid var(--line);position:relative}
+.ruler::after{content:"";position:absolute;left:0;right:0;top:0;height:5px;background-image:repeating-linear-gradient(to right,var(--line-strong) 0 1px,transparent 1px 36px)}
+h2{font-family:var(--font-display);font-size:clamp(26px,3.5vw,40px);line-height:1.16;letter-spacing:-.03em;font-weight:700;margin:14px 0 0}
+h3{font-size:16px;font-weight:600;margin:0 0 8px;letter-spacing:-.01em}
+.sec-sub{max-width:660px;color:var(--text-2);font-size:16px;line-height:1.85;margin:16px 0 0}
+.k{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--primary);display:block;margin-bottom:8px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:34px}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:34px}
+@media (max-width:768px){
+  .grid-3,.grid-2{grid-template-columns:1fr}
+  section{padding:52px 0}
+}
+.card{background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius-md);padding:22px;min-width:0}
+.card p{margin:0;color:var(--text-2);font-size:14px;line-height:1.8}
+.card ul{margin:12px 0 0;padding-left:18px;color:var(--text-2);font-size:13.8px;line-height:1.85}
+.card li{margin:5px 0}
+.card li::marker{color:var(--primary)}
+.card h3 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:9px;vertical-align:1px}
+
+/* rules */
+.rules{list-style:none;margin:30px 0 0;padding:0;counter-reset:rule}
+.rules li{counter-increment:rule;position:relative;padding:13px 0 13px 44px;border-top:1px solid var(--line);color:var(--text-2)}
+.rules li::before{content:counter(rule,decimal-leading-zero);position:absolute;left:0;top:15px;font-family:var(--font-mono);font-size:12px;color:var(--primary)}
+
+/* cascade */
+.cascade{margin-top:26px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--bg-elev);overflow:hidden}
+.cs-row{display:grid;grid-template-columns:76px 92px minmax(0,1fr);gap:16px;align-items:baseline;padding:13px 20px;border-top:1px solid var(--line);font-size:14px}
+.cs-row:first-child{border-top:0}
+.cs-time{font-family:var(--font-mono);font-size:14px;color:var(--text)}
+.cs-name{font-weight:600}
+.cs-out{color:var(--text-2);font-size:13.5px}
+.cs-over{color:var(--danger)}
+.cs-shift{color:var(--primary);font-weight:600}
+.cs-lock{color:var(--text-3)}
+@media (max-width:768px){
+  .cs-row{grid-template-columns:62px minmax(0,1fr);gap:4px 12px}
+  .cs-out{grid-column:1/-1}
+}
+
+/* command blocks */
+.cmd{position:relative;margin-top:14px;background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius-md);overflow:hidden}
+.cmd-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px 9px 18px;border-bottom:1px solid var(--line);background:var(--bg-sunken)}
+.cmd-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.cmd pre{margin:0;padding:15px 18px;font-family:var(--font-mono);font-size:13px;line-height:1.95;overflow-x:auto;color:var(--text)}
+.cmd code{font-family:inherit}
+.copy{flex:none;height:26px;padding:0 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--bg-elev);color:var(--text-2);font-size:12px;font-family:var(--font-body);cursor:pointer;transition:color .16s,border-color .16s}
+.copy:hover{color:var(--text);border-color:var(--text-3)}
+.copy.done{color:var(--primary);border-color:var(--primary)}
+.note{margin-top:16px;padding:14px 18px;border-left:3px solid var(--primary);background:var(--primary-soft);border-radius:0 var(--radius-sm) var(--radius-sm) 0;color:var(--text-2);font-size:13.5px;line-height:1.8}
+.note strong{color:var(--text);font-weight:600}
+
+/* stack */
+.stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 44px;margin-top:30px;border-top:1px solid var(--line)}
+.stack > div{display:grid;grid-template-columns:84px minmax(0,1fr);gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.stack dt{color:var(--text-3);font-size:13px}
+.stack dd{margin:0;color:var(--text-2)}
+@media (max-width:768px){
+  .stack{grid-template-columns:1fr}
+  .stack > div{grid-template-columns:72px minmax(0,1fr);gap:12px}
+}
+
+/* footer */
+footer{border-top:1px solid var(--line);padding:34px 0 46px;color:var(--text-3);font-size:13.5px}
+.foot-inner{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:center;justify-content:space-between}
+.foot-links{display:flex;flex-wrap:wrap;gap:18px}
+.foot-links a:hover{color:var(--text)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">
+      <svg viewBox="0 0 108 108" aria-hidden="true">
+        <path d="M32 60A24 24 0 0 0 76 60" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+        <circle cx="54" cy="52" r="12" fill="#F0B44A"/>
+      </svg>
+      Wake Plan
+    </a>
+    <nav class="nav-links" aria-label="主导航">
+      <a href="#model">核心模型</a>
+      <a href="#features">功能</a>
+      <a href="#privacy">隐私</a>
+      <a href="#build">构建</a>
+      <a href="#stack">技术栈</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-ghost" href="prototype.html">界面原型</a>
+      <a class="btn btn-primary" href="https://github.com/uwakeme/wake-plan/releases" target="_blank" rel="noopener">下载 APK</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">本地优先 · 多计划 · Android 8.0+</p>
+      <h1>
+        <svg class="mark" viewBox="0 0 108 108" aria-hidden="true">
+          <path d="M32 60A24 24 0 0 0 76 60" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".5"/>
+          <circle cx="54" cy="52" r="12" fill="#F0B44A"/>
+        </svg>
+        Wake Plan
+      </h1>
+      <p class="lead">时间段 + 任务 + 自动延期。把时间先切段，段里放任务；任务超时了，后面没锁定的任务自动往后延。一天打开一次，看到的就是当前时刻该干的那件事。</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/uwakeme/wake-plan/releases" target="_blank" rel="noopener">下载 app-release.apk</a>
+        <a class="btn btn-ghost" href="prototype.html">看界面原型</a>
+        <a class="btn btn-ghost" href="https://github.com/uwakeme/wake-plan" target="_blank" rel="noopener">GitHub 源码</a>
+      </div>
+      <p class="hero-meta">v0.6.0 · Apache-2.0 · Kotlin 2.0.21 + Compose Material 3</p>
+
+      <div class="tl-card">
+        <div class="tl-head">
+          <span class="tl-title">今日时间线</span>
+          <span class="chip">内置模板的一天</span>
+          <span class="chip">3 个模板 / 14 个任务</span>
+          <span class="chip">24 小时横向时间轴</span>
+        </div>
+        <div class="tl-scroll">
+          <svg viewBox="0 0 1120 244" role="img" aria-label="24 小时横向时间轴：三个内置模板的任务分布，红色竖线是当前时刻">
+            <g aria-hidden="true">
+              <line class="tl-tick" x1="96" y1="32" x2="96" y2="38"/>
+              <line class="tl-tick" x1="138" y1="34" x2="138" y2="38"/>
+              <line class="tl-tick-major" x1="180" y1="26" x2="180" y2="38"/>
+              <line class="tl-tick" x1="222" y1="34" x2="222" y2="38"/>
+              <line class="tl-tick" x1="264" y1="34" x2="264" y2="38"/>
+              <line class="tl-tick-major" x1="306" y1="26" x2="306" y2="38"/>
+              <line class="tl-tick" x1="348" y1="34" x2="348" y2="38"/>
+              <line class="tl-tick" x1="390" y1="34" x2="390" y2="38"/>
+              <line class="tl-tick-major" x1="432" y1="26" x2="432" y2="38"/>
+              <line class="tl-tick" x1="474" y1="34" x2="474" y2="38"/>
+              <line class="tl-tick" x1="516" y1="34" x2="516" y2="38"/>
+              <line class="tl-tick-major" x1="558" y1="26" x2="558" y2="38"/>
+              <line class="tl-tick" x1="600" y1="34" x2="600" y2="38"/>
+              <line class="tl-tick" x1="642" y1="34" x2="642" y2="38"/>
+              <line class="tl-tick-major" x1="684" y1="26" x2="684" y2="38"/>
+              <line class="tl-tick" x1="726" y1="34" x2="726" y2="38"/>
+              <line class="tl-tick" x1="768" y1="34" x2="768" y2="38"/>
+              <line class="tl-tick-major" x1="810" y1="26" x2="810" y2="38"/>
+              <line class="tl-tick" x1="852" y1="34" x2="852" y2="38"/>
+              <line class="tl-tick" x1="894" y1="34" x2="894" y2="38"/>
+              <line class="tl-tick-major" x1="936" y1="26" x2="936" y2="38"/>
+              <line class="tl-tick" x1="978" y1="34" x2="978" y2="38"/>
+              <line class="tl-tick" x1="1020" y1="34" x2="1020" y2="38"/>
+              <line class="tl-tick-major" x1="1104" y1="26" x2="1104" y2="38"/>
+              <text class="tl-hour" x="96" y="20">00:00</text>
+              <text class="tl-hour" x="180" y="20">02:00</text>
+              <text class="tl-hour" x="264" y="20">04:00</text>
+              <text class="tl-hour" x="348" y="20">06:00</text>
+              <text class="tl-hour" x="432" y="20">08:00</text>
+              <text class="tl-hour" x="516" y="20">10:00</text>
+              <text class="tl-hour" x="600" y="20">12:00</text>
+              <text class="tl-hour" x="684" y="20">14:00</text>
+              <text class="tl-hour" x="768" y="20">16:00</text>
+              <text class="tl-hour" x="852" y="20">18:00</text>
+              <text class="tl-hour" x="936" y="20">20:00</text>
+              <text class="tl-hour" x="1020" y="20">22:00</text>
+              <text class="tl-hour" x="1104" y="20">24:00</text>
+              <line class="tl-lane-line" x1="0" y1="48" x2="1120" y2="48"/>
+              <line class="tl-lane-line" x1="0" y1="104" x2="1120" y2="104"/>
+              <line class="tl-lane-line" x1="0" y1="158" x2="1120" y2="158"/>
+              <line class="tl-lane-line" x1="0" y1="206" x2="1120" y2="206"/>
+            </g>
+
+            <g>
+              <circle class="b1" cx="12" cy="74" r="4"/>
+              <text class="tl-lane-name" x="24" y="78">标准晨练</text>
+              <text class="tl-lane-meta" x="24" y="93">5 个任务</text>
+              <rect class="b1" x="348" y="64" width="7" height="30" rx="3"><title>起床 / 喝水 06:00 - 06:10</title></rect>
+              <rect class="b1" x="355" y="64" width="10.5" height="30" rx="3"><title>拉伸热身 06:10 - 06:25</title></rect>
+              <rect class="b1" x="365.5" y="64" width="28" height="30" rx="3"><title>跑步 40 分钟 06:25 - 07:05（锁定，不参与自动顺延）</title></rect>
+              <rect class="tl-lock tl-lock-body o1" x="376" y="75" width="7" height="6" rx="1.5"/>
+              <path class="tl-lock o1" d="M377.6 75v-2.2a1.9 1.9 0 0 1 3.8 0V75"/>
+              <rect class="b1" x="393.5" y="64" width="17.5" height="30" rx="3"><title>冲澡整理 07:05 - 07:30</title></rect>
+              <rect class="b1" x="411" y="64" width="21" height="30" rx="3"><title>早餐 07:30 - 08:00</title></rect>
+            </g>
+
+            <g>
+              <circle class="b2" cx="12" cy="128" r="4"/>
+              <text class="tl-lane-name" x="24" y="132">标准学习</text>
+              <text class="tl-lane-meta" x="24" y="147">5 个任务</text>
+              <rect class="b2" x="390" y="118" width="28" height="30" rx="3"><title>晨读 / 背诵 07:00 - 07:40</title></rect>
+              <rect class="b2" x="432" y="118" width="84" height="30" rx="3"><title>深度学习块 1 08:00 - 10:00</title></rect>
+              <text class="tl-block-label o2" x="474" y="138">深度学习 1</text>
+              <rect class="b2" x="516" y="118" width="9.3" height="30" rx="3"><title>复盘笔记 10:00 - 10:20</title></rect>
+              <rect class="b2" x="537" y="118" width="63" height="30" rx="3"><title>深度学习块 2 10:30 - 12:00</title></rect>
+              <text class="tl-block-label o2" x="568.5" y="138">深度学习 2</text>
+              <rect class="b2" x="999" y="118" width="42" height="30" rx="3"><title>晚间复习 20:30 - 21:30（工作日重复）</title></rect>
+            </g>
+
+            <g>
+              <circle class="b3" cx="12" cy="182" r="4"/>
+              <text class="tl-lane-name" x="24" y="186">周末阅读</text>
+              <text class="tl-lane-meta" x="24" y="201">4 个任务</text>
+              <rect class="b3" x="495" y="172" width="84" height="30" rx="3"><title>上午阅读 09:30 - 11:30（周末）</title></rect>
+              <text class="tl-block-label o3" x="537" y="192">上午阅读</text>
+              <rect class="b3" x="642" y="172" width="21" height="30" rx="3"><title>午后小憩 13:00 - 13:30（周末）</title></rect>
+              <rect class="b3" x="684" y="172" width="84" height="30" rx="3"><title>下午阅读 + 笔记 14:00 - 16:00（周末）</title></rect>
+              <text class="tl-block-label o3" x="726" y="192">下午阅读</text>
+              <rect class="b3" x="783" y="172" width="42" height="30" rx="3"><title>输出 / 读书笔记整理 16:30 - 17:30（周末）</title></rect>
+            </g>
+
+            <g>
+              <line class="tl-now-line" x1="544" y1="38" x2="544" y2="236"/>
+              <circle class="tl-now-dot" cx="544" cy="38" r="4"/>
+              <rect class="tl-now-chip" x="544" y="214" width="84" height="20" rx="10"/>
+              <text class="tl-now-text" x="554" y="228">现在 10:40</text>
+            </g>
+          </svg>
+        </div>
+        <div class="tl-foot">
+          <span>任务与时间取自仓库里的内置模板定义：标准晨练 / 标准学习 / 周末阅读</span>
+          <span class="tl-hint">窄屏可横向滑动 · 悬停色块看任务名</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="model">
+    <div class="ruler" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="k">核心模型</span>
+      <h2>计划、任务、任务实例，三层结构</h2>
+      <p class="sec-sub">市面上的日程 App 大多只服务一种场景，要么是纯待办，要么是日历，要么是习惯打卡。真要把「计划」和「日程」放到一起用，得在几个 App 之间来回切。Wake Plan 把两件事合成一层时间轴。</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="k">Plan</span>
+          <h3>计划</h3>
+          <p>一条线，比如「考研英语」。独立计时，跟别的计划互不干扰。</p>
+        </div>
+        <div class="card">
+          <span class="k">Task</span>
+          <h3>任务</h3>
+          <p>计划里的一件具体事。自带起止时间、重复规则、锁定标记。</p>
+        </div>
+        <div class="card">
+          <span class="k">TaskCompletion</span>
+          <h3>任务实例</h3>
+          <p>任务在某一天的落地记录。PENDING → IN_PROGRESS → COMPLETED / SKIPPED。</p>
+        </div>
+      </div>
+
+      <span class="k" style="margin-top:52px">自动延期</span>
+      <h3 style="font-size:20px;margin-top:6px">超时了怎么办</h3>
+      <ol class="rules">
+        <li>实际结束时间晚于计划结束时间，超出的分钟数向下取整。</li>
+        <li>同一计划里还没开始、没锁定的后续任务整体往后推，推完继续看下一个。</li>
+        <li>遇到锁定的任务就停下，它和它后面的任务留在原位。</li>
+        <li>延期只在同一个计划内发生，别的计划不受影响。</li>
+      </ol>
+
+      <div class="cascade">
+        <div class="cs-row">
+          <span class="cs-time">10:00</span>
+          <span class="cs-name">背单词</span>
+          <span class="cs-out cs-over">实际 10:40 结束 → 溢出 40 分钟</span>
+        </div>
+        <div class="cs-row">
+          <span class="cs-time">11:00</span>
+          <span class="cs-name">做阅读</span>
+          <span class="cs-out cs-shift">顺延到 11:40</span>
+        </div>
+        <div class="cs-row">
+          <span class="cs-time">12:00</span>
+          <span class="cs-name">复盘</span>
+          <span class="cs-out cs-shift">顺延到 12:40</span>
+        </div>
+        <div class="cs-row">
+          <span class="cs-time">13:00</span>
+          <span class="cs-name">午休</span>
+          <span class="cs-out cs-lock">锁定 · 遇到它停止级联</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="ruler" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="k">功能一览</span>
+      <h2>打开一次，该干的都在眼前</h2>
+      <p class="sec-sub">底部四个 tab：现在、计划、统计、设置。专注计时从任务卡片进，模板库和桌面组件在设置里。</p>
+
+      <div class="feat-grid grid-3">
+        <div class="card">
+          <h3><span class="dot" style="background:#F0B44A"></span>现在</h3>
+          <ul>
+            <li>打开就是当前时刻的聚合视图，多个计划的任务按时间轴叠在一起</li>
+            <li>24 小时水平时间线，红线是当前时刻，可以往前翻一天、往后翻一天</li>
+            <li>一键「开始 / 完成」，完成后弹可撤销的 Snackbar，最多排队 5 条</li>
+            <li>底部弹层快速建任务，默认挂到最近用的那个计划上</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:#5B9BD5"></span>计划</h3>
+          <ul>
+            <li>计划列表带 10 种预设色，也能自己填 hex，起始日期可选</li>
+            <li>任务自带起止时间，重复规则支持仅一次、每天、工作日、自定义星期</li>
+            <li>跨午夜的任务按次日折算，不用手动改日期</li>
+            <li>冲突以内联色条标在列表里，不弹窗；计划可以归档</li>
+            <li>内置 3 个模板：标准晨练、标准学习、周末阅读</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:#5DB88A"></span>专注</h3>
+          <ul>
+            <li>从任务卡片进全屏计时环，专注、短休、长休三段轮次</li>
+            <li>前台 Service 跑倒计时，锁屏也留一条常驻通知</li>
+            <li>一轮结束直接打卡，专注时长落库并计入统计</li>
+            <li>同一时刻只允许一个任务处于进行中</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:#B07FE8"></span>统计</h3>
+          <ul>
+            <li>近 7 天、近 30 天、本月三个窗口切换</li>
+            <li>每日完成数折线、按计划柱状、完成率、平均延期</li>
+            <li>专注时长按天、按计划一起算进去</li>
+            <li>明细可以导出 CSV，带 UTF-8 BOM，Excel 打开不乱码</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:#E87B9B"></span>设置</h3>
+          <ul>
+            <li>通知渠道分开配：任务开始、超时、完成、每日回顾、专注计时</li>
+            <li>每日回顾默认 21:00 推一条当天的完成率</li>
+            <li>语言跟随系统、中文、English 三选一，切换后立即生效</li>
+            <li>备份导出导入 JSON，可以选 passphrase 加密（AES-256）</li>
+            <li>数据保留策略：永久、90 天、1 年，只清终态记录</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:#8492AD"></span>通知与桌面</h3>
+          <ul>
+            <li>桌面 AppWidget 是 4×2 的迷你时间线，打卡后自动刷新</li>
+            <li>下拉面板的快捷设置 Tile 走同一个入口</li>
+            <li>开机、改系统时间、改时区之后闹钟会重新排一遍</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <div class="ruler" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="k">隐私与安全</span>
+      <h2>三条硬约束</h2>
+      <p class="sec-sub">不是「我们承诺不收集」，而是整个 App 里没有任何能收集东西的东西。</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="k">硬约束 01</span>
+          <h3>不发任何网络请求</h3>
+          <p>整个 App 不含任何网络库，统计口径全在本机算。</p>
+        </div>
+        <div class="card">
+          <span class="k">硬约束 02</span>
+          <h3>数据只存在本机，而且加密</h3>
+          <p>本地库用 SQLCipher 4.6.1 加密（AES-256），密钥在 AndroidKeyStore 里生成并包装。</p>
+        </div>
+        <div class="card">
+          <span class="k">硬约束 03</span>
+          <h3>没有账号，没有后端</h3>
+          <p>没有账号、没有后端、没有第三方 SDK、没有埋点。</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>数据在自己手里</h3>
+          <ul>
+            <li>数据随时能导出成 JSON 或 CSV，也能导入回来换机</li>
+            <li>通知权限只在引导页申请一次，被拒之后在设置页留了系统设置入口</li>
+            <li>备份可选 passphrase 加密（AES-256 + PBKDF2）</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>已知限制</h3>
+          <ul>
+            <li>专注计时依赖前台 Service，部分国产 ROM 的后台限制可能让倒计时通知中断</li>
+            <li>进程被杀之后，正在进行的专注场次不会恢复，重新打开会看到未结算的状态</li>
+            <li>精确闹钟在部分 ROM 上需要额外授权，已在设置页给出提示</li>
+            <li>v0.6 之前导出的备份里没有 <code>focus_sessions</code> 字段，导入时按空集合处理</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="build">
+    <div class="ruler" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="k">从源码构建</span>
+      <h2>JDK 17 + Android SDK 35</h2>
+      <p class="sec-sub">需要 Android SDK Platform 35 和 Build-Tools 35.0.0；模拟器 API 26 以上，或者开了 USB 调试的真机。</p>
+
+      <div class="cmd">
+        <div class="cmd-bar"><span class="cmd-label">clone</span><button class="copy" type="button" data-copy="cmd-clone" aria-label="复制克隆命令">复制</button></div>
+        <pre><code id="cmd-clone">git clone git@github.com:uwakeme/wake-plan.git
+cd wake-plan</code></pre>
+      </div>
+
+      <p class="note"><strong>local.properties 不在仓库里</strong>，第一次要自己写一份，里面指到本机 SDK 路径：<code>sdk.dir=D:\Program Files\Android\Android SDK</code>。</p>
+
+      <div class="cmd">
+        <div class="cmd-bar"><span class="cmd-label">build</span><button class="copy" type="button" data-copy="cmd-build" aria-label="复制构建命令">复制</button></div>
+        <pre><code id="cmd-build">./gradlew :app:assembleDebug
+./gradlew :app:installDebug</code></pre>
+      </div>
+
+      <div class="cmd">
+        <div class="cmd-bar"><span class="cmd-label">test</span><button class="copy" type="button" data-copy="cmd-test" aria-label="复制测试命令">复制</button></div>
+        <pre><code id="cmd-test">./gradlew :app:testDebugUnitTest
+./gradlew :app:lintDebug
+./gradlew :app:connectedAndroidTest</code></pre>
+      </div>
+
+      <p class="sec-sub" style="margin-top:26px">JVM 单测 326 个用例、56 个测试套件，JUnit 5 + MockK + Turbine，不依赖 Robolectric。数据库迁移测试放在 <code>androidTest</code>，用 Room 的 <code>MigrationTestHelper</code> 跑，会连 SQLCipher 加密路径一起验。提交前单测全绿、lint 0 error 是硬门槛。</p>
+
+      <p class="note"><strong>依赖和 Gradle wrapper 都走国内镜像</strong>：<code>settings.gradle.kts</code> 配了阿里云 maven 三件套，wrapper 指向国内 gradle 镜像，第一次 sync 大概 2 到 5 分钟。</p>
+    </div>
+  </section>
+
+  <section id="stack">
+    <div class="ruler" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="k">技术栈</span>
+      <h2>单 module，三层包结构</h2>
+      <p class="sec-sub"><code>ui/</code> → <code>domain/</code> → <code>data/</code> 单向依赖：domain 不依赖 data 和 ui，data 不依赖 ui。</p>
+
+      <dl class="stack">
+        <div><dt>语言</dt><dd>Kotlin 2.0.21</dd></div>
+        <div><dt>UI</dt><dd>Jetpack Compose（Material 3）</dd></div>
+        <div><dt>状态</dt><dd>StateFlow + collectAsStateWithLifecycle</dd></div>
+        <div><dt>依赖注入</dt><dd>Hilt 2.52（KSP，不用 KAPT）</dd></div>
+        <div><dt>导航</dt><dd>Navigation Compose 2.8.3</dd></div>
+        <div><dt>数据库</dt><dd>Room 2.6.1 + SQLCipher 4.6.1（AES-256）</dd></div>
+        <div><dt>偏好</dt><dd>DataStore Preferences 1.1.1</dd></div>
+        <div><dt>序列化</dt><dd>kotlinx.serialization 1.7.3</dd></div>
+        <div><dt>定时</dt><dd>WorkManager 2.9.1 + AlarmManager</dd></div>
+        <div><dt>时间</dt><dd>java.time + desugaring（API 26+）</dd></div>
+        <div><dt>测试</dt><dd>JUnit 5 + MockK + Turbine + Room Testing</dd></div>
+        <div><dt>构建</dt><dd>Gradle 8.7 / AGP 8.5.2</dd></div>
+      </dl>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span>Wake Plan v0.6.0 · Apache License 2.0</span>
+    <nav class="foot-links" aria-label="页脚链接">
+      <a href="https://github.com/uwakeme/wake-plan" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/uwakeme/wake-plan/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="prototype.html">界面原型</a>
+      <a href="https://github.com/uwakeme/wake-plan/blob/main/docs/INTERNAL_TEST.md" target="_blank" rel="noopener">内测清单</a>
+      <a href="https://github.com/uwakeme/wake-plan/blob/main/docs/plan/00-roadmap.md" target="_blank" rel="noopener">路线图</a>
+    </nav>
+    <span>页面内容来自仓库 README、模板定义与版本记录</span>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var text = document.getElementById(btn.dataset.copy).textContent;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    btn.textContent = '已复制';
+    btn.classList.add('done');
+    setTimeout(function () {
+      btn.textContent = '复制';
+      btn.classList.remove('done');
+    }, 1600);
+  });
+});
+</script>
+</body>
+</html>
