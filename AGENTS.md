@@ -16,6 +16,7 @@ Wake Plan — 本地优先的多计划时间管理 Android App。
 
 - `app/` — Android app module（Kotlin / Compose / Hilt / Room / SQLCipher）
 - `docs/` — PRD / 路线图 / 计划文档
+- `docs/index.html` — 项目主页单文件（GitHub Pages 发布：源 `main` + `/docs`，站点 `www.uwakeme.top/wake-plan/`；改主页内容直接改这个文件再推 main）
 - `designs/` — UI 设计稿（HTML 原型 + 界面截图）
 - `app/schemas/` — Room schema 导出（commit 上去便于 Migration 测试）
 - `gradle/libs.versions.toml` — 依赖版本目录
@@ -47,14 +48,15 @@ Wake Plan — 本地优先的多计划时间管理 Android App。
 
 - 不要提交 `local.properties`（已在 `.gitignore`）
 - 不要提交任何 secrets / 密钥 / token
+- 仓库已于 2026-11-17 转为**公开** ⇒ 提交前确认没有密钥、token、内网地址被提交；git 历史里的文件同样对外可见
 - 本地数据库走 SQLCipher 加密（master key 在 AndroidKeyStore）
 
 ## Release checklist
 
-- 仓库是**私有**的 ⇒ shields.io 匿名取不到 GitHub API，README 徽章一律用**静态**徽章
-  （`/badge/version-x.y.z-color`）。用 `github/v/release` 这类动态的会渲染成红底报错
-- **每次发版要手动改** `README.md` 和 `README.en.md` 里的 `version-x.y.z`（各一处）；
-  仓库公开后可改回动态徽章
+- 仓库已转**公开** ⇒ shields.io 能匿名取到 GitHub API，`github/v/release` 这类动态徽章已实测可用
+  （2026-11-17 验证返回 `RELEASE: V0.6.0`）
+- README 徽章目前仍是**静态**的（`/badge/version-x.y.z-color`），**每次发版要手动改**
+  `README.md` 和 `README.en.md` 里的 `version-x.y.z`（各一处）；想换动态徽章就两处一起换
 - **APK 从 tag 的干净 worktree 编**：`git worktree add <dir> <tag>` → 拷 `local.properties` →
   在 worktree 里 `assembleRelease` → `gh release create <tag> <apk>` → `git worktree remove --force`。
   别在主工作区编，否则未提交的 WIP 会被打进产物，APK 与 tag 对不上
