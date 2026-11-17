@@ -20,10 +20,21 @@ jobs:
       - name: Setup Gradle (caching)
         uses: gradle/actions/setup-gradle@v4
 
+      # 仓库可达性自检：runner 在境外，阿里云镜像未必可用，探一遍把状态码打进日志
+      - name: Probe plugin repositories
+        run: |
+          for u in \
+            "https://maven.aliyun.com/repository/gradle-plugin/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.0.21-1.0.27/com.google.devtools.ksp.gradle.plugin-2.0.21-1.0.27.pom" \
+            "https://plugins.gradle.org/m2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.0.21-1.0.27/com.google.devtools.ksp.gradle.plugin-2.0.21-1.0.27.pom" \
+            "https://repo1.maven.org/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.0.21-1.0.27/com.google.devtools.ksp.gradle.plugin-2.0.21-1.0.27.pom"; do
+            printf "%s  %s\n" "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 "$u" || echo ERR)" "$u"
+          done
+
       # 单测 + lint 是提交门槛（AGENTS.md：所有测试通过再提交推送）
+      # -PchinaMirror=false：境外 runner 不走阿里云镜像，只用官方源
       - name: Unit tests + Lint
-        run: ./gradlew :app:testDebugUnitTest :app:lintDebug --stacktrace
+        run: ./gradlew -PchinaMirror=false :app:testDebugUnitTest :app:lintDebug --stacktrace
 
       # 编译 debug/release APK 与 androidTest（Migration 测试的编译检查；跑 connectedAndroidTest 需设备）
       - name: Assemble APKs
-        run: ./gradlew :app:assembleDebug :app:assembleRelease :app:assembleDebugAndroidTest --stacktrace
+        run: ./gradlew -PchinaMirror=false :app:assembleDebug :app:assembleRelease :app:assembleDebugAndroidTest --stacktrace
