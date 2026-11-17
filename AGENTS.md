@@ -12,6 +12,10 @@ Wake Plan — 本地优先的多计划时间管理 Android App。
 
 > 本地 `local.properties` (`sdk.dir`) 与 `gradle.properties` (`org.gradle.java.home`) 都指向本机路径，换机器需重写。
 
+> 非交互 shell 里跑 `gradlew.bat` 必须先设 `JAVA_HOME`（本机 jbr 在 `D:\Program Files\Android\Android Studio\jbr`，
+> 即 `local.properties` 的 `org.gradle.java.home`），否则直接报 `JAVA_HOME is not set and no 'java' command could be found`。
+> aapt2 的本机变通同理放用户级 `~/.gradle/gradle.properties`，**不要**写进仓库。
+
 ## Project layout
 
 - `app/` — Android app module（Kotlin / Compose / Hilt / Room / SQLCipher）
