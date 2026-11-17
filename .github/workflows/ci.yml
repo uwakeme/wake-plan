@@ -24,6 +24,6 @@ jobs:
       - name: Unit tests + Lint
         run: ./gradlew :app:testDebugUnitTest :app:lintDebug --stacktrace
 
-      # 编译主 APK 与 androidTest（Migration 测试的编译检查；跑 connectedAndroidTest 需设备）
+      # 编译 debug/release APK 与 androidTest（Migration 测试的编译检查；跑 connectedAndroidTest 需设备）
       - name: Assemble APKs
-        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+        run: ./gradlew :app:assembleDebug :app:assembleRelease :app:assembleDebugAndroidTest --stacktrace
