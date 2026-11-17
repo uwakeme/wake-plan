@@ -33,13 +33,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -86,6 +84,7 @@ import com.wakeplan.app.domain.model.TaskStatus
 import com.wakeplan.app.domain.usecase.TaskConflict
 import com.wakeplan.app.ui.common.HighlightBus
 import com.wakeplan.app.ui.common.WpAnimateInContainer
+import com.wakeplan.app.ui.common.WpAddFab
 import com.wakeplan.app.ui.common.WpRadius
 import com.wakeplan.app.ui.common.parseHexColor
 import com.wakeplan.app.ui.theme.WpSuccessDark
@@ -162,16 +161,10 @@ fun TodayScreen(
         floatingActionButton = {
             // v0.4 快速录入：只在"今天"视图提供（非今天看历史时加任务没有意义）
             if (isViewingToday) {
-                FloatingActionButton(
+                WpAddFab(
                     onClick = { showQuickAdd = true },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) {
-                    Icon(
-                        Icons.Outlined.Add,
-                        contentDescription = stringResource(R.string.today_quick_add_title),
-                    )
-                }
+                    contentDescription = stringResource(R.string.today_quick_add_title),
+                )
             }
         },
     ) { innerPadding ->
