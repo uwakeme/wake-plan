@@ -8,12 +8,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -22,9 +26,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +48,8 @@ import java.time.LocalTime
  *
  * 计划 chips（默认选最近更新的活跃计划）+ 标题 + 起止时间，保存经
  * TodayViewModel.quickAddTask 建任务并立即铺当天实例。不动 schema、不进复杂编辑器。
+ * chips 行尾的「新建计划」跳建计划页；从那边回来弹层和已填内容原样恢复。
+ * 选好计划/时间后实时预演冲突（与保存后卡片红条同一套检测），只提示不阻断。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,14 +57,23 @@ internal fun QuickAddTaskSheet(
     plans: List<Plan>,
     defaultPlanId: String?,
     onSave: (planId: String, title: String, startMinutes: Int, endMinutes: Int) -> Unit,
+    onCreatePlan: () -> Unit,
+    conflictPreview: (planId: String, startMinutes: Int, endMinutes: Int) -> TodayViewModel.QuickAddConflict?,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var planId by remember { mutableStateOf(defaultPlanId ?: plans.firstOrNull()?.id) }
-    var title by remember { mutableStateOf("") }
-    var startMinutes by remember { mutableStateOf(9 * 60) }
-    var endMinutes by remember { mutableStateOf(9 * 60 + 30) }
+    var planId by rememberSaveable { mutableStateOf(defaultPlanId ?: plans.firstOrNull()?.id) }
+    var title by rememberSaveable { mutableStateOf("") }
+    var startMinutes by rememberSaveable { mutableStateOf(9 * 60) }
+    var endMinutes by rememberSaveable { mutableStateOf(9 * 60 + 30) }
     var picking by remember { mutableStateOf<String?>(null) }
+
+    // 空状态进来（planId 为 null）跳建计划页、回来后已有计划可选 → 补默认选中
+    LaunchedEffect(plans, defaultPlanId) {
+        if (planId == null) {
+            planId = defaultPlanId ?: plans.firstOrNull()?.id
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -81,6 +98,9 @@ internal fun QuickAddTaskSheet(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                TextButton(onClick = onCreatePlan) {
+                    Text(stringResource(R.string.today_quick_add_new_plan))
+                }
             } else {
                 Text(
                     text = stringResource(R.string.today_quick_add_plan_label),
@@ -100,6 +120,18 @@ internal fun QuickAddTaskSheet(
                             label = { Text(plan.title) },
                         )
                     }
+                    FilterChip(
+                        selected = false,
+                        onClick = onCreatePlan,
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        },
+                        label = { Text(stringResource(R.string.today_quick_add_new_plan)) },
+                    )
                 }
 
                 OutlinedTextField(
@@ -132,6 +164,33 @@ internal fun QuickAddTaskSheet(
                 if (endMinutes <= startMinutes) {
                     Text(
                         text = stringResource(R.string.task_end_before_start_error),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+
+                val pid = planId
+                val conflict = if (pid != null && endMinutes > startMinutes) {
+                    conflictPreview(pid, startMinutes, endMinutes)
+                } else {
+                    null
+                }
+                if (conflict != null) {
+                    Text(
+                        text = if (conflict.taskTitle.isBlank()) {
+                            stringResource(
+                                R.string.today_quick_add_conflict_plan,
+                                conflict.planTitle,
+                                conflict.overlapMinutes,
+                            )
+                        } else {
+                            stringResource(
+                                R.string.today_quick_add_conflict,
+                                conflict.planTitle,
+                                conflict.taskTitle,
+                                conflict.overlapMinutes,
+                            )
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )

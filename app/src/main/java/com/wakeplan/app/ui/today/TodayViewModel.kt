@@ -350,8 +350,47 @@ class TodayViewModel @Inject constructor(
         }
     }
 
+    /** 快速录入保存前的冲突预览——UI 实时提示用，不阻断保存 */
+    data class QuickAddConflict(
+        val planTitle: String,
+        val taskTitle: String,
+        val overlapMinutes: Int,
+    )
+
+    /**
+     * 预演 (planId, start, end) 保存后当天会跟谁撞——复用卡片红条同一套
+     * ConflictDetector + 链式延期后的 adjusted 时间，保证"预览的"就是"保存后标红的"。
+     * 对端 completion 不在今日列表（如归档计划）时 taskTitle 为空，UI 退化按计划名提示。
+     */
+    fun previewQuickAddConflict(planId: String, startMinutes: Int, endMinutes: Int): QuickAddConflict? {
+        if (endMinutes <= startMinutes) return null
+        val state = uiState.value
+        val synthetic = TaskCompletion(
+            id = QUICK_ADD_PREVIEW_ID,
+            taskId = "",
+            planId = planId,
+            scheduledDate = state.date,
+            plannedStart = state.date.atStartOfDay().plusMinutes(startMinutes.toLong()),
+            plannedEnd = state.date.atStartOfDay().plusMinutes(endMinutes.toLong()),
+        )
+        val top = conflictDetector(state.adjustedCompletions + synthetic, state.date)
+            .filter { it.taskA.id == QUICK_ADD_PREVIEW_ID || it.taskB.id == QUICK_ADD_PREVIEW_ID }
+            .maxByOrNull { it.overlapMinutes }
+            ?: return null
+        val other = if (top.taskA.id == QUICK_ADD_PREVIEW_ID) top.taskB else top.taskA
+        val otherItem = state.todayTaskItems.firstOrNull { it.completion.id == other.id }
+        return QuickAddConflict(
+            planTitle = otherItem?.plan?.title.orEmpty(),
+            taskTitle = otherItem?.task?.title.orEmpty(),
+            overlapMinutes = top.overlapMinutes,
+        )
+    }
+
     companion object {
         /** 撤销队列深度：超出丢最旧 */
         const val MAX_UNDO_DEPTH = 5
+
+        /** 冲突预演用的 synthetic completion id，只存在于内存，不落库 */
+        private const val QUICK_ADD_PREVIEW_ID = "quick-add-preview"
     }
 }

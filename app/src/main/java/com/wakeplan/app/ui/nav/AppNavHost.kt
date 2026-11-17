@@ -134,6 +134,7 @@ private fun AppNavGraph(
         composable(BottomTab.Today.route) {
             TodayScreen(
                 onOpenFocus = { completionId -> navController.navigate(Route.focus(completionId)) },
+                onCreatePlan = { navController.navigate(Route.PlanCreate) },
             )
         }
         composable(BottomTab.Plans.route) {

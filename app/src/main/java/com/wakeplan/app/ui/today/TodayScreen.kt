@@ -55,6 +55,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
@@ -97,6 +98,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TodayScreen(
     onOpenFocus: (String) -> Unit = {},
+    onCreatePlan: () -> Unit = {},
 ) {
     val viewModel: TodayViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -151,7 +153,8 @@ fun TodayScreen(
     }
 
     val isViewingToday by viewModel.isViewingToday.collectAsStateWithLifecycle()
-    var showQuickAdd by remember { mutableStateOf(false) }
+    // saveable：弹层里点「新建计划」跳走再回来，弹层和已填内容原样恢复
+    var showQuickAdd by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> WpSnackbar(data) } },
@@ -196,6 +199,8 @@ fun TodayScreen(
             onSave = { planId, title, start, end ->
                 viewModel.quickAddTask(planId, title, start, end)
             },
+            onCreatePlan = onCreatePlan,
+            conflictPreview = viewModel::previewQuickAddConflict,
             onDismiss = { showQuickAdd = false },
         )
     }
