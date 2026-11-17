@@ -168,8 +168,13 @@ class FocusTimerController @Inject constructor(
     }
 
     private fun stop() {
+        // 先把 Intent 造好再清 state：state 置 null 是「整场结束」的对外信号，
+        // 监听方看到 state==null 时，后台的 Intent 构造与记账都已就绪。
+        // 顺序反过来会让 state==null 早于 Intent 构造落地，
+        // 调用方（比如单测的 awaitStopped）会以为整场已经收工。
+        val serviceIntent = Intent(context, FocusTimerService::class.java)
         _state.value = null
-        context.stopService(Intent(context, FocusTimerService::class.java))
+        context.stopService(serviceIntent)
     }
 
     // ---- 内部 ----

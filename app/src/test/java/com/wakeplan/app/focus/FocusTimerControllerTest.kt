@@ -313,6 +313,9 @@ class FocusTimerControllerTest {
     /**
      * completeTask 的落库与 stop() 在内部 scope 异步执行；等 state 清空再进 tearDown，
      * 否则 stop() 里的 Intent 构造会撞上已拆除的构造 mock（MockKException 泄漏到下一条用例）
+     *
+     * 控制器已保证 Intent 在 state 清空之前构造好，这里再等 stopService 落地，
+     * 让「后台彻底收工」成为确定的事实而不是靠时序碰运气。
      */
     private fun awaitStopped(timeoutMs: Long = 2_000) {
         val deadline = System.currentTimeMillis() + timeoutMs
@@ -320,6 +323,7 @@ class FocusTimerControllerTest {
             Thread.sleep(20)
         }
         assertNull(controller.state.value, "等待专注场结束超时")
+        verify(timeout = 1_000) { context.stopService(any()) }
     }
 }
 
